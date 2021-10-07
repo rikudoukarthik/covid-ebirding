@@ -1,30 +1,17 @@
 ############ covid-ebirding
 
-
-# importing from raw ebd ###
-#
-# require(tidyverse)
-# require(dtplyr)
-# require(data.table)
-# library(lubridate)
-# 
-# memory.limit(size = 20000)
-# load("ebd_IN_relAug-2021.RData") # 8-11 minutes
-# ### ad hoc filters to produce tibble from dtplyr
-# data <- data %>% filter(YEAR >= 2017)
-# data <- collect(data)
-# rm("data_DT")
-# gc()
-# save.image("data.RData") 
-# 
-# detach("package:dtplyr", unload = T)
-# detach("package:data.table", unload = T)
-# 
-# ###
-
 library(tidyverse)
 library(lubridate)
-memory.limit(size = 20000)
+
+
+# ### importing from raw ebd
+#
+# load("ebd_IN_relAug-2021.RData") # 2 mins!
+# 
+# data <- data %>% filter(YEAR >= 2017) # 20 secs!
+# save.image("data.RData") # 3 mins
+
+
 load("data.RData")
 
 data <- data %>% filter(PROTOCOL.TYPE %in% c("Traveling","Stationary")) %>%
