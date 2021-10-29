@@ -6,18 +6,23 @@ library(lubridate)
 # load("data/ebd_IN_relSep-2021.RData") # 2 mins!
 # data <- data %>% filter(YEAR >= 2018) # 20 secs!
 # save.image("data/rawdata.RData") # 3 mins
-# load("data/rawdata.RData")
+# # load("data/rawdata.RData")
+# 
 # ### filters
-# groupaccs <- read.csv("ebd_users_GA_master_relAug-2021.csv",
-#                         na.strings = c(""," ",NA))
-# groupaccs <- groupaccs[1:400,] %>% mutate(CATEGORY = ifelse(GA.1 == 1, "GA.1", "GA.2"))
+# groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", na.strings = c(""," ",NA),
+#                         quote = "", header = T, nrows = 401)  # excluding empty cells
+# 
+# groupaccs <- groupaccs %>% 
+#   mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", GA.2 == 1 ~ "GA.2", TRUE ~ "NG"))
+# 
 # filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
-# data0 <- data %>% anti_join(filtGA) %>%
-#   filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
+# 
+# data0 <- data %>% anti_join(filtGA) %>% filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
+# 
 # rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
 # save.image("data/data0.RData")
-#
-# random subset for anaylsis
+# 
+# # random subset for analysis
 # set.seed(10)
 # data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000))
 # save(data_sub, file = "data/data_sub.RData")
