@@ -3,11 +3,11 @@ title: "COVID eBirding: Preliminary analyses"
 output: html_document
 date: "2021/10/28"
 author: "Karthik Thrikkadeeri"
+editor_options: 
+  chunk_output_type: console
+bibliography: covid-ebirding.bib
+link-citations: yes
 ---
-
-This is the preliminary analysis notebook for the COVID eBirding study.
-Here, I explore mainly via visualisations the basic patterns in the data.
-Our question is how the pandemic has affected birdwatching as well as birds in India.
 
 ```{r data_filt, eval=FALSE, echo=FALSE}
 ### importing from raw ebd
@@ -30,22 +30,266 @@ data0 <- data %>% anti_join(filtGA) %>% filter(PROTOCOL.TYPE %in% c("Traveling",
 rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
 save.image("data/data0.RData")
 
-# random subset for analysis
+# random subset for analysis + adding COVID category
 set.seed(10)
-data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000))
+data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
+  mutate(COVID = case_when(YEAR %in% c(2017,2018,2019) ~ "BEF", TRUE ~ "DUR"))
 save(data_sub, file = "data/data_sub.RData")
 ```
 
-```{r data_load, cache=TRUE, include=FALSE}
+
+```{r data_load, cache=TRUE, echo=FALSE}
 load("data/data_sub.RData")
 ```
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(lubridate)
+theme_set(theme_bw())
 ```
 
 
+# Introduction
+
+This study will focus on the impacts of the COVID-19 pandemic on both birds and the birding community in the Indian context. It will also try to understand the consequences of these changes on citizen science and the inferences that can be drawn from it. Lastly, it will propose guidelines for making the most of the available data while accounting for pandemic-driven biases and deviations from the pre-COVID normal. 
+
+To ensure a balanced time frame, this study will focus on the years from 2018 to 2021. The time period of 2018–19 will be considered as “pre-COVID” while 2020–21 will be considered “COVID”. In order to account for within-year variations in bird and birder behaviour, the comparisons will be made on the month level. For instance, various metrics of birding behaviour in the month of June will be compared between 2018–19 and 2020–21, and will not be confounded with patterns seen in other months. 
+
+# Preliminary analyses
+
+*This notebook is the preliminary analysis notebook for the study. Here, I explore, mainly via visualisations, the basic patterns in the data.*
+
+Among other filters applied, the data being used is a random subset (100,000 unique lists) of the full data, in order to reduce storage and computational demands.
 
 
+## Official data at national and state levels of COVID waves, lockdowns and vaccination drives
+
+### National level
+
+#### Waves:  
+While there is no strict definition for a "wave" or "phase" of an epidemic [@wagnerWhatMakesWave], here we use the general connotation of a natural pattern of sharply defined peaks and valleys in the number of sick/infected individuals. As such, India has experienced two waves at the national level [see @worldhealthorganizationIndiaWHOCoronavirus].  
+1. July 2020--December 2021  
+2. March 2021--June 2021
+
+#### Lockdowns:  
+1. 24 March 2020--31 May 2020 [@CoronavirusIndiaEnters2020; @gettlemanModiOrders3Week2020; @banerjeaCoronavirusLockdownExtended2020; @LockdownGuidelinesNationwide2020]  
+2. Second phase: The second wave of the pandemic in India has seen no nationwide lockdown [@Covid19SecondWave2021; @sangalAnalysisAnotherNational2021].
+
+#### Vaccination drives:  
+
+1. March 2021--June 2021  
+2. July 2021--mid-Aug 2021 (end of data)
+
+```{r, echo=FALSE}
+vax <- read.csv("covid_vaccine_statewise.csv", as.is=F)
+vax <- mutate(vax, date = as.Date(date, "%d/%m/%Y"))
+ggplot(filter(vax, state == "India"), aes(date, dose2)) + geom_line()
+```
+
+The lower plateau of the second dose vaccinations is certainly post mid-August, so we will use data from September onwards as control, to compare with DURING. 
+
+### State level
+
+
+```{r, echo=FALSE}
+states <- read.csv("covid_19_india.csv")
+states <- states %>% mutate(date = as.Date(date, "%d/%m/%Y"))
+states <- states %>% group_by(state) %>% 
+  mutate(tot_cases = cases, 
+         cases = cases - lag(cases, default = 0))
+```
+
+
+#### Kerala
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Kerala"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. September 2020--November 2020
+2. January 2021--March 2021  
+3. April 2021--June 2021
+4. August 2021--August 2021 (end of data)
+
+##### Lockdowns:  
+1. 24 March 2021--31 May 2021
+2. March 2021--April 2021  
+3. 8 May 2021--16 May 2021 [@Covid19SecondWave2021]  
+[@GoKDashboardOfficial]
+
+#### Karnataka
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Karnataka"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. July 2020--November 2020  
+2. April 2021--June 2021
+
+##### Lockdowns:  
+1. 24 March 2021--31 May 2021  
+2. May 2021--May 2021 [@Covid19SecondWave2021]  
+
+#### Tamil Nadu
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Tamil Nadu"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. June 2020--November 2020  
+2. April 2021--July 2021
+
+##### Lockdowns:  
+1. 24 March 2021--31 May 2021  
+2. 10 May 2021--24 May 2021 [@Covid19SecondWave2021]  
+
+#### Maharashtra
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. July 2020--November 2020  
+2. March 2021--June 2021
+
+##### Lockdowns:  
+1. 24 March 2021--31 May 2021  
+2. April 2021--May 2021 [@Covid19SecondWave2021]  
+
+#### Gujarat
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Gujarat"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. April 2021--June 2021  
+
+##### Lockdowns:  
+No state lockdowns. Only curfews and other restrictions. [@Covid19SecondWave2021]
+
+#### Arunachal Pradesh
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Arunachal Pradesh"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. August 2020--December 2020   
+2. May 2021--August 2021 (end of data)
+
+##### Lockdowns:  
+1.   
+2. 
+
+#### West Bengal
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "West Bengal"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. July 2020--January 2021  
+2. April 2021--July 2021
+
+##### Lockdowns:  
+1.   
+2. 
+
+#### Sikkim
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Sikkim"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. April 2021--June 2021  
+2. July 2021--August 2021 (end of data)
+
+##### Lockdowns:  
+1.   
+2. 
+
+#### Uttarakhand
+
+```{r, echo=FALSE}
+ggplot(filter(states, state == "Uttarakhand"), aes(date, cases)) + geom_line()
+```
+
+##### Waves:  
+1. August 2020--November 2020  
+2. December 2020--January 2021
+3. April 2021--June 2021
+
+##### Lockdowns:  
+1.   
+2. 
+
+
+
+
+
+
+## Birder behaviour (focus level: checklists)
+
+Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
+
+1. Number of submitted checklists  
+1.1. Total lists  
+1.2. Shared lists (use no. of obs.)  
+2. Number of submitted checklists per observer  
+2.1. Total lists  
+2.2. Shared lists (use no. of obs.)  
+3. Hotspot birding  
+4. Birding protocol  
+5. Birding distance
+6. Site fidelity per observer  
+7. Habitats surveyed  
+8. Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.  
+8.1. Spatial spread by absences  
+8.2. Spatial spread by densities  
+9. List duration
+10. List length  
+11. Birding time per observer (monthly for prelim, later maybe daily)  
+12. Temporal spread of birding activity  
+12.1. Temporal spread within day (time-of-day)  
+12.2. Temporal spread within week (day-of-week)  
+13. Media  
+14. Number of new birders
+
+When running the actual models, observer will be used as a random effect because all of these metrics would vary differently from observer to observer.
+
+Aside from comparing trends before and during the pandemic, at a finer scale we will also try to find patterns matching the various waves of spread and complete lockdown, as well as the vaccination progress.
+
+
+
+
+
+
+Seeing patterns in 
+
+```{r, message=FALSE, eval=FALSE, echo=FALSE}
+data_obs <- data_sub %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% group_by(YEAR,OBSERVER.ID,OBSERVATION.DATE) %>%
+  summarise(BIRDING.TIME = sum(DURATION.MINUTES), NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  ungroup %>% mutate(COVID = case_when(YEAR == 2017:2019 ~ "BEF", TRUE ~ "DUR"))
+
+
+ggplot(data_obs) + theme_bw() +
+  scale_y_log10() +
+  geom_violin(aes(x = as.factor(YEAR), y = BIRDING.TIME))
+
+ggplot(data_obs) + theme_bw() +
+  scale_y_log10() +
+  geom_violin(aes(x = as.factor(YEAR), y = NO.LISTS))
+```
+ 
+
+
+
+# References
 

@@ -22,9 +22,10 @@ library(lubridate)
 # rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
 # save.image("data/data0.RData")
 # 
-# # random subset for analysis
+# # random subset for analysis + adding COVID category
 # set.seed(10)
-# data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000))
+# data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
+#   mutate(COVID = case_when(YEAR %in% c(2017,2018,2019) ~ "BEF", TRUE ~ "DUR"))
 # save(data_sub, file = "data/data_sub.RData")
 
 
