@@ -10,10 +10,9 @@
 
 
 create_maps <- function(g1 = 25, g2 = 50, g3 = 100, g4 = 200,
-                       path1 = "India", name1 = "India_2011",
-                       path2 = "in_states_2019", name2 = "in_states_2019",
-                       path3 = "in_dists_2019", name3 = "in_dist_2019",
-                       papath = "PA_Boundaries_WII", paname = "pa_bounds")
+                        path1 = "data/in_2011", name1 = "India_2011",
+                        path2 = "data/in_states_2019", name2 = "in_states_2019",
+                        path3 = "data/in_dists_2019", name3 = "in_dist_2019")
 {
   require(tidyverse)
   require(rgdal)
@@ -31,12 +30,7 @@ create_maps <- function(g1 = 25, g2 = 50, g3 = 100, g4 = 200,
   assign("districtmap",readOGR(path3,name3),.GlobalEnv)
   names(districtmap@data)[1:2] <- c("DISTRICT","ST_NM")
   assign("districtmap",districtmap,.GlobalEnv)
-  
-  assign("pamap",readOGR(papath,paname),.GlobalEnv)
-  pamap <- pamap[,c(3,15)]
-  assign("pamap",pamap,.GlobalEnv)
-  
-  
+
   # creating SPDF grids below that can be intersected with various maps and overlaid on to data
   
   bb <- bbox(indiamap) # creates a box with extents from map
