@@ -1,47 +1,82 @@
 ---
 title: "COVID eBirding: Preliminary analyses"
-output: html_document
 date: "2021/10/28"
 author: "Karthik Thrikkadeeri"
 editor_options: 
   chunk_output_type: console
 bibliography: covid-ebirding.bib
 link-citations: yes
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3  
+    number_sections: false  
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+
 ---
-
-```{r data_filt, eval=FALSE, echo=FALSE}
-### importing from raw ebd
-load("data/ebd_IN_relSep-2021.RData") # 2 mins!
-data <- data %>% filter(YEAR >= 2018) # 20 secs!
-save.image("data/rawdata.RData") # 3 mins
-# load("data/rawdata.RData")
-
-### filters
-groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", na.strings = c(""," ",NA),
-                        quote = "", header = T, nrows = 401)  # excluding empty cells
-
-groupaccs <- groupaccs %>% 
-  mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", GA.2 == 1 ~ "GA.2", TRUE ~ "NG"))
-
-filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
-
-data0 <- data %>% anti_join(filtGA) %>% filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
-
-rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
-save.image("data/data0.RData")
-
-# random subset for analysis + adding COVID category
-set.seed(10)
-data_sub <- data0 %>% filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
-  mutate(COVID = case_when(YEAR %in% c(2017,2018,2019) ~ "BEF", TRUE ~ "DUR"))
-save(data_sub, file = "data/data_sub.RData")
-```
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(lubridate)
 library(patchwork)
 theme_set(theme_bw())
+```
+
+```{r data_filt, cache=TRUE, echo=FALSE}
+### importing from modified ebd RData
+load("data/ebd_IN_relSep-2021.RData") 
+
+### list of group accounts to be filtered
+groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", 
+                      na.strings = c(""," ",NA), quote = "", header = T, 
+                      nrows = 401)  # excluding empty cells
+groupaccs <- groupaccs %>% 
+  mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
+                              GA.2 == 1 ~ "GA.2", 
+                              TRUE ~ "NG"))
+filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
+
+
+
+### new observer data
+new_obsr_data <- data %>% 
+  select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
+           "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
+  mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>% 
+  group_by(OBSERVER.ID) %>% 
+  arrange(LAST.EDITED.DATE) %>% 
+  ungroup() %>% 
+  distinct(OBSERVER.ID, .keep_all = TRUE) %>%
+  mutate(LE.YEAR = year(LAST.EDITED.DATE),
+         LE.MONTH = month(LAST.EDITED.DATE)) %>% 
+  mutate(COVID = case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
+                           LE.YEAR %in% c(2020,2021) ~ "DUR",
+                           TRUE ~ "NA")) 
+
+# filtering
+new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
+
+save(new_obsr_data, file = "data/new_obsr_data.RData")
+
+
+### main data
+data <- data %>% filter(YEAR >= 2018) 
+save(data, file = "data/rawdata.RData")
+
+# filters
+data0 <- data %>% anti_join(filtGA) %>% 
+  filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
+
+rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
+save.image("data/data0.RData")
+
+# random subset for analysis + adding COVID category
+set.seed(10)
+data_sub <- data0 %>% 
+  filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
+  mutate(COVID = case_when(YEAR %in% c(2017,2018,2019) ~ "BEF", TRUE ~ "DUR"))
+save(data_sub, file = "data/data_sub.RData")
 ```
 
 ```{r data_load, cache=TRUE, dependson="data_filt", echo=FALSE}
@@ -67,6 +102,18 @@ Among other filters applied, the data being used is a random subset (100,000 uni
 ### National level
 
 #### Waves:  
+
+```{r nationalwaves, echo=FALSE}
+nwaves <- read.csv("data/covid_19_india.csv")
+nwaves <- nwaves %>% mutate(date = as.Date(date, "%d/%m/%Y")) %>% 
+  group_by(date) %>% summarise(cases = sum(cases))
+nwaves <- nwaves %>% mutate(tot_cases = cases, 
+                            cases = cases - lag(cases, default = 0))
+
+ggplot(nwaves, aes(date, cases)) + geom_line()
+
+```
+
 While there is no strict definition for a "wave" or "phase" of an epidemic [@wagnerWhatMakesWave], here we use the general connotation of a natural pattern of sharply defined peaks and valleys in the number of sick/infected individuals. As such, India has experienced two waves at the national level [see @worldhealthorganizationIndiaWHOCoronavirus].  
 1. July 2020--December 2021  
 2. March 2021--June 2021
@@ -239,26 +286,26 @@ Changes in eBirder behaviour will be analysed using the focal data point, checkl
 
 1. Number of submitted checklists  
 1.1. Total lists  
-1.2. Shared lists (use no. of obs.)  
-2. Number of submitted checklists per observer  
-2.1. Total lists  
-2.2. Shared lists (use no. of obs.)  
-3. Hotspot birding  
-4. Birding protocol  
-5. Birding distance
-6. Site fidelity per observer  
-7. Habitats surveyed  
-8. Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.  
-8.1. Spatial spread by absences  
-8.2. Spatial spread by densities  
-9. List duration
-10. List length  
-11. Birding time per observer (monthly for prelim, later maybe daily)  
-12. Temporal spread of birding activity  
-12.1. Temporal spread within day (time-of-day)  
-12.2. Temporal spread within week (day-of-week)  
-13. Media  
-14. Number of new birders
+1.1. Shared lists (use no. of obs.)  
+1. Number of submitted checklists per observer  
+1.1. Total lists  
+1.1. Shared lists (use no. of obs.)  
+1. Hotspot birding  
+1. Birding protocol  
+1. Birding distance
+1. Site fidelity per observer  
+1. Habitats surveyed  
+1. Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.  
+1.1. Spatial spread by absences  
+1.1. Spatial spread by densities  
+1. List duration
+11. List length  
+1. Birding time per observer (monthly for prelim, later maybe daily)  
+1. Temporal spread of birding activity  
+1.1. Temporal spread within day (time-of-day)  
+1.1. Temporal spread within week (day-of-week)  
+1. Media  
+1. Number of new birders
 
 When running the actual models, observer will be used as a random effect because all of these metrics would vary differently from observer to observer.
 
@@ -629,7 +676,7 @@ fidel_sw <- data_sub %>%
 (ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
     scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
     geom_smooth() +
-    ggtitle("Site fidelity of observers at national level")) /
+    ggtitle("No. of sites visited by observers at national level")) /
 ((ggplot(filter(fidel_sw, STATE == "Kerala"), 
         aes(MONTH, NO.SITES, colour = COVID)) + 
     scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
@@ -680,11 +727,208 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 ### Spatial spread  
 
+```{r s_spread_1, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+source("scripts/map_functions.R")
+
+create_maps()
+
+```
+
+```{r s_spread_2, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+library(raster)
+
+x <- raster("data/in_LULC/data/LULC_2005.tif")
+y <- rasterToPolygons(x)
+
+
+```
+
+
 ### List duration
+
+```{r duration, cache=TRUE, message=FALSE, echo=FALSE}
+
+dur <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() 
+
+(ggplot(dur, aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  ggtitle("Average checklist duration at national level")) /
+((ggplot(filter(dur, STATE == "Kerala"), 
+       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  ggtitle("Kerala")) |
+(ggplot(filter(dur, STATE == "Karnataka"), 
+       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  ggtitle("Karnataka"))) /
+((ggplot(filter(dur, STATE == "Gujarat"), 
+       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  ggtitle("Gujarat")) |
+(ggplot(filter(dur, STATE == "Arunachal Pradesh"), 
+       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  ggtitle("Arunachal Pradesh")))
+
+rm(dur)
+
+```
+
+* In normal circumstances, checklists become longer in the winter, and shorter during February (probably due to GBBC) and July--August (monsoon). The most striking change during the pandemic was the extremely low checklist duration in April--June, due to the national lockdown.  
+* In Kerala, while most of the pattern remains similar before and during the pandemic, the strong dip in checklist duration during the national lockdown is still present. Moreover, the winter months during the pandemic saw longer checklists than before.  
+* Karnataka before the pandemic showed strange patterns in terms of checklist duration, alternating with every month. During the pandemic, the fluctuation disappeared, but although the months of April and May had shortest checklist compared to other months, it wasn't very different from the average duration before the pandemic.  
+* In Gujarat checklist duration decreased in all months with pandemic, except for January which could be because of tourists arriving in search of migrants(?). Duration was lowest during lockdown months.  
+* Arunachal Pradesh has insufficient data.  
+* A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Gujarat.  
 
 ### List length
 
+```{r length, cache=TRUE, message=FALSE, echo=FALSE}
+
+length_nw <- data_sub %>% 
+  mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
+                                 COMMON.NAME == "Rock Pigeon" ~ "species",
+                               TRUE ~ CATEGORY)) %>% 
+  filter(CATEGORY %in% c("issf","species")) %>% 
+  group_by(COVID, YEAR, MONTH, SAMPLING.EVENT.IDENTIFIER) %>% 
+  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% ungroup() 
+
+length_sw <- data_sub %>% 
+  mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
+                                 COMMON.NAME == "Rock Pigeon" ~ "species",
+                               TRUE ~ CATEGORY)) %>% 
+  filter(CATEGORY %in% c("issf","species")) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
+  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% ungroup() 
+
+length_nw_bx <- length_nw %>% 
+  group_by(COVID, MONTH) %>%
+  summarise(y0 = quantile(LENGTH, 0.05),
+            y25 = quantile(LENGTH, 0.25),
+            y50 = mean(LENGTH),
+            y75 = quantile(LENGTH, 0.75),
+            y100 = quantile(LENGTH, 0.95))
+
+length_sw_bx <- length_sw %>% 
+  group_by(COVID, MONTH, STATE) %>%
+  summarise(y0 = quantile(LENGTH, 0.05),
+            y25 = quantile(LENGTH, 0.25),
+            y50 = mean(LENGTH),
+            y75 = quantile(LENGTH, 0.75),
+            y100 = quantile(LENGTH, 0.95))
+
+(ggplot(length_nw_bx, aes(as.factor(MONTH), fill = COVID)) +
+  scale_y_log10() +
+  geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+               stat = "identity") +
+  ggtitle("Average checklist length at national level")) 
+
+((ggplot(filter(length_sw_bx, STATE == "Kerala"), 
+         aes(as.factor(MONTH), fill = COVID)) + 
+    scale_y_log10() + 
+    geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+               stat = "identity") + 
+    ggtitle("Kerala")) |
+(ggplot(filter(length_sw_bx, STATE == "Karnataka"), 
+         aes(as.factor(MONTH), fill = COVID)) + 
+   scale_y_log10() + 
+   geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+                stat = "identity") + 
+   ggtitle("Karnataka"))) /
+((ggplot(filter(length_sw_bx, STATE == "Gujarat"), 
+         aes(as.factor(MONTH), fill = COVID)) + 
+    scale_y_log10() + 
+    geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+               stat = "identity") + 
+    ggtitle("Gujarat")) |
+(ggplot(filter(length_sw_bx, STATE == "Arunachal Pradesh"), 
+         aes(as.factor(MONTH), fill = COVID)) + 
+   scale_y_log10() + 
+   geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+                stat = "identity") + 
+   ggtitle("Arunachal Pradesh")))
+
+rm(length_nw, length_sw, length_nw_bx, length_sw_bx)
+
+```
+
+* The smooth is giving very different results from the boxplots. Hence, decided to use only boxplots.  
+* There is no discernible pattern in checklist length with the pandemic or with seasons, although it seems that the average checklist becomes bigger in the winter (due to winter migrants adding to the local species pool).
+
+
 ### Birding time per observer
+
+```{r time, cache=TRUE, message=FALSE, echo=FALSE}
+
+time_nw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(B.TIME = sum(DURATION.MINUTES))
+
+time_nw_bx <- time_nw %>% 
+  group_by(COVID, MONTH) %>%
+  summarise(y0 = quantile(B.TIME, 0.05),
+            y25 = quantile(B.TIME, 0.25),
+            y50 = mean(B.TIME),
+            y75 = quantile(B.TIME, 0.75),
+            y100 = quantile(B.TIME, 0.95))
+
+time_sw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(B.TIME = sum(DURATION.MINUTES))
+
+time_sw_bx <- time_sw %>% 
+  group_by(COVID, MONTH, STATE) %>%
+  summarise(y0 = quantile(B.TIME, 0.05),
+            y25 = quantile(B.TIME, 0.25),
+            y50 = mean(B.TIME),
+            y75 = quantile(B.TIME, 0.75),
+            y100 = quantile(B.TIME, 0.95))
+
+
+(ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_smooth() +
+    ggtitle("Monthly birding times of observers at national level")) /
+(ggplot(time_nw_bx, aes(as.factor(MONTH), fill = COVID)) +
+  geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
+               stat = "identity") +
+  ggtitle("Monthly birding time of observers at national level")) 
+
+
+
+((ggplot(filter(time_sw, STATE == "Kerala"), aes(MONTH, B.TIME, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_smooth() +
+    ggtitle("Kerala")) |
+(ggplot(filter(time_sw, STATE == "Karnataka"), aes(MONTH, B.TIME, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_smooth() +
+    ggtitle("Karnataka"))) /
+((ggplot(filter(time_sw, STATE == "Gujarat"), aes(MONTH, B.TIME, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_smooth() +
+    ggtitle("Gujarat")) |
+(ggplot(filter(time_sw, STATE == "Arunachal Pradesh"), aes(MONTH, B.TIME, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_smooth() +
+    ggtitle("Arunachal Pradesh")))
+
+rm(time_nw, time_sw, time_nw_bx, time_sw_bx)
+
+```
+
+* At the national level, birding times were and are higher in the winter, but during the pandemic decreased slightly in all months and drastically during the national lockdown.  
+* In Kerala, pre-COVID birding times per observer showed a massive dip during the monsoon, even compared to the neighbouring state Karnataka where the monsoon is not as strong (dip nonexistent in Gujarat). The relatively low average birding time indicates that Kerala has several eBirders who do little birding.  
+* In Karnataka, winter birding times per observer increased during the pandemic, either due to "behavioural release" from COVID restrictions, or due to greater interest/effort in winter migrants generated via other outreach initiatives(?).  
+* In Gujarat the pattern was the opposite. Birding times decreased slightly during the national lockdown as well as during early winter. 
 
 ### Temporal spread
 
@@ -809,7 +1053,153 @@ rm(list = c("temp1","t_dow_nw","t_dow_sw","t_tod_nw","t_tod_sw"))
 
 ### Media
 
+```{r media, cache=TRUE, message=FALSE, echo=FALSE}
+
+media_nw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  filter(HAS.MEDIA == 1) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) 
+
+media_sw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  filter(HAS.MEDIA == 1) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) 
+
+# Daman and Diu lists not appearing from 2020--2021
+
+
+(ggplot(media_nw, aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  ggtitle("Proportion of stationary lists at national level")) 
+
+((ggplot(filter(media_sw, STATE == "Kerala"), 
+         aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  ggtitle("Kerala")) |
+(ggplot(filter(media_sw, STATE == "Karnataka"), 
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  ggtitle("Karnataka"))) /
+((ggplot(filter(media_sw, STATE == "Gujarat"), 
+         aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  ggtitle("Gujarat")) |
+(ggplot(filter(media_sw, STATE == "Arunachal Pradesh"), 
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  ggtitle("Arunachal Pradesh")))
+
+rm(list = c("media_nw","media_sw"))
+
+```
+
+* At the national level, there are more lists with media during the winter than in other periods of the year. During the pandemic, lists with media have seemingly increased a little, most likely due to overall growth in eBirding.  
+* At the state level, Kerala and Karnataka have decent and similar numbers of lists with media. Kerala has a stonger mid-year dip than Karnataka, while the latter shows a relatively greater increase in lists with media during the pandemic. Other states like Gujarat and Arunachal Pradesh have few such lists, making conclusions difficult.  
+
+
+
 ### New birders
+
+```{r new, cache=TRUE, message=FALSE, echo=FALSE}
+
+load("data/new_obsr_data.RData")
+
+new_obsr_nw <- new_obsr_data %>% 
+  filter(COVID != "NA") %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
+  summarise(NEW = n_distinct(OBSERVER.ID))
+
+# not new to the state, but new overall, just grouped by state of first eBirding
+new_obsr_sw <- new_obsr_data %>% 
+  filter(COVID != "NA") %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
+  summarise(NEW = n_distinct(OBSERVER.ID))
+
+x <- filter(new_obsr_data, STATE == "Gujarat")
+
+y <- new_obsr_data %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
+  summarise(NEW = n_distinct(OBSERVER.ID))
+
+z <- filter(y, STATE == "Gujarat")
+z2 <- filter(y, STATE == "Maharashtra")
+z3 <- filter(y, STATE == "Punjab")
+z4 <- filter(y, STATE == "Chattisgarh")
+z5 <- filter(y, STATE == "Goa")
+
+temp1 <- data %>% filter(STATE == "Gujarat") %>% group_by(YEAR) %>% 
+  summarise(OBS = n_distinct(OBSERVER.ID))
+
+temp2 <- data %>% filter(STATE == "Maharashtra") %>% group_by(YEAR) %>% 
+  summarise(OBS = n_distinct(OBSERVER.ID))
+
+temp3 <- data %>% 
+  filter(STATE == "Gujarat") %>% 
+  select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
+           "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
+  mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>% 
+  group_by(OBSERVER.ID) %>% 
+  arrange(LAST.EDITED.DATE) %>% 
+  ungroup() %>% 
+  distinct(OBSERVER.ID, .keep_all = TRUE) %>%
+  mutate(LE.YEAR = year(LAST.EDITED.DATE),
+         LE.MONTH = month(LAST.EDITED.DATE)) %>% 
+  mutate(COVID = case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
+                           LE.YEAR %in% c(2020,2021) ~ "DUR",
+                           TRUE ~ "NA")) 
+
+temp4 <- data %>% filter(STATE == "Gujarat") %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  mutate(COVID = case_when(YEAR %in% c(2018,2019) ~ "BEF", 
+                           YEAR %in% c(2020,2021) ~ "DUR",
+                           TRUE ~ "NA")) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+ggplot(filter(temp4, COVID != "NA"), aes(MONTH, NO.LISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+  geom_point(size = 2)
+
+
+
+
+(ggplot(new_obsr_nw, aes(LE.MONTH, NEW, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    geom_point(size = 2) +
+    ggtitle("Monthly number of new eBirders at national level")) /
+((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
+         aes(LE.MONTH, NEW, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    geom_point(size = 2) +
+    ggtitle("Kerala"))  |
+(ggplot(filter(new_obsr_sw, STATE == "Karnataka"), 
+         aes(LE.MONTH, NEW, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    geom_point(size = 2) +
+    ggtitle("Karnataka"))) /
+((ggplot(filter(new_obsr_sw, STATE == "Gujarat"), 
+         aes(LE.MONTH, NEW, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    geom_point(size = 2) +
+    ggtitle("Gujarat")) |
+(ggplot(filter(new_obsr_sw, STATE == "Arunachal Pradesh"), 
+         aes(LE.MONTH, NEW, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    geom_point(size = 2) +
+    ggtitle("Arunachal Pradesh")))
+
+rm(list = c("new_obsr_nw","new_obsr_sw"))
+
+```
+
+* At the national level, the pandemic has seen a greater number of monthly new eBirders than before, presumably due to greater frequency and impact of outreach initiatives. The dip in monthly new eBirders during the monsoon, which was seen before the pandemic, has also disappeared in 2020--21.  
+* While Kerala and Karnataka both have seen increases in monthly new eBirders with the pandemic, the increase is more striking in Karnataka than in Kerala. 
 
 
 # References
