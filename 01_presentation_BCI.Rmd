@@ -9,7 +9,7 @@ output:
     includes:
       in_header: "in_header.html"
       after_body: "after_body.html"
-    css: [xaringan-themer.css]
+    css: [01_presentation_BCI.css]
     nature:
       beforeInit: "macros.js"
       slideNumberFormat: "%current%"
