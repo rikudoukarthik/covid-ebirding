@@ -2,7 +2,7 @@
 title: "eBirding and the pandemic"
 subtitle: "Preliminary results"  
 author: "Karthik Thrikkadeeri"
-date: '`r format(Sys.Date(), "%d-%m-%Y")`'
+date: '`r format(dmy("17/11/2021"), "%d-%m-%Y")`'
 output:
   xaringan::moon_reader:
     chakra: libs/remark-latest.min.js
