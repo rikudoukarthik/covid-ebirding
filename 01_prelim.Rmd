@@ -13,7 +13,6 @@ output:
     number_sections: false  
     theme: united  # many options for theme, this one is my favorite.
     highlight: tango  # specifies the syntax highlighting style
-
 ---
 
 ```{r setup, include=FALSE}
