@@ -44,14 +44,6 @@ theme_set(theme_bw())
 
 ```
 
-```{css, include=FALSE}
-.caption {
-  text-align: center;
-  font-size: 0.2rem;
-}
-```
-
-
 ```{r data_load, cache=TRUE, echo=FALSE}
 load("data/data_sub.RData")
 ```
