@@ -2,7 +2,7 @@
 title: "eBirding and the pandemic"
 subtitle: "Preliminary results"  
 author: "Karthik Thrikkadeeri"
-date: '`r format(lubridate::dmy("17/11/2021"), "%d-%m-%Y")`'
+date: '`r format(lubridate::dmy("01/12/2021"), "%d-%m-%Y")`'
 output:
   xaringan::moon_reader:
     chakra: libs/remark-latest.min.js
@@ -246,7 +246,7 @@ temp2 <- data_sub %>%
 
 nl_sw <- left_join(temp1, temp2)
 rm(list = c("temp1","temp2"))
-
+  
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -446,16 +446,6 @@ class: center middle inverse subsection
 .center[
 ```{r protocol_1, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=11}
 
-prot_nw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, PROTOCOL.TYPE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
-  ungroup() %>% group_by(COVID, YEAR, MONTH) %>% 
-  pivot_wider(names_from = PROTOCOL.TYPE, values_from = NO.LISTS) %>% 
-  mutate(PROP.S = round(Stationary/(Stationary+Traveling),2), 
-         PROP.T = round(Traveling/(Stationary+Traveling),2))
-
 prot_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -465,8 +455,25 @@ prot_sw <- data_sub %>%
   complete(YEAR, MONTH, STATE, PROTOCOL.TYPE, fill = list(NO.LISTS = 0)) %>% 
   ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
   pivot_wider(names_from = PROTOCOL.TYPE, values_from = NO.LISTS) %>% 
-  mutate(PROP.S = round(Stationary/(Stationary+Traveling),2), 
-         PROP.T = round(Traveling/(Stationary+Traveling),2))
+  mutate(PROP.S = if_else(Stationary == 0 | Traveling ==0,
+                          0,
+                          round(Stationary/(Stationary+Traveling),2)),
+         PROP.T = if_else(Stationary == 0 | Traveling ==0,
+                          0,
+                          round(Traveling/(Stationary+Traveling),2)))
+
+prot_nw <- prot_sw %>% ungroup() %>% 
+  filter(!(Stationary == 0 & Traveling == 0)) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(Stationary = ceiling(mean(Stationary)),
+            Traveling = ceiling(mean(Traveling)),
+            PROP.S = if_else(Stationary == 0 | Traveling ==0,
+                          0,
+                          round(Stationary/(Stationary+Traveling),2)),
+            PROP.T = if_else(Stationary == 0 | Traveling ==0,
+                          0,
+                          round(Traveling/(Stationary+Traveling),2)))
+
 
 # Daman and Diu lists not appearing from 2020--2021
 
@@ -524,15 +531,20 @@ rm(list = c("prot_nw","prot_sw"))
 .pull-left[
 ```{r distance_1, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
 
-dist <- data_sub %>% 
+dist_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(PROTOCOL.TYPE == "Traveling",
          !is.na(EFFORT.DISTANCE.KM))
 
-(ggplot(dist, aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
+dist_nw <- dist_sw %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(EFFORT.DISTANCE.KM = mean(EFFORT.DISTANCE.KM)) %>% 
+  ungroup()
+
+(ggplot(dist_nw, aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
   scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("National level") +
+  ggtitle("Average distance travelled at national level") +
   xlab("Month") + ylab("Distance travelled (km)"))
 
 ```
@@ -547,7 +559,7 @@ dist <- data_sub %>%
 
 .pull-right[
 ```{r distance_2, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
-(ggplot(filter(dist, STATE == "Kerala"), 
+(ggplot(filter(dist_sw, STATE == "Kerala"), 
        aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
   scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
   ggtitle("Kerala") +
@@ -561,7 +573,7 @@ dist <- data_sub %>%
 
 .pull-left[
 ```{r distance_3, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
-(ggplot(filter(dist, STATE == "Karnataka"), 
+(ggplot(filter(dist_sw, STATE == "Karnataka"), 
        aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
   scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
   ggtitle("Karnataka") +
@@ -571,13 +583,13 @@ dist <- data_sub %>%
 
 .pull-right[
 ```{r distance_4, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
-(ggplot(filter(dist, STATE == "Gujarat"), 
+(ggplot(filter(dist_sw, STATE == "Gujarat"), 
        aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
   scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
   ggtitle("Gujarat") +
   xlab("Month") + ylab("Distance travelled (km)"))
 
-rm(dist)
+rm(dist_sw, dist_nw)
 ```
 ]
 
@@ -605,6 +617,8 @@ rm(dist)
 
 .pull-left[
 ```{r fidelity_1, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
+
+# not averaged by state
 
 fidel_nw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -702,28 +716,11 @@ time_nw <- data_sub %>%
   group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES))
 
-time_nw_bx <- time_nw %>% 
-  group_by(COVID, MONTH) %>%
-  summarise(y0 = quantile(B.TIME, 0.05),
-            y25 = quantile(B.TIME, 0.25),
-            y50 = mean(B.TIME),
-            y75 = quantile(B.TIME, 0.75),
-            y100 = quantile(B.TIME, 0.95))
-
 time_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES))
-
-time_sw_bx <- time_sw %>% 
-  group_by(COVID, MONTH, STATE) %>%
-  summarise(y0 = quantile(B.TIME, 0.05),
-            y25 = quantile(B.TIME, 0.25),
-            y50 = mean(B.TIME),
-            y75 = quantile(B.TIME, 0.75),
-            y100 = quantile(B.TIME, 0.95))
-
 
 (ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
@@ -759,26 +756,20 @@ temp1 <- data_sub %>%
          TIMED = hour(as_datetime(paste(OBSERVATION.DATE,
                                               TIME.OBSERVATIONS.STARTED)))) 
 
-t_dow_nw <- temp1 %>% group_by(COVID, YEAR, MONTH, DAYW) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
-  ungroup() %>% group_by(COVID, YEAR, MONTH) %>% 
-  summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
-  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
-
 t_dow_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, DAYW, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%  
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%  
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, DAYW, fill = list(NO.LISTS = 0)) %>%
   ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
 
-t_tod_nw <- temp1 %>% group_by(COVID, YEAR, MONTH, TIMED) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>% 
-  ungroup() %>% group_by(COVID) %>% 
-  complete(YEAR, MONTH, TIMED, fill = list(NO.LISTS = 0)) %>%
-  ungroup() %>% group_by(COVID, YEAR, MONTH) %>% 
-  summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
+t_dow_nw <- t_dow_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, DAYW) %>% 
+  summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
   
 t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, TIMED, STATE) %>% 
@@ -786,6 +777,14 @@ t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, TIMED, STATE) %>%
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, TIMED, fill = list(NO.LISTS = 0)) %>%
   ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
+  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
+  
+t_tod_nw <- t_tod_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, TIMED) %>% 
+  summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
   summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
 
@@ -807,13 +806,12 @@ t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, TIMED, STATE) %>%
 
 ```{r t_spread_2, cache=TRUE, dependson="setup", message=FALSE, echo=FALSE, fig.height=5, fig.width=11}
 
-
-  (ggplot(t_tod_nw, aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+(ggplot(t_tod_nw, aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
-     geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1, width = 0.3, position = position_dodge(0.5)) +
-     xlab("Hour") + ylab("Proportion of lists"))
+   xlab("Hour") + ylab("Proportion of lists"))
 
 ```
 
