@@ -944,105 +944,105 @@ rm(length_nw, length_sw)
 
 ### Spatial spread  
 
-```{r s_spread_shp, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_1, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
 library(sp)
 library(rgdal)
 
+india <- readOGR(dsn = "data/in_2011", layer = "India_2011")
+states <- readOGR(dsn = "data/in_states_2019", layer = "in_states_2019")
+
 load("data/maps.RData")
 load("data/clips.RData")
 
-temp1 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  filter(SAMPLING.EVENT.IDENTIFIER %in%
-           sample(unique(SAMPLING.EVENT.IDENTIFIER), 1000))
-
-temp1 <- data_sub %>% 
+data_sp <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() 
 
-
-
-temp <- temp1 %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER") 
+temp <- data_sp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER") 
 coordinates(temp) <- ~LONGITUDE + LATITUDE 
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- temp %>% over(districtmap) %>%
   select(1:2) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, temp1)
+data_sp <- left_join(temp, data_sp)
   
 # add columns with GRID ATTRIBUTES to main data
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
+temp <- data_sp %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
 temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
 coordinates(temp) <- ~LONGITUDE + LATITUDE
 temp <- temp %>% over(gridmapg1) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "GRIDG1"
+data_sp <- left_join(temp, data_sp)
+names(data_sp)[2] <- "GRIDG1"
 
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
-temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
-coordinates(temp) <- ~LONGITUDE + LATITUDE
-temp <- temp %>% over(gridmapg2) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "GRIDG2"
-
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
-temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
-coordinates(temp) <- ~LONGITUDE + LATITUDE
-temp <- temp %>% over(gridmapg3) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "GRIDG3"
-
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
-temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
-coordinates(temp) <- ~LONGITUDE + LATITUDE
-temp <- temp %>% over(gridmapg4) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "GRIDG4"
-
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
+temp <- data_sp %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
 temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
 coordinates(temp) <- ~LONGITUDE + LATITUDE
 temp <- temp %>% over(g2clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "G2CLIP"
+data_sp <- left_join(temp, data_sp)
+names(data_sp)[2] <- "G2CLIP"
+```
 
-temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
-temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
-coordinates(temp) <- ~LONGITUDE + LATITUDE
-temp <- temp %>% over(g3clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
-data_map <- left_join(temp, data_map)
-names(data_map)[2] <- "G3CLIP"
+```{r s_spread_cov, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
-
-
-
-india <- readOGR(dsn = "data/in_2011", layer = "India_2011")
-states <- readOGR(dsn = "data/in_states_2019", layer = "in_states_2019")
-
-
-temp2 <- data_map %>% 
+data_cov <- data_sp %>% 
   ungroup() %>% 
-  filter(COVID == "BEF") %>% 
-  group_by(G2CLIP) %>% 
+  mutate(TOT.GRIDS = n_distinct(GRIDG1)) %>% 
+  group_by(COVID, YEAR, MONTH, GRIDG1) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+            TOT.GRIDS = min(TOT.GRIDS)) %>% 
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(SD.LISTS = sd(NO.LISTS),
+            TOT.GRIDS = min(TOT.GRIDS),
+            NO.GRIDS = n_distinct(GRIDG1),
+            PROP.GRIDS = round(NO.GRIDS/TOT.GRIDS,2))
+
+ggplot(data_cov, aes(as.factor(MONTH), SD.LISTS, colour = COVID)) + 
+   geom_point(stat = "summary", fun.data = mean_cl_boot, 
+              size = 4, position = position_dodge(0.5)) +
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+   xlab("Month") + ylab("Standard deviation of lists across cells")
+
+ggplot(data_cov, aes(as.factor(MONTH), PROP.GRIDS, colour = COVID)) + 
+   geom_point(stat = "summary", fun.data = mean_cl_boot, 
+              size = 4, position = position_dodge(0.5)) +
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+   xlab("Month") + ylab("Proportion of cells with birding activity")
+
+ggplot(data_cov, aes(as.factor(MONTH), NO.GRIDS, colour = COVID)) + 
+   geom_point(stat = "summary", fun.data = mean_cl_boot, 
+              size = 4, position = position_dodge(0.5)) +
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+   xlab("Month") + ylab("Number of cells with birding activity")
+
+```
+
+```{r s_spread_city, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+blr <- readOGR(dsn = "data/boundaries_IN_metro/Bangalore", 
+               layer = "Bangalore Divisions")
+
+plot(blr)
+
+```
+
+```{r s_spread_map, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+data_map <- data_sp %>% 
+  ungroup() %>% 
+  group_by(COVID, G2CLIP) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   mutate(id = paste0("g",G2CLIP)) %>% 
   right_join(fortify(g2clip))
-
-temp3 <- data_map %>% 
-  ungroup() %>% 
-  filter(COVID == "DUR") %>% 
-  group_by(G2CLIP) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  mutate(id = paste0("g",G2CLIP)) %>% 
-  right_join(fortify(g2clip))
-
 
 ggplot() +
   geom_polygon(data = fortify(india), 
                aes(long, lat, group = group),
                fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = temp2, 
+  geom_polygon(data = filter(data_map, COVID == "BEF"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
@@ -1052,13 +1052,14 @@ ggplot() +
   geom_polygon(data = fortify(india), 
                aes(long, lat, group = group),
                fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = temp3, 
+  geom_polygon(data = filter(data_map, COVID == "DUR"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
 
 
 ```
+
 
 ```{r s_spread_LULC, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
