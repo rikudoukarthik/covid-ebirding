@@ -249,10 +249,10 @@ ggplot(filter(states, state == "Gujarat"), aes(date, cases)) + geom_line()
 2. April 2021--June 2021 (only night curfew + other restrictions) [@LockdownGujaratNight2021; @GujaratCOVID19Restrictions2021]
 No state lockdowns. Only curfews and other restrictions. [@Covid19SecondWave2021]
 
-#### Arunachal Pradesh
+#### Maharashtra
 
 ```{r states_AR, echo=FALSE}
-ggplot(filter(states, state == "Arunachal Pradesh"), aes(date, cases)) + geom_line()
+ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
 ```
 
 ##### Waves:  
@@ -539,9 +539,9 @@ plot_annotation(title = "Change in no. of lists per observer with pandemic in Ka
   scale_x_continuous(breaks = 1:12) + geom_smooth()) +
 plot_annotation(title = "Change in no. of lists per observer with pandemic in Gujarat")
 
-(ggplot(filter(nl_po_sw, STATE == "Arunachal Pradesh"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+(ggplot(filter(nl_po_sw, STATE == "Maharashtra"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_smooth()) +
-plot_annotation(title = "Change in no. of lists per observer with pandemic in Arunachal Pradesh")
+plot_annotation(title = "Change in no. of lists per observer with pandemic in Maharashtra")
 
 rm(list = c("nl_po_sw","nl_po_nw"))
 
@@ -603,9 +603,9 @@ hot_nw <- hot_sw %>% ungroup() %>%
 ((ggplot(filter(hot_sw, STATE == "Gujarat"), aes(MONTH, PROP.H, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
   ggtitle("Gujarat")) |
-(ggplot(filter(hot_sw, STATE == "Arunachal Pradesh"), aes(MONTH, PROP.H, colour = COVID)) + 
+(ggplot(filter(hot_sw, STATE == "Maharashtra"), aes(MONTH, PROP.H, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Arunachal Pradesh")))
+  ggtitle("Maharashtra")))
 
 rm(list = c("hot_nw","hot_sw"))
 
@@ -659,9 +659,9 @@ prot_nw <- prot_sw %>% ungroup() %>%
 ((ggplot(filter(prot_sw, STATE == "Gujarat"), aes(MONTH, PROP.S, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
   ggtitle("Gujarat")) |
-(ggplot(filter(prot_sw, STATE == "Arunachal Pradesh"), aes(MONTH, PROP.S, colour = COVID)) + 
+(ggplot(filter(prot_sw, STATE == "Maharashtra"), aes(MONTH, PROP.S, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Arunachal Pradesh")))
+  ggtitle("Maharashtra")))
 
 rm(list = c("prot_nw","prot_sw"))
 
@@ -765,11 +765,11 @@ fidel_sw <- data_sub %>%
     scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
     geom_smooth() +
   ggtitle("Gujarat")) |
-(ggplot(filter(fidel_sw, STATE == "Arunachal Pradesh"), 
+(ggplot(filter(fidel_sw, STATE == "Maharashtra"), 
         aes(MONTH, NO.SITES, colour = COVID)) + 
     scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
     geom_smooth() +
-  ggtitle("Arunachal Pradesh")))
+  ggtitle("Maharashtra")))
 
 # fidel_nw_bx <- fidel_nw %>% ungroup() %>% 
 #   group_by(COVID, MONTH) %>% 
@@ -1163,10 +1163,10 @@ media_sw <- data_sub %>%
          aes(MONTH, NO.LISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
   ggtitle("Gujarat")) |
-(ggplot(filter(media_sw, STATE == "Arunachal Pradesh"), 
+(ggplot(filter(media_sw, STATE == "Maharashtra"), 
         aes(MONTH, NO.LISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Arunachal Pradesh")))
+  ggtitle("Maharashtra")))
 
 rm(list = c("media_nw","media_sw"))
 
@@ -1214,11 +1214,11 @@ new_obsr_sw <- new_obsr_data %>%
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
     geom_point(size = 2) +
     ggtitle("Gujarat")) |
-(ggplot(filter(new_obsr_sw, STATE == "Arunachal Pradesh"), 
+(ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
     geom_point(size = 2) +
-    ggtitle("Arunachal Pradesh")))
+    ggtitle("Maharashtra")))
 
 
 # Gujarat and ArP showing zero eBirders in certain cases. Probably due to random subsampling.
