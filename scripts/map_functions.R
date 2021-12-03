@@ -120,42 +120,42 @@ add_mapvars <- function(datapath = "data/data_sub.RData", mappath = "data/maps.R
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(gridmapg1) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "GRIDG1"
+  names(data_map)[2] <- "GRIDG1"
   
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(gridmapg2) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "GRIDG2"
+  names(data_map)[2] <- "GRIDG2"
   
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(gridmap3) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "GRIDG3"
+  names(data_map)[2] <- "GRIDG3"
   
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(gridmapg4) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "GRIDG4"
+  names(data_map)[2] <- "GRIDG4"
   
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(g2clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "G2CLIP"
+  names(data_map)[2] <- "G2CLIP"
   
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
   temp <- temp %>% over(g3clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
-  names(data)[2] <- "G3CLIP"
+  names(data_map)[2] <- "G3CLIP"
   
   ## 
   
