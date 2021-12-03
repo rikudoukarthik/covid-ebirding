@@ -132,7 +132,7 @@ add_mapvars <- function(datapath = "data/data_sub.RData", mappath = "data/maps.R
   temp <- data_map %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
   temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
   coordinates(temp) <- ~LONGITUDE + LATITUDE
-  temp <- temp %>% over(gridmap3) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
+  temp <- temp %>% over(gridmapg3) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
   data_map <- left_join(temp, data_map)
   names(data_map)[2] <- "GRIDG3"
   
