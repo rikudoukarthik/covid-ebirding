@@ -49,11 +49,12 @@ new_obsr_data <- data %>%
   distinct(OBSERVER.ID, .keep_all = TRUE) %>%
   mutate(LE.YEAR = year(LAST.EDITED.DATE),
          LE.MONTH = month(LAST.EDITED.DATE)) %>% 
-  mutate(COVID = case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
-                           LE.YEAR == 2020 ~ "DUR",
-                           LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR",
-                           LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT",
-                           TRUE ~ "NA")) 
+  mutate(COVID = factor(case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
+                                  LE.YEAR == 2020 ~ "DUR",
+                                  LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR",
+                                  LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT",
+                                  TRUE ~ "NA"),
+                        levels = c("BEF","DUR","AFT"))) 
 
 # filtering
 new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
@@ -77,10 +78,11 @@ save.image("data/data0.RData")
 set.seed(10)
 data_sub <- data0 %>% 
   filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
-  mutate(COVID = case_when(YEAR %in% c(2018,2019) ~ "BEF", 
-                           YEAR == 2020 ~ "DUR",
-                           YEAR == 2021 & MONTH < 9 ~ "DUR",
-                           YEAR == 2021 & MONTH >= 9 ~ "AFT"))
+  mutate(COVID = factor(case_when(YEAR %in% c(2018,2019) ~ "BEF", 
+                                  YEAR == 2020 ~ "DUR",
+                                  YEAR == 2021 & MONTH < 9 ~ "DUR",
+                                  YEAR == 2021 & MONTH >= 9 ~ "AFT"),
+                        levels = c("BEF","DUR","AFT")))
 save(data_sub, file = "data/data_sub.RData")
 ```
 
