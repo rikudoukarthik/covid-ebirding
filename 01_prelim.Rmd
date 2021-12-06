@@ -11,7 +11,7 @@ output:
     toc: true
     toc_depth: 3  
     number_sections: false  
-    theme: united  # many options for theme, this one is my favorite.
+    theme: united  
     highlight: tango  # specifies the syntax highlighting style
 ---
 
@@ -22,9 +22,9 @@ library(patchwork)
 theme_set(theme_bw())
 ```
 
-```{r data_filt, cache=TRUE, echo=FALSE}
+```{r data_filt, echo=FALSE}
 ### importing from modified ebd RData
-load("data/ebd_IN_relSep-2021.RData") 
+load("data/ebd_IN_relOct-2021.RData") 
 
 ### list of group accounts to be filtered
 groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", 
@@ -38,7 +38,7 @@ filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
 
 
 
-### new observer data
+### new observer data (to calculate no. of new observers metric)
 new_obsr_data <- data %>% 
   select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
            "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
@@ -50,13 +50,16 @@ new_obsr_data <- data %>%
   mutate(LE.YEAR = year(LAST.EDITED.DATE),
          LE.MONTH = month(LAST.EDITED.DATE)) %>% 
   mutate(COVID = case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
-                           LE.YEAR %in% c(2020,2021) ~ "DUR",
+                           LE.YEAR == 2020 ~ "DUR",
+                           LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR",
+                           LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT",
                            TRUE ~ "NA")) 
 
 # filtering
 new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
 
 save(new_obsr_data, file = "data/new_obsr_data.RData")
+
 
 
 ### main data
@@ -74,7 +77,10 @@ save.image("data/data0.RData")
 set.seed(10)
 data_sub <- data0 %>% 
   filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
-  mutate(COVID = case_when(YEAR %in% c(2017,2018,2019) ~ "BEF", TRUE ~ "DUR"))
+  mutate(COVID = case_when(YEAR %in% c(2018,2019) ~ "BEF", 
+                           YEAR == 2020 ~ "DUR",
+                           YEAR == 2021 & MONTH < 9 ~ "DUR",
+                           YEAR == 2021 & MONTH >= 9 ~ "AFT"))
 save(data_sub, file = "data/data_sub.RData")
 ```
 
