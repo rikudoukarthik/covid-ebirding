@@ -19,7 +19,9 @@ output:
 library(tidyverse)
 library(lubridate)
 library(patchwork)
+
 theme_set(theme_bw())
+
 ```
 
 ```{r data_filt, echo=FALSE}
@@ -49,6 +51,7 @@ new_obsr_data <- data %>%
   distinct(OBSERVER.ID, .keep_all = TRUE) %>%
   mutate(LE.YEAR = year(LAST.EDITED.DATE),
          LE.MONTH = month(LAST.EDITED.DATE)) %>% 
+  filter(LE.YEAR >= 2018) %>% 
   mutate(COVID = factor(case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
                                   LE.YEAR == 2020 ~ "DUR",
                                   LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR",
@@ -348,7 +351,7 @@ When running the actual models, observer will be used as a random effect because
 
 Aside from comparing trends before and during the pandemic, at a finer scale we will also try to find patterns matching the various waves of spread and complete lockdown, as well as the vaccination progress.
 
-Pot-presentation: regarding averaging national level patterns by state for some metrics, this means that means are manually calculated for states and the points plotted in the graph are only these single points per state (instead of all the raw data points).
+Post-presentation: regarding averaging national level patterns by state for some metrics, this means that means are manually calculated for states and the points plotted in the graph are only these single points per state (instead of all the raw data points).
 
 
 ### Number of submitted lists
@@ -359,16 +362,16 @@ Includes "duplicate" shared lists, of course.
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(YEAR, MONTH, STATE) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 nl_sw <- left_join(temp1, temp2)
@@ -377,16 +380,16 @@ rm(list = c("temp1","temp2"))
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(YEAR, MONTH) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 nl_nw <- left_join(temp1, temp2)
@@ -400,78 +403,120 @@ nl_nw <- nl_nw %>%
   mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2))
 
 
-(ggplot(nl_nw, aes(COVID, NO.LISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Total lists") |
-ggplot(nl_nw, aes(COVID, NO.SLISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Shared lists")) /
+(ggplot(nl_nw, aes(COVID, NO.LISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Total lists") +
+    scale_colour_brewer(palette = "Dark2") |
+ggplot(nl_nw, aes(COVID, NO.SLISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Shared lists") +
+    scale_colour_brewer(palette = "Dark2")) /
 (ggplot(nl_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2)) +
+   scale_x_continuous(breaks = 1:12) + geom_point(size = 4, shape = "diamond") +
+   scale_colour_brewer(palette = "Dark2")) +
+plot_layout(guides = "collect") +
 plot_annotation(title = "Change in no. of lists with pandemic at national level")
 
 
-(ggplot(filter(nl_sw, STATE == "Kerala"), aes(COVID, NO.LISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Total lists") |
-ggplot(filter(nl_sw, STATE == "Kerala"), aes(COVID, NO.SLISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Shared lists")) /
-(ggplot(filter(nl_sw, STATE == "Kerala"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2)) +
+(ggplot(filter(nl_sw, STATE == "Kerala"), 
+        aes(COVID, NO.LISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Total lists") +
+    scale_colour_brewer(palette = "Dark2") |
+ggplot(filter(nl_sw, STATE == "Kerala"), 
+       aes(COVID, NO.SLISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Shared lists") +
+    scale_colour_brewer(palette = "Dark2")) /
+(ggplot(filter(nl_sw, STATE == "Kerala"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+   scale_x_continuous(breaks = 1:12) + geom_point(size = 4, shape = "diamond") +
+   scale_colour_brewer(palette = "Dark2")) +
+plot_layout(guides = "collect") +
 plot_annotation(title = "Change in no. of lists with pandemic in Kerala")
 
 
-(ggplot(filter(nl_sw, STATE == "Karnataka"), aes(COVID, NO.LISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Total lists") |
-ggplot(filter(nl_sw, STATE == "Karnataka"), aes(COVID, NO.SLISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Shared lists")) /
-(ggplot(filter(nl_sw, STATE == "Karnataka"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2)) +
+(ggplot(filter(nl_sw, STATE == "Karnataka"), 
+        aes(COVID, NO.LISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Total lists") +
+    scale_colour_brewer(palette = "Dark2") |
+ggplot(filter(nl_sw, STATE == "Karnataka"), 
+       aes(COVID, NO.SLISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Shared lists") +
+    scale_colour_brewer(palette = "Dark2")) /
+(ggplot(filter(nl_sw, STATE == "Karnataka"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+   scale_x_continuous(breaks = 1:12) + geom_point(size = 4, shape = "diamond") +
+   scale_colour_brewer(palette = "Dark2")) +
+plot_layout(guides = "collect") +
 plot_annotation(title = "Change in no. of lists with pandemic in Karnataka")
 
 
-(ggplot(filter(nl_sw, STATE == "Gujarat"), aes(COVID, NO.LISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Total lists") |
-ggplot(filter(nl_sw, STATE == "Gujarat"), aes(COVID, NO.SLISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Shared lists")) /
-(ggplot(filter(nl_sw, STATE == "Gujarat"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2)) +
+(ggplot(filter(nl_sw, STATE == "Gujarat"), 
+        aes(COVID, NO.LISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Total lists") +
+    scale_colour_brewer(palette = "Dark2") |
+ggplot(filter(nl_sw, STATE == "Gujarat"), 
+       aes(COVID, NO.SLISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Shared lists") +
+    scale_colour_brewer(palette = "Dark2")) /
+(ggplot(filter(nl_sw, STATE == "Gujarat"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+   scale_x_continuous(breaks = 1:12) + geom_point(size = 4, shape = "diamond") +
+   scale_colour_brewer(palette = "Dark2")) +
+plot_layout(guides = "collect") +
 plot_annotation(title = "Change in no. of lists with pandemic in Gujarat")
 
 
-(ggplot(filter(nl_sw, STATE == "Maharashtra"), aes(COVID, NO.LISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Total lists") |
-ggplot(filter(nl_sw, STATE == "Maharashtra"), aes(COVID, NO.SLISTS, group = COVID)) + 
-  scale_y_log10() + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, width = 0.1) +
-  xlab("COVID") + ylab("Shared lists")) /
-(ggplot(filter(nl_sw, STATE == "Maharashtra"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2)) +
+(ggplot(filter(nl_sw, STATE == "Maharashtra"), 
+        aes(COVID, NO.LISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Total lists") +
+    scale_colour_brewer(palette = "Dark2") |
+ggplot(filter(nl_sw, STATE == "Maharashtra"), 
+       aes(COVID, NO.SLISTS, group = COVID, colour = COVID)) + 
+    scale_y_log10() + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 4) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.1) +
+    xlab("COVID") + ylab("Shared lists") +
+    scale_colour_brewer(palette = "Dark2")) /
+(ggplot(filter(nl_sw, STATE == "Maharashtra"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+   scale_x_continuous(breaks = 1:12) + geom_point(size = 4, shape = "diamond") +
+   scale_colour_brewer(palette = "Dark2")) +
+plot_layout(guides = "collect") +
 plot_annotation(title = "Change in no. of lists with pandemic in Maharashtra")
 
 rm(list = c("nl_sw","nl_nw"))
@@ -491,16 +536,16 @@ Includes "duplicate" shared lists, of course.
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 nl_po_sw <- left_join(temp1, temp2)
@@ -509,16 +554,16 @@ rm(list = c("temp1","temp2"))
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 nl_po_nw <- left_join(temp1, temp2)
@@ -531,24 +576,59 @@ nl_po_nw <- nl_po_nw %>%
   mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS)) %>% 
   mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2))
 
-(ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_smooth()) +
+
+ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
+  scale_colour_brewer(palette = "Dark2") +
 plot_annotation(title = "Change in no. of lists per observer with pandemic at national level")
 
-(ggplot(filter(nl_po_sw, STATE == "Kerala"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_smooth()) +
+ggplot(filter(nl_po_sw, STATE == "Kerala"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
+  scale_colour_brewer(palette = "Dark2") +
 plot_annotation(title = "Change in no. of lists per observer with pandemic in Kerala")
 
-(ggplot(filter(nl_po_sw, STATE == "Karnataka"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_smooth()) +
+ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
+  scale_colour_brewer(palette = "Dark2") +
 plot_annotation(title = "Change in no. of lists per observer with pandemic in Karnataka")
 
-(ggplot(filter(nl_po_sw, STATE == "Gujarat"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_smooth()) +
+ggplot(filter(nl_po_sw, STATE == "Gujarat"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
+  scale_colour_brewer(palette = "Dark2") +
 plot_annotation(title = "Change in no. of lists per observer with pandemic in Gujarat")
 
-(ggplot(filter(nl_po_sw, STATE == "Maharashtra"), aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_smooth()) +
+ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
+        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
+  scale_colour_brewer(palette = "Dark2") +
 plot_annotation(title = "Change in no. of lists per observer with pandemic in Maharashtra")
 
 rm(list = c("nl_po_sw","nl_po_nw"))
@@ -571,8 +651,8 @@ Not sure if we should explore this metric "per observer"; I think it isn't neces
 hot_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, STATE, LOCALITY.TYPE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE, LOCALITY.TYPE) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, LOCALITY.TYPE, fill = list(NO.LISTS = 0)) %>% 
   ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -582,7 +662,8 @@ hot_sw <- data_sub %>%
                           round(H/(H+P),2)), 
          PROP.P = if_else(H == 0 | P ==0,
                           0,
-                          round(P/(H+P),2)))
+                          round(P/(H+P),2))) %>% 
+  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9))
 
 hot_nw <- hot_sw %>% ungroup() %>% 
   filter(!(H == 0 & P == 0)) %>% 
@@ -600,26 +681,35 @@ hot_nw <- hot_sw %>% ungroup() %>%
 
 
 (ggplot(hot_nw, aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Proportion of lists from hotspots at national level")) /
-((ggplot(filter(hot_sw, STATE == "Kerala"), aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+((ggplot(filter(hot_sw, STATE == "Kerala"), 
+         aes(MONTH, PROP.H, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Kerala")) |
-(ggplot(filter(hot_sw, STATE == "Karnataka"), aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+(ggplot(filter(hot_sw, STATE == "Karnataka"), 
+        aes(MONTH, PROP.H, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Karnataka"))) /
-((ggplot(filter(hot_sw, STATE == "Gujarat"), aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+((ggplot(filter(hot_sw, STATE == "Gujarat"), 
+         aes(MONTH, PROP.H, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Gujarat")) |
-(ggplot(filter(hot_sw, STATE == "Maharashtra"), aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+(ggplot(filter(hot_sw, STATE == "Maharashtra"), 
+        aes(MONTH, PROP.H, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Maharashtra")))
 
 rm(list = c("hot_nw","hot_sw"))
 
 ```
 
-There seems to be no difference in birding effort between hotspots and personal locations, before and during the pandemic.
+There seems to be no difference in birding effort between hotspots and personal locations, before and during the pandemic. Only Maharashtra shows a major decrease in hotspot birding during the months of April & May during the pandemic.
 
 ### Birding protocol  
 
@@ -628,8 +718,8 @@ There seems to be no difference in birding effort between hotspots and personal 
 prot_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(YEAR, MONTH, STATE, PROTOCOL.TYPE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%
+  group_by(COVID, YEAR, MONTH, STATE, PROTOCOL.TYPE) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, PROTOCOL.TYPE, fill = list(NO.LISTS = 0)) %>% 
   ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -639,7 +729,8 @@ prot_sw <- data_sub %>%
                           round(Stationary/(Stationary+Traveling),2)),
          PROP.T = if_else(Stationary == 0 | Traveling ==0,
                           0,
-                          round(Traveling/(Stationary+Traveling),2)))
+                          round(Traveling/(Stationary+Traveling),2))) %>% 
+  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9))
 
 prot_nw <- prot_sw %>% ungroup() %>% 
   filter(!(Stationary == 0 & Traveling == 0)) %>% 
@@ -656,19 +747,28 @@ prot_nw <- prot_sw %>% ungroup() %>%
 # Daman and Diu lists not appearing from 2020--2021
 
 (ggplot(prot_nw, aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Proportion of stationary lists at national level")) /
-((ggplot(filter(prot_sw, STATE == "Kerala"), aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+((ggplot(filter(prot_sw, STATE == "Kerala"), 
+         aes(MONTH, PROP.S, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Kerala")) |
-(ggplot(filter(prot_sw, STATE == "Karnataka"), aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+(ggplot(filter(prot_sw, STATE == "Karnataka"), 
+        aes(MONTH, PROP.S, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Karnataka"))) /
-((ggplot(filter(prot_sw, STATE == "Gujarat"), aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+((ggplot(filter(prot_sw, STATE == "Gujarat"), 
+         aes(MONTH, PROP.S, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Gujarat")) |
-(ggplot(filter(prot_sw, STATE == "Maharashtra"), aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
+(ggplot(filter(prot_sw, STATE == "Maharashtra"), 
+        aes(MONTH, PROP.S, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
+  scale_color_brewer(palette = "Dark2") +
   ggtitle("Maharashtra")))
 
 rm(list = c("prot_nw","prot_sw"))
@@ -681,6 +781,7 @@ rm(list = c("prot_nw","prot_sw"))
 * In Karnataka, the overall mid-year peak was not as strong, because the Western Ghats comprises a relatively smaller area of the state and most of the birding in Karnataka happens in and around metros like Bangalore. Similarly, the shift in proportions with the pandemic was not very significant, except for the months of April and May, that too only in one year (due to the national lockdown in 2020). This agrees with the previous observation that implementation of restrictions was generally more lax in Karnataka than in Kerala.  
 * There is no noticeable mid-year peak in Gujarat, which makes sense because the state does not experience a strong monsoon (although it is to be noted that Gujarat has less overall birding compared to the previous states). However, it still saw the spike in proportion of stationary lists during April-May due to the national lockdown.  
 * Arunachal once again shows erratic patterns because of scarcity of data, not allowing us to make inferences. 
+* Maharashtra and the national average show that people made fewer stationary lists before and after the pandemic. However, some states show idiosyncratic patterns. Kerala has more stationary lists than both before and during the pandemic. In Karnataka, proportion of stationary lists wasn't very different before and during the pandemic, but decreased greatly after. 
 
 
 ### Birding distance
@@ -694,34 +795,61 @@ dist_sw <- data_sub %>%
          !is.na(EFFORT.DISTANCE.KM))
 
 dist_nw <- dist_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(EFFORT.DISTANCE.KM = mean(EFFORT.DISTANCE.KM)) %>% 
   ungroup()
 
+# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
+
 (ggplot(dist_nw, aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
+  scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
   ggtitle("Average distance travelled at national level") +
   xlab("Month") + ylab("Distance travelled (km)")) /
 ((ggplot(filter(dist_sw, STATE == "Kerala"), 
-       aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Kerala") +
-  xlab("Month") + ylab("Distance travelled (km)")) |
+         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    ggtitle("Kerala") +
+    xlab("Month") + ylab("Distance travelled (km)")) |
 (ggplot(filter(dist_sw, STATE == "Karnataka"), 
-       aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Karnataka") +
-  xlab("Month") + ylab("Distance travelled (km)"))) /
+         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Karnataka") +
+   xlab("Month") + ylab("Distance travelled (km)"))) /
 ((ggplot(filter(dist_sw, STATE == "Gujarat"), 
-       aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Gujarat") +
-  xlab("Month") + ylab("Distance travelled (km)")) |
+         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    ggtitle("Gujarat") +
+    xlab("Month") + ylab("Distance travelled (km)")) |
 (ggplot(filter(dist_sw, STATE == "Maharashtra"), 
-       aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Maharashtra") +
-  xlab("Month") + ylab("Distance travelled (km)")))
+        aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Maharashtra") +
+   xlab("Month") + ylab("Distance travelled (km)")))
 
 rm(dist_sw, dist_nw)
 
@@ -732,6 +860,7 @@ rm(dist_sw, dist_nw)
 * Karnataka didn't show differences between early and late winter, but February saw very short distances, most likely due to the global event GBBC, where people are advised to submit multiple 15-minute lists. Otherwise, effort distances remained fairly constant, with highest peaks in summer and winter. However, during the pandemic these patterns stayed the same except for the months of April and May due to the national lockdown.  
 * In Gujarat the patterns were much more simple, with summer having short distance checklists and early winter having long distance lists. This could be because the months of August--October overlap with the arrival of huge numbers of passage migrants in Gujarat (most of these are uncommon birds and move on further outside India), attracting a lot of birding. Interestingly, there is no difference with the pandemic.  
 * Once again, due to data scarcity, there is no clear pattern that can be identified from Arunachal Pradesh.
+* Only in Kerala and Maharashtra does there seem to be some effect of the pandemic on birding distances. In Kerala this was notable in April--June and September--October. In Maharashtra, this was more or less prominent over all months. 
 
 
 ### Site fidelity per observer  
@@ -740,58 +869,90 @@ rm(dist_sw, dist_nw)
 
 # not averaged by state 
 
+# 111 km = 1 deg
+# 111 * n * 1 km = n deg
+# 111 * n (5K) = n deg * 5
+# 111/5 * n (5K) = n deg 
+
+# doing 25kmx25km
+
 fidel_nw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  mutate(COORD = paste0(round(LATITUDE, 2), ",", round(LONGITUDE, 2))) %>% #1kmx1km
+  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
+  mutate(LAT.5K = LATITUDE*111/5, 
+         LON.5K = LONGITUDE*111/5,
+         LAT.25K = LATITUDE*111/25, 
+         LON.25K = LONGITUDE*111/25) %>% 
+  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
+         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
   group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.SITES = n_distinct(COORD))
+  summarise(NO.SITES = n_distinct(COORD.25K))
 
 fidel_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  mutate(COORD = paste0(round(LATITUDE, 2), ",", round(LONGITUDE, 2))) %>% #1kmx1km
+  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
+  mutate(LAT.5K = LATITUDE*111/5, 
+         LON.5K = LONGITUDE*111/5,
+         LAT.25K = LATITUDE*111/25, 
+         LON.25K = LONGITUDE*111/25) %>% 
+  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
+         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SITES = n_distinct(COORD))
+  summarise(NO.SITES = n_distinct(COORD.25K))
 
+  
 (ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("No. of sites visited by observers at national level")) /
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("No. of sites (unique 25kmx25km cells) visited by observers at national level") + 
+   xlab("Month") + ylab("No. of sites")) /
 ((ggplot(filter(fidel_sw, STATE == "Kerala"), 
-        aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-  ggtitle("Kerala")) |
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Kerala") + 
+   xlab("Month") + ylab("No. of sites")) |
 (ggplot(filter(fidel_sw, STATE == "Karnataka"), 
-        aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-  ggtitle("Karnataka"))) /
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Karnataka") + 
+   xlab("Month") + ylab("No. of sites"))) /
 ((ggplot(filter(fidel_sw, STATE == "Gujarat"), 
-        aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-  ggtitle("Gujarat")) |
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Gujarat") + 
+   xlab("Month") + ylab("No. of sites")) |
 (ggplot(filter(fidel_sw, STATE == "Maharashtra"), 
-        aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-  ggtitle("Maharashtra")))
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Maharashtra") + 
+   xlab("Month") + ylab("No. of sites")))
 
-# fidel_nw_bx <- fidel_nw %>% ungroup() %>% 
-#   group_by(COVID, MONTH) %>% 
-#   summarise(y0 = quantile(NO.SITES, 0.05),
-#             y25 = quantile(NO.SITES, 0.25),
-#             y50 = mean(NO.SITES),
-#             y75 = quantile(NO.SITES, 0.75),
-#             y100 = quantile(NO.SITES, 0.95))
-# 
-# ggplot(fidel_nw_bx, aes(as.factor(MONTH), fill = COVID)) + 
-#   scale_y_log10() + 
-#   geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100),
-#                stat = "identity") +
-#   ggtitle("Site fidelity of observers at national level")
   
 rm(list = c("fidel_nw","fidel_sw"))
 
@@ -802,6 +963,7 @@ rm(list = c("fidel_nw","fidel_sw"))
 * This pattern was present in the states of Kerala and Karnataka as well, but in Karnataka the winter months were similar in the two periods, if not DURING having lower site fidelity than BEFORE.  
 * In Gujarat, the difference wasn't great, and site fidelity even seems to be lower during the pandemic, possibly due to growth in eBirding in the state.  
 * Arunachal Pradesh has insufficient data to make conclusions from.
+* Only Kerala and Karnataka showed higher site fidelity during April--June during the pandemic than before, while other states showed fairly similar patterns before, during and after. However, at the national level it seems like the site fidelity is returning to pre-COVID levels after a decrease during the pandemic.
 
 
 ### Birding time per observer
@@ -821,30 +983,58 @@ time_sw <- data_sub %>%
   summarise(B.TIME = sum(DURATION.MINUTES))
 
 
-(ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("Monthly birding times of observers at national level")) 
+ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Monthly birding times of observers at national level") 
 
+((ggplot(filter(time_sw, STATE == "Kerala"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Kerala")) |
+(ggplot(filter(time_sw, STATE == "Karnataka"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Karnataka"))) /
+((ggplot(filter(time_sw, STATE == "Gujarat"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Gujarat")) |
+(ggplot(filter(time_sw, STATE == "Maharashtra"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Maharashtra")))
 
-((ggplot(filter(time_sw, STATE == "Kerala"), aes(MONTH, B.TIME, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("Kerala")) |
-(ggplot(filter(time_sw, STATE == "Karnataka"), aes(MONTH, B.TIME, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("Karnataka"))) /
-((ggplot(filter(time_sw, STATE == "Gujarat"), aes(MONTH, B.TIME, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("Gujarat")) |
-(ggplot(filter(time_sw, STATE == "Maharashtra"), aes(MONTH, B.TIME, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_smooth() +
-    ggtitle("Maharashtra")))
-
-rm(time_nw, time_sw, time_nw_bx, time_sw_bx)
+rm(time_nw, time_sw)
 
 ```
 
@@ -852,57 +1042,90 @@ rm(time_nw, time_sw, time_nw_bx, time_sw_bx)
 * In Kerala, pre-COVID birding times per observer showed a massive dip during the monsoon, even compared to the neighbouring state Karnataka where the monsoon is not as strong (dip nonexistent in Gujarat). The relatively low average birding time indicates that Kerala has several eBirders who do little birding.  
 * In Karnataka, winter birding times per observer increased during the pandemic, either due to "behavioural release" from COVID restrictions, or due to greater interest/effort in winter migrants generated via other outreach initiatives(?).  
 * In Gujarat the pattern was the opposite. Birding times decreased slightly during the national lockdown as well as during early winter. 
+* At the national level, birding times decreased during the pandemic in January, April--June and November. At the state level, patterns are not very clear.
 
 ### List duration
 
 ```{r duration, cache=TRUE, message=FALSE, echo=FALSE}
 
+# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
+
 dur_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(DURATION.MINUTES = ceiling(mean(DURATION.MINUTES))) %>%
-  ungroup() 
+  slice(1) %>% ungroup() 
 
 dur_nw <- dur_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DURATION.MINUTES = ceiling(mean(DURATION.MINUTES))) %>% 
   ungroup()
 
 (ggplot(dur_nw, aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Average checklist duration at national level")) /
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("Duration (mins)") +
+    ggtitle("Average checklist duration at national level")) /
 ((ggplot(filter(dur_sw, STATE == "Kerala"), 
-       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Kerala")) |
+         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("Duration (mins)") +
+    ggtitle("Kerala")) |
 (ggplot(filter(dur_sw, STATE == "Karnataka"), 
-       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Karnataka"))) /
+         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("Duration (mins)") +
+    ggtitle("Karnataka"))) /
 ((ggplot(filter(dur_sw, STATE == "Gujarat"), 
-       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Gujarat")) |
+         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("Duration (mins)") +
+    ggtitle("Gujarat")) |
 (ggplot(filter(dur_sw, STATE == "Maharashtra"), 
-       aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Maharashtra")))
+         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("Duration (mins)") +
+    ggtitle("Maharashtra")))
 
 rm(dur_sw, dur_nw)
 
 ```
 
-* In normal circumstances, checklists become longer in the winter, and shorter during February (probably due to GBBC) and July--August (monsoon). The most striking change during the pandemic was the extremely low checklist duration in April--June, due to the national lockdown.  
-* In Kerala, while most of the pattern remains similar before and during the pandemic, the strong dip in checklist duration during the national lockdown is still present. Moreover, the winter months during the pandemic saw longer checklists than before.  
-* Karnataka before the pandemic showed strange patterns in terms of checklist duration, alternating with every month. During the pandemic, the fluctuation disappeared, but although the months of April and May had shortest checklist compared to other months, it wasn't very different from the average duration before the pandemic.  
-* In Gujarat checklist duration decreased in all months with pandemic, except for January which could be because of tourists arriving in search of migrants(?). Duration was lowest during lockdown months.  
+* In normal circumstances, checklists become longer in the winter, and shorter during February (probably due to GBBC) and July--August (monsoon). The only notable change during the pandemic at the national level was low checklist duration in April--June, due to the national lockdown/second wave.  
+* In Kerala, while most of the pattern remains similar before and during the pandemic, the strong dip in checklist duration during the national lockdown is still present. Moreover, the winter months during the pandemic saw longer checklists than before. After the pandemic, the winter months have seen slightly longer lists.  
+* Karnataka doesn't show very clear patterns apart from a possibly lower participation in the February GBBC (leading to higher average duration) during the pandemic, and shorter lists in April--May.  
+* Gujarat also doesn't show very clear patterns.  
 * Arunachal Pradesh has insufficient data.  
-* A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Gujarat.  
+* Maharashtra showed a decrease in average duration of lists during March--May but otherwise didn't seem to be affected by the pandemic.  
+* A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Maharashtra.  
 
 ### List length
 
 ```{r length, cache=TRUE, message=FALSE, echo=FALSE}
+
+# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
 
 length_sw <- data_sub %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
@@ -910,42 +1133,74 @@ length_sw <- data_sub %>%
                                TRUE ~ CATEGORY)) %>% 
   filter(CATEGORY %in% c("issf","species")) %>% 
   group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
-  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% ungroup() %>% 
+  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% ungroup() 
+
+length_nw <- length_sw %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(LENGTH = ceiling(mean(LENGTH))) %>% 
   ungroup()
 
-length_nw <- length_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  summarise(LENGTH = ceiling(mean(LENGTH))) %>% 
-  ungroup()
 
 (ggplot(length_nw, aes(MONTH, LENGTH, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Average checklist length at national level")) /
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("List length (no. of species)") +
+    ggtitle("Average checklist length at national level")) /
 ((ggplot(filter(length_sw, STATE == "Kerala"), 
-       aes(MONTH, LENGTH, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Kerala")) |
+         aes(MONTH, LENGTH, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("List length (no. of species)") +
+    ggtitle("Kerala")) |
 (ggplot(filter(length_sw, STATE == "Karnataka"), 
-       aes(MONTH, LENGTH, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Karnataka"))) /
+         aes(MONTH, LENGTH, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("List length (no. of species)") +
+    ggtitle("Karnataka"))) /
 ((ggplot(filter(length_sw, STATE == "Gujarat"), 
-       aes(MONTH, LENGTH, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Gujarat")) |
+         aes(MONTH, LENGTH, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("List length (no. of species)") +
+    ggtitle("Gujarat")) |
 (ggplot(filter(length_sw, STATE == "Maharashtra"), 
-       aes(MONTH, LENGTH, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + geom_smooth() +
-  ggtitle("Maharashtra")))
+         aes(MONTH, LENGTH, colour = COVID)) + 
+    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+    scale_colour_brewer(palette = "Dark2") +
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("Month") + ylab("List length (no. of species)") +
+    ggtitle("Maharashtra")))
 
 rm(length_nw, length_sw)
 
 ```
 
-* The smooth is giving very different results from the boxplots. Hence, decided to use only boxplots.  
-* There is no discernible pattern in checklist length with the pandemic or with seasons, although it seems that the average checklist becomes bigger in the winter (due to winter migrants adding to the local species pool).
+* Apart from a suggestion of lower list length in the months of April and May, there is no discernible pattern with the pandemic or with seasons, although it seems that the average checklist becomes bigger in the winter (due to winter migrants adding to the local species pool).  
+* In Kerala, list length increased in the winter months of October--January during the pandemic, but decreased in Feb--Mar, May--June and Aug.  
+* In Karnataka, list length during the pandemic mostly stayed similar to pre-COVID levels, or increased.  
+* Gujarat doesn't show any clear pattern.  
+* In Maharashtra, list length decreased drastically during Apr--May, possibly due to the severity of the pandemic.
+
 
 
 ### Habitats surveyed  
@@ -1092,11 +1347,15 @@ temp1 <- data_sub %>%
          TIMED = hour(as_datetime(paste(OBSERVATION.DATE,
                                               TIME.OBSERVATIONS.STARTED)))) 
 
-t_dow_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, DAYW, STATE) %>% 
+
+t_dow_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, STATE, DAYW) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%  
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, DAYW, fill = list(NO.LISTS = 0)) %>%
-  ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
+  ungroup() %>% 
+  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  # not grouping by DAYW because need to sum over all obs in group
   summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
 
@@ -1105,14 +1364,18 @@ t_dow_nw <- t_dow_sw %>% ungroup() %>%
   summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
+  # not grouping by DAYW because need to sum over all obs in group
   summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
   
-t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, TIMED, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER), COVID = min(COVID)) %>%  
+t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, STATE, TIMED) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%  
   ungroup() %>% group_by(COVID) %>% 
   complete(YEAR, MONTH, STATE, TIMED, fill = list(NO.LISTS = 0)) %>%
-  ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
+  ungroup() %>% 
+  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  # not grouping by TIMED because need to sum over all obs in group
   summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
   
@@ -1121,6 +1384,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
   summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
+  # not grouping by TIMED because need to sum over all obs in group
   summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
   mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
 
@@ -1132,114 +1396,144 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
 
 ```{r t_spread_2, cache=TRUE, message=FALSE, echo=FALSE}
 
-ggplot(t_dow_nw, aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 4, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists")
+(ggplot(t_dow_nw, 
+       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Day") + ylab("Proportion of lists") + 
+   ggtitle("Temporal spread over all months")) /
+(ggplot(filter(t_dow_nw, MONTH == 9), 
+       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Day") + ylab("Proportion of lists") + 
+   ggtitle("Temporal spread in September"))
 
 ```
 
-* At the national level, Friday, Saturday and Sunday see the highest birding activity, and this remained the same even during the pandemic. Although weekend birding decreased marginally, it is not a strong enough shift. (Note that boxplot uses median, not mean.)  
+* At the national level, weekend birding seems to have decreased marginally. This pattern becomes clear when considering only one month instead of all 12. After the pandemic, these proportions look like they are returning to pre-COVID levels.  
 
 ```{r t_spread_3, cache=TRUE, message=FALSE, echo=FALSE}
 
-((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
+((ggplot(filter(t_dow_sw, STATE == "Kerala", MONTH == 9), 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Kerala") |
-ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
+    ggtitle("Kerala (September)") |
+ggplot(filter(t_dow_sw, STATE == "Karnataka", MONTH == 9), 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Karnataka") ) /
-(ggplot(filter(t_dow_sw, STATE == "Gujarat"), 
+    ggtitle("Karnataka (September)") ) /
+(ggplot(filter(t_dow_sw, STATE == "Gujarat", MONTH == 9), 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-   ggtitle("Gujarat")  |
-ggplot(filter(t_dow_sw, STATE == "Maharashtra"), 
+   ggtitle("Gujarat (September)")  |
+ggplot(filter(t_dow_sw, STATE == "Maharashtra", MONTH == 9), 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Maharashtra") ))
+    ggtitle("Maharashtra (September)") ))
 
 ```
 
-* The states of Kerala and Karnataka also show pretty much the same pattern as the national level, with minor differences.  
-* Thus, the pandemic did not influence the amount of birding done on particular days of the week.
+* Birding over the 7 days of a week became more uniform during the pandemic, with decrease in weekend birding and increase in weekday birding. This was mostly true, except in Karnataka which didn't show much of a difference. (Gujarat probably needs the full dataset to show patterns.)
 
 #### Time-of-day
 
 ```{r t_spread_4, cache=TRUE, message=FALSE, echo=FALSE}
 
-ggplot(t_tod_nw, aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 4, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists")
+(ggplot(t_tod_nw, 
+       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Time") + ylab("Proportion of lists") + 
+   ggtitle("Temporal spread over all months")) /
+(ggplot(filter(t_tod_nw, MONTH == 9), 
+       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Time") + ylab("Proportion of lists") + 
+   ggtitle("Temporal spread in September"))
 
 ```
 
-* At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. (Note that boxplot uses median, not mean.)  
+* At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. But there was greater birding around 17:00--18:00. 
 
 ```{r t_spread_5, cache=TRUE, message=FALSE, echo=FALSE}
 
-((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
+((ggplot(filter(t_tod_sw, STATE == "Kerala", MONTH == 9), 
        aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+   scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+              size = 2, position = position_dodge(0.5)) +
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+   xlab("Day") + ylab("Proportion of lists") +
+    ggtitle("Kerala (September)") |
+ggplot(filter(t_tod_sw, STATE == "Karnataka", MONTH == 9), 
+       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Kerala") |
-ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
+    ggtitle("Karnataka (September)") ) /
+(ggplot(filter(t_tod_sw, STATE == "Gujarat", MONTH == 9), 
        aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+   scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+              size = 2, position = position_dodge(0.5)) +
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+   xlab("Day") + ylab("Proportion of lists") +
+   ggtitle("Gujarat (September)")  |
+ggplot(filter(t_tod_sw, STATE == "Maharashtra", MONTH == 9), 
+       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
+  scale_color_brewer(palette = "Dark2") +
    geom_point(stat = "summary", fun.data = mean_cl_boot, 
               size = 2, position = position_dodge(0.5)) +
    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                  size = 1.25, width = 0.3, position = position_dodge(0.5)) +
    xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Karnataka") ) /
-(ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-   ggtitle("Gujarat")  |
-ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Maharashtra") ))
+    ggtitle("Maharashtra (September)") ))
 
 
 rm(list = c("temp1","t_dow_nw","t_dow_sw","t_tod_nw","t_tod_sw"))
 
 ```
 
-* The states of Kerala and Karnataka also show pretty much the same pattern as the national level, with minor differences between them.  
-* Thus, the pandemic did not influence the amount of birding done at different times of the day.
+* Increase in birding at 17:00 was most prominent in Karnataka and Maharashtra, possibly due to the change in lifestyle of people living in metros like Mumbai and Bangalore.
 
 ### Media
 
@@ -1247,50 +1541,111 @@ rm(list = c("temp1","t_dow_nw","t_dow_sw","t_tod_nw","t_tod_sw"))
 
 # not averaged by state
 
-media_nw <- data_sub %>% 
+temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) 
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
 
-media_sw <- data_sub %>% 
+temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) 
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+media_sw <- left_join(temp1, temp2)
+rm(list = c("temp1","temp2"))
+
+temp1 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+temp2 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  filter(HAS.MEDIA == 1) %>% 
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+media_nw <- left_join(temp1, temp2)
+rm(list = c("temp1","temp2"))
+
+media_sw <- media_sw %>% 
+  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
+  mutate(PROP.MLISTS = round(NO.MLISTS/NO.MLISTS,2))
+media_nw <- media_nw %>% 
+  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
+  mutate(PROP.MLISTS = round(NO.MLISTS/NO.MLISTS,2))
+
 
 # Daman and Diu lists not appearing from 2020--2021
 
 
 (ggplot(media_nw, aes(MONTH, NO.LISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Proportion of stationary lists at national level")) 
+    scale_color_brewer(palette = "Dark2") +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("MONTH") + ylab("Proportion of media lists per observer") +
+    ggtitle("Change in no. of media lists per observer with pandemic at national level")) 
 
 ((ggplot(filter(media_sw, STATE == "Kerala"), 
          aes(MONTH, NO.LISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Kerala")) |
+    scale_color_brewer(palette = "Dark2") +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("MONTH") + ylab("Proportion of media lists per observer") +
+    ggtitle("Kerala")) |
 (ggplot(filter(media_sw, STATE == "Karnataka"), 
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Karnataka"))) /
+         aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_color_brewer(palette = "Dark2") +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("MONTH") + ylab("Proportion of media lists per observer") +
+    ggtitle("Karnataka"))) /
 ((ggplot(filter(media_sw, STATE == "Gujarat"), 
          aes(MONTH, NO.LISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Gujarat")) |
+    scale_color_brewer(palette = "Dark2") +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("MONTH") + ylab("Proportion of media lists per observer") +
+    ggtitle("Gujarat")) |
 (ggplot(filter(media_sw, STATE == "Maharashtra"), 
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2) +
-  ggtitle("Maharashtra")))
+         aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_color_brewer(palette = "Dark2") +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+               position = position_dodge(0.5)) + 
+    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                  width = 0.3, position = position_dodge(0.5)) +
+    xlab("MONTH") + ylab("Proportion of media lists per observer") +
+    ggtitle("Maharashtra")))
 
 rm(list = c("media_nw","media_sw"))
 
 ```
 
-* At the national level, there are more lists with media during the winter than in other periods of the year. During the pandemic, lists with media have seemingly increased a little, most likely due to overall growth in eBirding.  
-* At the state level, Kerala and Karnataka have decent and similar numbers of lists with media. Kerala has a stonger mid-year dip than Karnataka, while the latter shows a relatively greater increase in lists with media during the pandemic. Other states like Gujarat and Arunachal Pradesh have few such lists, making conclusions difficult.  
+* At the national level, there are more lists with media during late winter than in other periods of the year. Proportion of media lists increased during the lockdown/second wave period.
+* Kerala has a stonger mid-year dip than Karnataka, while the latter shows a relatively greater increase in lists with media during the pandemic. Other states like Gujarat and Arunachal Pradesh have few such lists, making conclusions difficult.  
+* Overall, media lists seem to have increased with the pandemic across states, with the highest increases in Karnataka and Maharashtra.
 
 
 
@@ -1314,26 +1669,31 @@ new_obsr_sw <- new_obsr_data %>%
 
 (ggplot(new_obsr_nw, aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    scale_color_brewer(palette = "Dark2") +
     geom_point(size = 2) +
     ggtitle("Monthly number of new eBirders at national level")) /
 ((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    scale_color_brewer(palette = "Dark2") +
     geom_point(size = 2) +
     ggtitle("Kerala"))  |
 (ggplot(filter(new_obsr_sw, STATE == "Karnataka"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    scale_color_brewer(palette = "Dark2") +
     geom_point(size = 2) +
     ggtitle("Karnataka"))) /
 ((ggplot(filter(new_obsr_sw, STATE == "Gujarat"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    scale_color_brewer(palette = "Dark2") +
     geom_point(size = 2) +
     ggtitle("Gujarat")) |
 (ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + scale_y_log10() +
+    scale_color_brewer(palette = "Dark2") +
     geom_point(size = 2) +
     ggtitle("Maharashtra")))
 
