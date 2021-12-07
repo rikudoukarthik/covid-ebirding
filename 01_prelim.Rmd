@@ -1245,7 +1245,7 @@ data_sp <- left_join(temp, data_sp)
 names(data_sp)[2] <- "G2CLIP"
 ```
 
-```{r s_spread_cov, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_cover, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
 data_cov <- data_sp %>% 
   ungroup() %>% 
@@ -1261,34 +1261,28 @@ data_cov <- data_sp %>%
             PROP.GRIDS = round(NO.GRIDS/TOT.GRIDS,2))
 
 ggplot(data_cov, aes(as.factor(MONTH), SD.LISTS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 4, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Month") + ylab("Standard deviation of lists across cells")
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Standard deviation of lists across cells")
 
 ggplot(data_cov, aes(as.factor(MONTH), PROP.GRIDS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 4, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Month") + ylab("Proportion of cells with birding activity")
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Proportion of cells with birding activity")
 
 ggplot(data_cov, aes(as.factor(MONTH), NO.GRIDS, colour = COVID)) + 
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 4, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Month") + ylab("Number of cells with birding activity")
-
-```
-
-```{r s_spread_city, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
-
-blr <- readOGR(dsn = "data/boundaries_IN_metro/Bangalore", 
-               layer = "Bangalore Divisions")
-
-plot(blr)
+  scale_color_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, 
+             size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
+                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Number of cells with birding activity")
 
 ```
 
@@ -1296,6 +1290,7 @@ plot(blr)
 
 data_map <- data_sp %>% 
   ungroup() %>% 
+  filter(MONTH %in% 9:10) %>% 
   group_by(COVID, G2CLIP) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   mutate(id = paste0("g",G2CLIP)) %>% 
@@ -1320,9 +1315,40 @@ ggplot() +
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
 
+ggplot() +
+  geom_polygon(data = fortify(india), 
+               aes(long, lat, group = group),
+               fill = NA, colour = "black", lwd = 1) +
+  geom_polygon(data = filter(data_map, COVID == "AFT"), 
+               aes(long, lat, group = group, fill = log(NO.LISTS)),
+               colour = NA, lwd = 0.5) +
+  scale_fill_distiller(palette = "Reds", direction = 1)
 
 ```
 
+* Both the maps and the graphs show that there were overall more cells covered during the pandemic, and even more after. This can be attributed to general growth in eBirding.  
+* SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
+
+```{r s_spread_city, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+blr <- readOGR(dsn = "data/boundaries_IN_metro/Bangalore", 
+               layer = "Bangalore Divisions")
+plot(blr)
+
+blr2 <- blr
+coordinates(blr2) <- ~ LON + LAT
+proj4string(blr2) <- CRS("+proj=longlat +datum=WGS84")
+library(rgeos)
+blr_buff <- gBuffer(blr, width = 50000)
+
+plot(blr_buff)
+
+
+chenn <- readOGR(dsn = "data/boundaries_IN_metro/Chennai", 
+               layer = "Zones")
+plot(chenn)
+
+```
 
 ```{r s_spread_LULC, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
@@ -1331,6 +1357,7 @@ library(raster)
 x <- raster("data/in_LULC/data/LULC_2005.tif")
 y <- rasterToPolygons(x)
 
+plot(x)
 
 ```
 
