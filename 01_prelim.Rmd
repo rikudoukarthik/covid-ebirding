@@ -523,10 +523,12 @@ rm(list = c("nl_sw","nl_nw"))
 
 ```
 
-* In Kerala, overall birding (no. of lists) did not show as great of an increase as at the national level, but shared lists drastically during the pandemic, and especially lowered during April--May which coincided with lockdowns roughly in the two years. Therefore, growth in eBirding was not very high, but group birding decreased.  
-* Karnataka saw very high growth in eBirding in terms of no. of lists submitted, but group birding also increased during the pandemic. Monthwise proportion of shared lists wasn't notably different before and during.  
-* Gujarat showed similar patterns to Karnataka, but to a lower extent. Monthwise proportion of shared lists wasn't notably different before and during, except for April--May when there were very few shared lists.  
-* For Arunachal Pradesh, there isn't enough data to make conclusion. Some months have no lists submitted and these cases are total mysteries, while for months with some (limited) data,  monthwise proportions of shared lists weren't notably different.
+* At the national level, number of lists increased with the pandemic (growth in eBirding) but stayed relatively same after the pandemic. However, the same trend in shared lists was disproportionate: shared lists were very few during the pandemic but started rising after.  
+* In Kerala, overall birding (no. of lists) did not show as great of an increase as at the national level, but shared lists drastically during the pandemic, and especially lowered during April--May which coincided with lockdown/second wave. Therefore, growth in eBirding was not very high, but group birding decreased. However, overall birding has decreased after the pandemic while shared list proportion has stayed the same as during.   
+* Karnataka saw very high growth in eBirding in terms of no. of lists submitted, but group birding also increased during the pandemic. Monthwise proportion of shared lists wasn't notably different, except during lockdown/second wave.  
+* Gujarat showed similar patterns to Karnataka, but to a lower extent, and seemed to mirror national level patterns. Monthwise proportion of shared lists wasn't notably different before and during, except for April--May when there were very few shared lists.  
+* For Arunachal Pradesh, there isn't enough data to make conclusion. Some months have no lists submitted and these cases are total mysteries, while for months with some (limited) data,  monthwise proportions of shared lists weren't notably different.  
+* In Maharashtra also the decrease in proportion of shared lists during the pandemic was mostly during the lockdown/second wave. Moreover, the proportions after the pandemic seem to be returning to pre-COVID levels.  
 
 ### Number of submitted lists per observer
 
@@ -635,11 +637,12 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 
 ```
 
-* At the national level, it is hard to see patterns using the box/violin plots for lists per observer simply because a huge number of observers fall in the 0--5 range. However, comparing shared lists per observer using the violin plot shows that the right skew in the distribution of data increased greatly, meaning that on average observers made less shared checklists during the pandemic. For the monthwise comparisons, I used smoothing because plotting points for each observer cluttered the graph. The smoothed lines show a beautiful and significant dip in proportion of group birding activities in April--May, i.e., the nationwide lockdown, after which it slowly picked back up. Overall, group birding was less common during the pandemic than before.  
-* In Kerala, average birding activity of observers did not change drastically, but group birding per observer decreased slightly (mirroring the national level pattern). Monthwise, in general group birding was less common than before the pandemic; this is especially true during the period of national and state lockdowns (April--May), where it is lower than even expected from the general trend.  
-* Karnataka saw a growth in birding, in the sense that the average observer birded more (submitted more lists per month) during the pandemic than before. The difference in group birding before and during the pandemic is minimal overall. When explored at the level of month, it is evident that group birding saw a massive decline mostly during the period of the national lockdown, but was surprisingly similar to the levels before the pandemic during other months! Perhaps birders in Karnataka cared much less about the pandemic than those in Kerala, or, more likely, this could simply be reflecting the difference in implementations of regulations in the two states.  
-* Gujarat overall has much less birding activity than the previous two states. It is hard to tell whether the average birder has started birding more or less during the pandemic. The graph seems to suggest that before the pandemic, there were many "tagalong" observers, leading to a relatively high and constant proportion of group birding per observer. This could have been some expert-led bird walks or bird tours, which dominated the entire data coming from the state. However, since the onset of the pandemic, this dominance has diffused, with more observers seemingly starting to explore on their own or with few others. During the national lockdown, group birding drastically reduced, but sharply rose back up again for the onset of winter.  
-* Due to scarcity of data from Arunachal Pradesh, it is once again hard to come to conclusions. However, it does indeed look like people started to bird alone more. 
+* At the national level, it is very evident that the average birder went group birding much less during the pandemic than before. This was most prominent during the lockdown/second wave months. However, it is unclear whether the levels after the pandemic are similar to before or during the pandemic. More data will probably be required for this.  
+* Kerala mirrors the national pattern but to a slightly lesser extent.  
+* Karnataka showed the decline in group birding during the lockdown/second wave period, but otherwise the patterns stayed quite similar! Perhaps birders in Karnataka cared much less about the pandemic than those in Kerala, or, more likely, this could simply be reflecting the difference in implementations of regulations in the two states.  
+* Gujarat showed a major decrease only during the lockdown/second wave period, and otherwise showed similar patterns before and during. There is a suggestion that proportions after the pandemic returned to pre-COVID levels.  
+* Due to scarcity of data from Arunachal Pradesh, it is once again hard to come to conclusions. However, it does indeed look like people started to bird alone more.  
+* Maharashtra showed lower proportions of group birding across all months of the year, but most prominently during the lockdown/second wave months. There is a suggestion that proportions after the pandemic returned to pre-COVID levels.
 
 
 ### Hotspot birding  
@@ -709,7 +712,9 @@ rm(list = c("hot_nw","hot_sw"))
 
 ```
 
-There seems to be no difference in birding effort between hotspots and personal locations, before and during the pandemic. Only Maharashtra shows a major decrease in hotspot birding during the months of April & May during the pandemic.
+* The national level saw lower hotspot birding during the lockdown/second wave months.  
+* Kerala and Karnataka showed marginal decreases during these months, but Gujarat showed none.  
+* Only Maharashtra shows a major decrease in hotspot birding during these months as well as a few following months (some "inertia"?). 
 
 ### Birding protocol  
 
@@ -775,13 +780,14 @@ rm(list = c("prot_nw","prot_sw"))
 
 ```
 
-* At the national level, there is an overall pattern in proportion of stationary lists: birders make point counts to a greater extent during the monsoon, when moving outdoors becomes difficult, whereas in the winter stationary lists account for a very tiny fraction of overall lists submitted, because the weather becomes more favourable and people are out in search of migrants. It is interesting to note that despite this pattern, there is no noticeable difference between birding in hotspots and in personal locations. While this mid-year peak in proportion of stationary lists is consistent over the years (even during the pandemic), we see a marked difference in the months of April and May, and to a lesser extent during the monsoon months, in one particular year. This is most likely due to the strict nationwide lockdown implemented in 2020 during these months to curb the spread of the disease. People are likely to have done most birding from their homes. (There being no difference in hotspot birding could possibly be because of many people having their home locations as eBird hotspots.)  
+* At the national level, there is an overall pattern in proportion of stationary lists: birders make point counts to a greater extent during the monsoon, when moving outdoors becomes difficult, whereas in the winter stationary lists account for a very tiny fraction of overall lists submitted, because the weather becomes more favourable and people are out in search of migrants.  
+* While this mid-year peak in proportion of stationary lists is consistent over the years (even during the pandemic), we see a marked difference in the months of April and May, and to a lesser extent during a few of the following months. This could be due to the effect of monsoon rains or because of "inertia" from the previous months.  
 * The same general pattern is observed in individual states to varying degrees.  
-* In Kerala, which sees a very strong monsoon, the overall mid-year peak is very distinct. An additional noteworthy point is that the winter months of November and December see greater proportion of stationary lists compared to January and February. This represents some sort of latency in shifting from the monsoon birding mode to migrant-searching mode, although this could simply be due to the fact that migration is not complete yet in November and December. Compared to the national level, Kerala experienced a higher shift in stationary list proportions during the pandemic, evenly through the year, but the sharp increase in April and May extending through the monsoon was seen here too.   
-* In Karnataka, the overall mid-year peak was not as strong, because the Western Ghats comprises a relatively smaller area of the state and most of the birding in Karnataka happens in and around metros like Bangalore. Similarly, the shift in proportions with the pandemic was not very significant, except for the months of April and May, that too only in one year (due to the national lockdown in 2020). This agrees with the previous observation that implementation of restrictions was generally more lax in Karnataka than in Kerala.  
+* In Kerala, which sees a very strong monsoon, the overall mid-year peak is very distinct. An additional noteworthy point is that the winter months of November and December see greater proportion of stationary lists compared to January and February. This represents some sort of latency in shifting from the monsoon birding mode to migrant-searching mode, although this could simply be due to the fact that migration is not complete yet in November and December.  
+* In Karnataka, the overall mid-year peak was not as strong, because the Western Ghats comprises a relatively smaller area of the state and most of the birding in Karnataka happens in and around metros like Bangalore.  
 * There is no noticeable mid-year peak in Gujarat, which makes sense because the state does not experience a strong monsoon (although it is to be noted that Gujarat has less overall birding compared to the previous states). However, it still saw the spike in proportion of stationary lists during April-May due to the national lockdown.  
 * Arunachal once again shows erratic patterns because of scarcity of data, not allowing us to make inferences. 
-* Maharashtra and the national average show that people made fewer stationary lists before and after the pandemic. However, some states show idiosyncratic patterns. Kerala has more stationary lists than both before and during the pandemic. In Karnataka, proportion of stationary lists wasn't very different before and during the pandemic, but decreased greatly after. 
+* Maharashtra and the national average show that people made fewer stationary lists before and after the pandemic. However, some states show idiosyncratic patterns. Kerala has more stationary lists after than both before and during the pandemic. In Karnataka, proportion of stationary lists wasn't very different before and during the pandemic, but decreased greatly after. 
 
 
 ### Birding distance
@@ -855,9 +861,9 @@ rm(dist_sw, dist_nw)
 
 ```
 
-* At the national level, checklist distances were highest during summer and winter before the pandemic. During the pandemic, distances remained fairly similar for the winter months of October--December, but were drastically lower during the summer months of April and May, which coincided with the national lockdown.  
-* In Kerala, before the pandemic, birders travelled longest in checklists during late summer and early winter and shortest in late winter and peak monsoon. This contrasts with the pattern seen in proportion of stationary lists (more stationary in early winter and less in late winter). This means that in early winter the lists were either stationary or travelling larger distances, while in late winter lists converged to shorter distances. With the pandemic, effort distances reduced in general, most strongly in late summer and early monsoon, coinciding with the national lockdown.  
-* Karnataka didn't show differences between early and late winter, but February saw very short distances, most likely due to the global event GBBC, where people are advised to submit multiple 15-minute lists. Otherwise, effort distances remained fairly constant, with highest peaks in summer and winter. However, during the pandemic these patterns stayed the same except for the months of April and May due to the national lockdown.  
+* At the national level, checklist distances were highest during summer and winter before the pandemic. During the pandemic, distances remained fairly similar for the winter months of October--December, but were drastically lower during the summer months of April and May, which coincided with the lockdown/second wave.  
+* In Kerala, before the pandemic, birders travelled longest in checklists during late summer and early winter and shortest in late winter and peak monsoon. This contrasts with the pattern seen in proportion of stationary lists (more stationary in early winter and less in late winter). This means that in early winter the lists were either stationary or travelling larger distances, while in late winter lists converged to shorter distances. With the pandemic, effort distances reduced in general, most strongly in late summer and early monsoon, coinciding with the lockdown/second wave.  
+* Karnataka didn't show differences between early and late winter, but February saw very short distances, most likely due to the global event GBBC, where people are advised to submit multiple 15-minute lists. Otherwise, effort distances remained fairly constant, except for marginal reductions during the lockdown/second wave months.  
 * In Gujarat the patterns were much more simple, with summer having short distance checklists and early winter having long distance lists. This could be because the months of August--October overlap with the arrival of huge numbers of passage migrants in Gujarat (most of these are uncommon birds and move on further outside India), attracting a lot of birding. Interestingly, there is no difference with the pandemic.  
 * Once again, due to data scarcity, there is no clear pattern that can be identified from Arunachal Pradesh.
 * Only in Kerala and Maharashtra does there seem to be some effect of the pandemic on birding distances. In Kerala this was notable in April--June and September--October. In Maharashtra, this was more or less prominent over all months. 
@@ -958,12 +964,11 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 ```
 
-* Smooths were used instead of boxplots because the latter was proving uninformative, due to high right skew (1-inflation). I feel smooths explain the patterns better.  
-* At the national level, site fidelity was generally higher during the pandemic than before in all months. However, April and May were drastically different due to the national lockdown, and saw very high site fidelity (i.e., very low number of sites visited).  
-* This pattern was present in the states of Kerala and Karnataka as well, but in Karnataka the winter months were similar in the two periods, if not DURING having lower site fidelity than BEFORE.  
-* In Gujarat, the difference wasn't great, and site fidelity even seems to be lower during the pandemic, possibly due to growth in eBirding in the state.  
+* At the national level, site fidelity was generally higher during the pandemic than before but mostly only during lockdown/second wave and early winter months. After the pandemic, site fidelity returned to pre-COVID levels.  
+* In Kerala and Karnataka this pattern seemed to be present only during the lockdown/second wave months.  
+* Gujarat didn't show much of a difference.   
 * Arunachal Pradesh has insufficient data to make conclusions from.
-* Only Kerala and Karnataka showed higher site fidelity during April--June during the pandemic than before, while other states showed fairly similar patterns before, during and after. However, at the national level it seems like the site fidelity is returning to pre-COVID levels after a decrease during the pandemic.
+* In Maharashtra, there was marginal decrease during April--May, but otherwise patterns were similar.
 
 
 ### Birding time per observer
@@ -1038,11 +1043,9 @@ rm(time_nw, time_sw)
 
 ```
 
-* At the national level, birding times were and are higher in the winter, but during the pandemic decreased slightly in all months and drastically during the national lockdown.  
+* At the national level, birding times were and are lowest during monsoon, but during the pandemic decreased marginally in all months and drastically during the national lockdown.  
 * In Kerala, pre-COVID birding times per observer showed a massive dip during the monsoon, even compared to the neighbouring state Karnataka where the monsoon is not as strong (dip nonexistent in Gujarat). The relatively low average birding time indicates that Kerala has several eBirders who do little birding.  
-* In Karnataka, winter birding times per observer increased during the pandemic, either due to "behavioural release" from COVID restrictions, or due to greater interest/effort in winter migrants generated via other outreach initiatives(?).  
-* In Gujarat the pattern was the opposite. Birding times decreased slightly during the national lockdown as well as during early winter. 
-* At the national level, birding times decreased during the pandemic in January, April--June and November. At the state level, patterns are not very clear.
+* In individual states, while there are some suggestions of increase during the pandemic in early winter months, overall there are no clear patterns.
 
 ### List duration
 
