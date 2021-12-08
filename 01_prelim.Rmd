@@ -1356,12 +1356,41 @@ plot(chenn)
 ```{r s_spread_LULC, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
 
 library(raster)
+library(sp)
+library(sf)
 
-x <- raster("data/in_LULC/data/LULC_2005.tif")
-y <- rasterToPolygons(x)
+# x <- raster("data/in_LULC/data/LULC_2005.tif")
+# y <- rasterToPolygons(x)
+# plot(x)
 
-plot(x)
+x <- raster("data/in_LULC_USGS/MCD12Q1.A2019001.h24v05.006.2020212132505.hdf")
 
+# list all the hdf files 
+files <- list.files(path = "data/in_LULC_USGS/", pattern = paste0("*.hdf"), 
+                    all.files = FALSE, full.names = TRUE)
+library(gdalUtils)
+# choose the band that you want using the sds[] option and write GTiff files.
+# University of Maryland SDS (LC_Type2) is SDS1
+for (i in (files)) {
+  sds <- get_subdatasets(i)
+  r2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))}
+
+rastlist <- list.files(path = "data/in_LULC_USGS/", pattern = ".tif",
+                       all.files = TRUE, full.names = TRUE)
+allrast <- merge(rastlist)
+allrast_b <- brick(allrast)
+
+
+allrasters <- lapply(rastlist, raster)
+# https://stackoverflow.com/a/16007522/13000254
+mergerast <- do.call(merge, allrasters)
+
+plot(mergerast)
+
+load("data/maps.RData")
+mask <- mask(allrasters, indiamap)
+
+merged <- merge(allrasters)
 ```
 
 
