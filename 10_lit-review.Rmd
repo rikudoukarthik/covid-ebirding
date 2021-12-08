@@ -1,0 +1,37 @@
+---
+title: "Literature Review"
+author: "Karthik Thrikkadeeri"
+date: "08/12/2021"
+editor_options: 
+  chunk_output_type: console
+bibliography: covid-ebirding.bib
+link-citations: yes
+output: 
+  html_document:
+    toc: false
+    number_sections: false  
+    theme: united  
+    highlight: tango  # specifies the syntax highlighting style
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Literature review
+
+
+## Birder behaviour
+
+Start by elaborating on how sampling process/effort can vary temporally. Detection probabilites may change.
+
+Two essentially contradictory possibilities: birding decreased due to restrictions on movement (and perhaps other life priorities), or birding increased due to greater desire for natural connections as well as active encouragement through outreach programmes.
+
+Quantity as well as quality of data. Spatial (clustered data) and temporal bias. Rare habitats (wetlands?) undersampled. 
+
+@hochachka2021 found an alteration in birder behaviour in April 2020, but this was not as substantial as would be expected given the magnitude of change to daily life. Main biases seen were in **representation of habitats** and **observer effort**. Notably, other moments of distribution than mean, like variance, were as important. In their comparison of four political units, they found different patterns in all of them, pointing to the differences in political and policy responses across the world and suggesting that these regional differences be taken into account when using eBird data. However, their conclusions and inferences only hold for the month of April 2020, with the strict lockdowns in place. Most studies looking at temporal trends would compare years, without going to the finer scale of individual months. Hence, it is important to ascertain how exactly the eBird dataset would have been affected by the overall "COVID period" rather than just the full lockdowns.
+
+## Bird behaviour
+
+
