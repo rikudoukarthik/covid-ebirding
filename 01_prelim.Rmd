@@ -1353,44 +1353,100 @@ plot(chenn)
 
 ```
 
-```{r s_spread_LULC, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
 
 library(raster)
 library(sp)
-library(sf)
-
-# x <- raster("data/in_LULC/data/LULC_2005.tif")
-# y <- rasterToPolygons(x)
-# plot(x)
-
-x <- raster("data/in_LULC_USGS/MCD12Q1.A2019001.h24v05.006.2020212132505.hdf")
-
-# list all the hdf files 
-files <- list.files(path = "data/in_LULC_USGS/", pattern = paste0("*.hdf"), 
-                    all.files = FALSE, full.names = TRUE)
 library(gdalUtils)
-# choose the band that you want using the sds[] option and write GTiff files.
+library(geodata)
+library(terra)
+library(luna)
+
+
+## Obtaining MODIS data from within R for reproducibility, then saving the cropped and masked raster of area of interest as .tif file.
+## Walkthrough at https://rspatial.org/terra/modis/2-download.html 
+
+# The MODIS Land Cover Type Product (MCD12Q1) provides a suite of science data sets (SDSs) that map global land cover at 500 meter spatial resolution at annual time step for six different land cover legends. The maps were created from classifications of spectro-temporal features derived of data from the Moderate Resolution Imaging Spectroradiometer (MODIS).
+
+# ## To see list of MODIS products. We already know which one we want, so ignore.
+# MODISprod <- getProducts("^MOD|^MYD|^MCD")
+# MODISprod
+
+prod <- "MCD12Q1" # short name of product of interest
+start <- "2019-12-31" # time period of mapping
+end <- "2019-12-31" # time period of mapping
+
+# shapefile of India as area of interest
+aoi <- geodata::gadm("India", level = 1, path = "data")
+
+# creating folder to store MODIS data that will be downloaded
+datapath <- "data/in_LULC_MODIS/"
+dir.create(datapath, showWarnings=FALSE)
+
+
+# ## create RDS file containing login credentials for EOSDIS account
+# cred <- data.frame(UN = "xxx",
+#                    PW = "yyy")
+# saveRDS(cred, "userpass.rds")
+
+
+userpass <- readRDS("userpass.rds")
+
+# downloading MODIS tiled data (16 tiles for our defined area of interest, India)
+# resulting object is a list of file names
+modis <- luna::getModis(prod, start, end, 
+                        aoi = aoi, download = T, path = datapath, 
+                        username = userpass$UN, password = userpass$PW)
+
+# choose the band (SDS) that you want using sds[] option and write GTiff files.
 # University of Maryland SDS (LC_Type2) is SDS1
-for (i in (files)) {
+for (i in (modis)) {
   sds <- get_subdatasets(i)
-  r2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))}
+  modis2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))
+  }
 
-rastlist <- list.files(path = "data/in_LULC_USGS/", pattern = ".tif",
-                       all.files = TRUE, full.names = TRUE)
-allrast <- merge(rastlist)
-allrast_b <- brick(allrast)
+# listing all the different tiles present as .tif files, to later merge into one
+rast_list <- list.files(path = datapath, pattern = ".tif",
+                        all.files = TRUE, full.names = TRUE)
+
+# merge into one raster
+rast_full <- rast_list %>% 
+  lapply(raster) %>% # rasterise the different files
+  do.call(what = merge) %>% # merge the files
+  rast()
 
 
-allrasters <- lapply(rastlist, raster)
-# https://stackoverflow.com/a/16007522/13000254
-mergerast <- do.call(merge, allrasters)
+## projecting from MODIS sinusoidal to WGS84 (flat 2D)
+projto <- crs(aoi) 
+rast_proj <- project(rast_full, projto) # takes a few minutes
 
-plot(mergerast)
+## cropping and masking the raster to our area of interest
+rast_aoi <- crop(rast_proj, aoi)
+rast_aoi <- mask(rast_aoi, aoi)
 
-load("data/maps.RData")
-mask <- mask(allrasters, indiamap)
 
-merged <- merge(allrasters)
+writeRaster(rast_aoi, paste0(datapath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
+
+rm(list = setdiff(ls(), "data_sub"), pos = .GlobalEnv)
+
+```
+
+```{r s_spread_LULC_analMODIS, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+
+require(raster)
+require(sp)
+require(gdalUtils)
+require(geodata)
+require(terra)
+require(luna)
+
+# read in cropped and masked .tif
+rast <- rast("data/in_LULC_MODIS/in_LULC_MODIS.tif")
+plot(rast)
+
+
+
 ```
 
 

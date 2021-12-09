@@ -5,6 +5,9 @@
 *.RData
 *.Rproj
 
+# RDS file with login credentials
+*.rds
+
 # data files
 *.csv
 *.txt
