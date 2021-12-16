@@ -20,11 +20,14 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 
+knitr::opts_chunk$set(echo = FALSE, warnings=FALSE, 
+                      messages=FALSE, cache.lazy = FALSE)
+
 theme_set(theme_bw())
 
 ```
 
-```{r data_filt, echo=FALSE}
+```{r data_filt, cache=TRUE}
 ### importing from modified ebd RData
 load("data/ebd_IN_relOct-2021.RData") 
 
@@ -89,7 +92,7 @@ data_sub <- data0 %>%
 save(data_sub, file = "data/data_sub.RData")
 ```
 
-```{r data_load, cache=TRUE, dependson="data_filt", echo=FALSE}
+```{r data_load, eval=FALSE, cache=TRUE, dependson="data_filt"}
 load("data/data_sub.RData")
 ```
 
@@ -126,7 +129,7 @@ Among other filters applied, the data being used is a random subset (100,000 uni
 
 #### Waves:  
 
-```{r nationalwaves, echo=FALSE}
+```{r nationalwaves}
 nwaves <- read.csv("data/covid_19_india.csv")
 nwaves <- nwaves %>% mutate(date = as.Date(date, "%d/%m/%Y")) %>% 
   group_by(date) %>% summarise(cases = sum(cases))
@@ -149,7 +152,7 @@ While there is no strict definition for a "wave" or "phase" of an epidemic [@wag
 
 #### Lockdowns:  
 
-```{r, echo=FALSE}
+```{r nationallocks}
 knitr::include_graphics("pics/lox.png")
 ```
 
@@ -161,7 +164,7 @@ knitr::include_graphics("pics/lox.png")
 1. March 2021--June 2021  
 2. July 2021--mid-Aug 2021 (end of data)
 
-```{r vax, echo=FALSE}
+```{r vax}
 vax <- read.csv("data/covid_vaccine_statewise.csv", as.is=F)
 vax <- mutate(vax, date = as.Date(date, "%d/%m/%Y"))
 ggplot(filter(vax, state == "India"), aes(date, dose2)) + geom_line() +
@@ -178,7 +181,7 @@ The lower plateau of the second dose vaccinations is certainly post mid-August, 
 ### State level
 
 
-```{r states, echo=FALSE}
+```{r states}
 states <- read.csv("data/covid_19_india.csv")
 states <- states %>% mutate(date = as.Date(date, "%d/%m/%Y"))
 states <- states %>% group_by(state) %>% 
@@ -189,7 +192,7 @@ states <- states %>% group_by(state) %>%
 
 #### Kerala
 
-```{r states_KL, echo=FALSE}
+```{r states_KL}
 ggplot(filter(states, state == "Kerala"), aes(date, cases)) + geom_line()
 ```
 
@@ -206,7 +209,7 @@ ggplot(filter(states, state == "Kerala"), aes(date, cases)) + geom_line()
 
 #### Karnataka
 
-```{r states_KA, echo=FALSE}
+```{r states_KA}
 ggplot(filter(states, state == "Karnataka"), aes(date, cases)) + geom_line()
 ```
 
@@ -221,7 +224,7 @@ ggplot(filter(states, state == "Karnataka"), aes(date, cases)) + geom_line()
 
 #### Tamil Nadu
 
-```{r states_TN, echo=FALSE}
+```{r states_TN}
 ggplot(filter(states, state == "Tamil Nadu"), aes(date, cases)) + geom_line()
 ```
 
@@ -234,7 +237,7 @@ ggplot(filter(states, state == "Tamil Nadu"), aes(date, cases)) + geom_line()
 
 #### Maharashtra
 
-```{r states_MH, echo=FALSE}
+```{r states_MH}
 ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
 ```
 
@@ -248,7 +251,7 @@ ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
 
 #### Gujarat
 
-```{r states_GJ, echo=FALSE}
+```{r states_GJ}
 ggplot(filter(states, state == "Gujarat"), aes(date, cases)) + geom_line()
 ```
 
@@ -262,7 +265,7 @@ No state lockdowns. Only curfews and other restrictions. [@Covid19SecondWave2021
 
 #### Maharashtra
 
-```{r states_AR, echo=FALSE}
+```{r states_AR}
 ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
 ```
 
@@ -276,7 +279,7 @@ ggplot(filter(states, state == "Maharashtra"), aes(date, cases)) + geom_line()
 
 #### West Bengal
 
-```{r states_WB, echo=FALSE}
+```{r states_WB}
 ggplot(filter(states, state == "West Bengal"), aes(date, cases)) + geom_line()
 ```
 
@@ -290,7 +293,7 @@ ggplot(filter(states, state == "West Bengal"), aes(date, cases)) + geom_line()
 
 #### Sikkim
 
-```{r states_SI, echo=FALSE}
+```{r states_SI}
 ggplot(filter(states, state == "Sikkim"), aes(date, cases)) + geom_line()
 ```
 
@@ -304,7 +307,7 @@ ggplot(filter(states, state == "Sikkim"), aes(date, cases)) + geom_line()
 
 #### Uttarakhand
 
-```{r states_UK, echo=FALSE}
+```{r states_UK}
 ggplot(filter(states, state == "Uttarakhand"), aes(date, cases)) + geom_line()
 ```
 
@@ -358,7 +361,7 @@ Post-presentation: regarding averaging national level patterns by state for some
 
 Includes "duplicate" shared lists, of course.
 
-```{r no_lists, cache=TRUE, message=FALSE, echo=FALSE}
+```{r no_lists, cache=TRUE, message=FALSE}
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -534,7 +537,7 @@ rm(list = c("nl_sw","nl_nw"))
 
 Includes "duplicate" shared lists, of course.
 
-```{r no_lists_po, cache=TRUE, message=FALSE, echo=FALSE}
+```{r no_lists_po, cache=TRUE, message=FALSE}
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -649,7 +652,7 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 
 Not sure if we should explore this metric "per observer"; I think it isn't necessary. Includes duplicate lists, of course.
 
-```{r hotspot, cache=TRUE, message=FALSE, echo=FALSE}
+```{r hotspot, cache=TRUE, message=FALSE}
 
 hot_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -718,7 +721,7 @@ rm(list = c("hot_nw","hot_sw"))
 
 ### Birding protocol  
 
-```{r protocol, cache=TRUE, message=FALSE, echo=FALSE}
+```{r protocol, cache=TRUE, message=FALSE}
 
 prot_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -792,7 +795,7 @@ rm(list = c("prot_nw","prot_sw"))
 
 ### Birding distance
 
-```{r distance, cache=TRUE, message=FALSE, echo=FALSE}
+```{r distance, cache=TRUE, message=FALSE}
 
 dist_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -871,7 +874,7 @@ rm(dist_sw, dist_nw)
 
 ### Site fidelity per observer  
 
-```{r fidelity, cache=TRUE, message=FALSE, echo=FALSE}
+```{r fidelity, cache=TRUE, message=FALSE}
 
 # not averaged by state 
 
@@ -973,7 +976,7 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 ### Birding time per observer
 
-```{r time, cache=TRUE, message=FALSE, echo=FALSE}
+```{r time, cache=TRUE, message=FALSE}
 
 time_nw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1049,7 +1052,7 @@ rm(time_nw, time_sw)
 
 ### List duration
 
-```{r duration, cache=TRUE, message=FALSE, echo=FALSE}
+```{r duration, cache=TRUE, message=FALSE}
 
 # here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
 
@@ -1126,7 +1129,7 @@ rm(dur_sw, dur_nw)
 
 ### List length
 
-```{r length, cache=TRUE, message=FALSE, echo=FALSE}
+```{r length, cache=TRUE, message=FALSE}
 
 # here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
 
@@ -1210,7 +1213,7 @@ rm(length_nw, length_sw)
 
 ### Spatial spread  
 
-```{r s_spread_1, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_1, cache=TRUE, message=FALSE, eval=FALSE}
 
 library(sp)
 library(rgdal)
@@ -1248,7 +1251,7 @@ data_sp <- left_join(temp, data_sp)
 names(data_sp)[2] <- "G2CLIP"
 ```
 
-```{r s_spread_cover, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_cover, cache=TRUE, message=FALSE, eval=FALSE}
 
 data_cov <- data_sp %>% 
   ungroup() %>% 
@@ -1289,7 +1292,7 @@ ggplot(data_cov, aes(as.factor(MONTH), NO.GRIDS, colour = COVID)) +
 
 ```
 
-```{r s_spread_map, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_map, cache=TRUE, message=FALSE, eval=FALSE}
 
 data_map <- data_sp %>% 
   ungroup() %>% 
@@ -1332,7 +1335,7 @@ ggplot() +
 * Both the maps and the graphs show that there were overall more cells covered during the pandemic, and even more after. This can be attributed to general growth in eBirding.  
 * SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
 
-```{r s_spread_city, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_city, cache=TRUE, message=FALSE, eval=FALSE}
 
 blr <- readOGR(dsn = "data/boundaries_IN_metro/Bangalore", 
                layer = "Bangalore Divisions")
@@ -1353,7 +1356,7 @@ plot(chenn)
 
 ```
 
-```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
 
 library(raster)
@@ -1432,7 +1435,7 @@ rm(list = setdiff(ls(), "data_sub"), pos = .GlobalEnv)
 
 ```
 
-```{r s_spread_LULC_analMODIS, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+```{r s_spread_LULC_analMODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
 require(raster)
 require(sp)
@@ -1442,8 +1445,10 @@ require(terra)
 require(luna)
 
 # read in cropped and masked .tif
-rast <- rast("data/in_LULC_MODIS/in_LULC_MODIS.tif")
+rast <- raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
 plot(rast)
+
+data_LULC <- rasterToPolygons(rast)
 
 
 
@@ -1452,7 +1457,7 @@ plot(rast)
 
 ### Temporal spread
 
-```{r t_spread_1, cache=TRUE, message=FALSE, echo=FALSE}
+```{r t_spread_1, cache=TRUE, message=FALSE}
 
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1509,7 +1514,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
 
 #### Day-of-week
 
-```{r t_spread_2, cache=TRUE, message=FALSE, echo=FALSE}
+```{r t_spread_2, cache=TRUE, message=FALSE}
 
 (ggplot(t_dow_nw, 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
@@ -1534,7 +1539,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
 
 * At the national level, weekend birding seems to have decreased marginally. This pattern becomes clear when considering only one month instead of all 12. After the pandemic, these proportions look like they are returning to pre-COVID levels.  
 
-```{r t_spread_3, cache=TRUE, message=FALSE, echo=FALSE}
+```{r t_spread_3, cache=TRUE, message=FALSE}
 
 ((ggplot(filter(t_dow_sw, STATE == "Kerala", MONTH == 9), 
        aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
@@ -1579,7 +1584,7 @@ ggplot(filter(t_dow_sw, STATE == "Maharashtra", MONTH == 9),
 
 #### Time-of-day
 
-```{r t_spread_4, cache=TRUE, message=FALSE, echo=FALSE}
+```{r t_spread_4, cache=TRUE, message=FALSE}
 
 (ggplot(t_tod_nw, 
        aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
@@ -1604,7 +1609,7 @@ ggplot(filter(t_dow_sw, STATE == "Maharashtra", MONTH == 9),
 
 * At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. But there was greater birding around 17:00--18:00. 
 
-```{r t_spread_5, cache=TRUE, message=FALSE, echo=FALSE}
+```{r t_spread_5, cache=TRUE, message=FALSE}
 
 ((ggplot(filter(t_tod_sw, STATE == "Kerala", MONTH == 9), 
        aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
@@ -1652,7 +1657,7 @@ rm(list = c("temp1","t_dow_nw","t_dow_sw","t_tod_nw","t_tod_sw"))
 
 ### Media
 
-```{r media, cache=TRUE, message=FALSE, echo=FALSE}
+```{r media, cache=TRUE, message=FALSE}
 
 # not averaged by state
 
@@ -1766,7 +1771,7 @@ rm(list = c("media_nw","media_sw"))
 
 ### New birders
 
-```{r new, cache=TRUE, message=FALSE, echo=FALSE}
+```{r new, cache=TRUE, message=FALSE}
 
 load("data/new_obsr_data.RData")
 
