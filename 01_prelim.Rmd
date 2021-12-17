@@ -97,6 +97,7 @@ load("data/data_sub.RData")
 ```
 
 
+
 # Introduction
 
 This study will focus on the impacts of the COVID-19 pandemic on both birds and the birding community in the Indian context. It will also try to understand the consequences of these changes on citizen science and the inferences that can be drawn from it. Lastly, it will propose guidelines for making the most of the available data while accounting for pandemic-driven biases and deviations from the pre-COVID normal. 
