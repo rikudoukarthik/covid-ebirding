@@ -9,14 +9,20 @@
 *.rds
 
 # data files
-*.csv
+*.pdf
 *.txt
 *.zip
 
 # folders in repo
 Literature/
+data/boundaries_IN_PA_WII/
+data/boundaries_IN_admin_old/
+data/in_LULC/
+data/in_LULC_USGS/
+
 # RMD caches
 *_cache/
+*_files/
 
 
 
