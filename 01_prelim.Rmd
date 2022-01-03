@@ -20,8 +20,8 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 
-knitr::opts_chunk$set(echo = FALSE, warnings=FALSE, 
-                      messages=FALSE, cache.lazy = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
+                      messages = FALSE, cache.lazy = FALSE)
 
 theme_set(theme_bw())
 
@@ -29,7 +29,7 @@ theme_set(theme_bw())
 
 ```{r data_filt, cache=TRUE}
 ### importing from modified ebd RData
-load("data/ebd_IN_relOct-2021.RData") 
+load("data/ebd_IN_relNov-2021.RData") 
 
 ### list of group accounts to be filtered
 groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", 
@@ -54,13 +54,13 @@ new_obsr_data <- data %>%
   distinct(OBSERVER.ID, .keep_all = TRUE) %>%
   mutate(LE.YEAR = year(LAST.EDITED.DATE),
          LE.MONTH = month(LAST.EDITED.DATE)) %>% 
-  filter(LE.YEAR >= 2018) %>% 
-  mutate(COVID = factor(case_when(LE.YEAR %in% c(2018,2019) ~ "BEF", 
-                                  LE.YEAR == 2020 ~ "DUR",
-                                  LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR",
-                                  LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT",
+  filter(LE.YEAR >= 2019) %>% 
+  mutate(COVID = factor(case_when(LE.YEAR == 2019 ~ "BEF_19", 
+                                  LE.YEAR == 2020 ~ "DUR_20",
+                                  LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR_21",
+                                  LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT_21",
                                   TRUE ~ "NA"),
-                        levels = c("BEF","DUR","AFT"))) 
+                        levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21")))
 
 # filtering
 new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
@@ -70,7 +70,7 @@ save(new_obsr_data, file = "data/new_obsr_data.RData")
 
 
 ### main data
-data <- data %>% filter(YEAR >= 2018) 
+data <- data %>% filter(YEAR >= 2019) 
 save(data, file = "data/rawdata.RData")
 
 # filters
@@ -84,11 +84,11 @@ save.image("data/data0.RData")
 set.seed(10)
 data_sub <- data0 %>% 
   filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
-  mutate(COVID = factor(case_when(YEAR %in% c(2018,2019) ~ "BEF", 
-                                  YEAR == 2020 ~ "DUR",
-                                  YEAR == 2021 & MONTH < 9 ~ "DUR",
-                                  YEAR == 2021 & MONTH >= 9 ~ "AFT"),
-                        levels = c("BEF","DUR","AFT")))
+  mutate(COVID = factor(case_when(YEAR == 2019 ~ "BEF_19", 
+                                  YEAR == 2020 ~ "DUR_20",
+                                  YEAR == 2021 & MONTH < 9 ~ "DUR_21",
+                                  YEAR == 2021 & MONTH >= 9 ~ "AFT_21"),
+                        levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21")))
 save(data_sub, file = "data/data_sub.RData")
 ```
 
