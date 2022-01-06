@@ -21,13 +21,13 @@ library(lubridate)
 library(patchwork)
 library(boot)
 
-knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
-                      messages = FALSE, cache.lazy = FALSE)
-
 theme_set(theme_bw())
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
+
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
+                      messages = FALSE, cache.lazy = FALSE)
 
 ```
 
@@ -391,7 +391,6 @@ nl_sw <- left_join(temp1, temp2) %>%
   mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS))
 rm(list = c("temp1","temp2"))
 
-
 # unequal values for lower and upper: bracketing the CI(?)
 # https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Bracketing_the_confidence_interval
 # cannot use this because here we need to propagate. hence, assume Gaussian.
@@ -477,26 +476,35 @@ rm(list = c("nl_sw","nl_nw"))
 
 ### Number of submitted lists per observer
 
-Includes "duplicate" shared lists, of course.
-
 ```{r no_lists_po, cache=TRUE, message=FALSE}
+
 temp1 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
 temp2 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  summarise(NO.SLISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
-nl_po_sw <- left_join(temp1, temp2)
+nl_po_sw <- left_join(temp1, temp2) %>% 
+  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS))
 rm(list = c("temp1","temp2"))
+
+
+
+# nl_po_sw <- nl_po_sw %>% 
+  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2),
+         PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS),
+         PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
+         PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
+
 
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -516,9 +524,6 @@ temp2 <- data_sub %>%
 nl_po_nw <- left_join(temp1, temp2)
 rm(list = c("temp1","temp2"))
 
-nl_po_sw <- nl_po_sw %>% 
-  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS)) %>% 
-  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2))
 nl_po_nw <- nl_po_nw %>% 
   mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS)) %>% 
   mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2))
