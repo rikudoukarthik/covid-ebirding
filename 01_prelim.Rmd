@@ -497,132 +497,77 @@ nl_po_sw <- left_join(temp1, temp2) %>%
   mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS))
 rm(list = c("temp1","temp2"))
 
-
-
-# nl_po_sw <- nl_po_sw %>% 
+nl_po_sw <- nl_po_sw %>%
   mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2),
-         PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS),
-         PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
-         PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
+         PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS))
+
+# this is for each observer, but we are interested in plotting mean value of all observers combined
+# hence, averaging proportions and its SE by propagation of error
+
+nl_po_sw <- nl_po_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(PROP.SLISTS = round(mean(PROP.SLISTS), 2),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
 
-temp1 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-temp2 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-nl_po_nw <- left_join(temp1, temp2)
-rm(list = c("temp1","temp2"))
-
-nl_po_nw <- nl_po_nw %>% 
-  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS)) %>% 
-  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2))
-
-
-
-
-
-set.seed(420)
-x <- nl_nw %>% group_by(COVID, MONTH) %>% 
-  summarise(BOOT.LISTS = mean(sample(NO.LISTS, size = 999, replace = T)),
-            BOOT.LISTS.CI.L = quantile(sample(NO.LISTS, size = 999, replace = T),
-                                       probs = 0.025),
-            BOOT.LISTS.CI.U = quantile(sample(NO.LISTS, size = 999, replace = T),
-                                       probs = 0.975))
-
-
-B <- 1000
-N <- n_distinct(MONTH)
-
-boot_note_a <- replicate(B, {
-
-#taking random samples of the same sample size of those notes 
-#and putting back the taken sample in the urn—for each iteration
-
-notes_star <- sample(NO.LISTS, N, replace = T)
-
-#getting the proportion of the note "a" within each bootstrapped sample.
-#Hence, we'll get B (100 in this case) times a proportion of the note "a"
-#based on the respective bootstrapped sample.  
-
-mean(notes_star == "a")
-
-}) 
-
-#getting the confidence interval (at a confidence level of 95%) of the 
-#bootstrapped proportion of the note "a" in the bootstrapped sample
-
-quantile(boot_note_a, prob = c(0.025, 0.975)) 
-
-
-
-
-
+nl_po_nw <- nl_po_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(PROP.SLISTS = round(mean(PROP.SLISTS), 2),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
 
 ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
-  scale_colour_brewer(palette = "Dark2") +
-plot_annotation(title = "Change in no. of lists per observer with pandemic at national level")
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly group birding per observer with pandemic at national level",
+       x = "Month", y = "Proportion of group birding lists per observer")
 
 ggplot(filter(nl_po_sw, STATE == "Kerala"), 
-        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+       aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
-  scale_colour_brewer(palette = "Dark2") +
-plot_annotation(title = "Change in no. of lists per observer with pandemic in Kerala")
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly group birding per observer with pandemic in Kerala",
+       x = "Month", y = "Proportion of group birding lists per observer")
 
 ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
-        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+       aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
-  scale_colour_brewer(palette = "Dark2") +
-plot_annotation(title = "Change in no. of lists per observer with pandemic in Karnataka")
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly group birding per observer with pandemic in Karnataka",
+       x = "Month", y = "Proportion of group birding lists per observer")
 
 ggplot(filter(nl_po_sw, STATE == "Gujarat"), 
-        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+       aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
-  scale_colour_brewer(palette = "Dark2") +
-plot_annotation(title = "Change in no. of lists per observer with pandemic in Gujarat")
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly group birding per observer with pandemic in Gujarat",
+       x = "Month", y = "Proportion of group birding lists per observer")
 
 ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
-        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+       aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("MONTH") + ylab("Proportion of shared lists per observer") +
-  scale_colour_brewer(palette = "Dark2") +
-plot_annotation(title = "Change in no. of lists per observer with pandemic in Maharashtra")
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly group birding per observer with pandemic in Maharashtra",
+       x = "Month", y = "Proportion of group birding lists per observer")
 
 rm(list = c("nl_po_sw","nl_po_nw"))
 
