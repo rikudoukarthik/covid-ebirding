@@ -362,8 +362,9 @@ Aside from comparing trends before and during the pandemic, at a finer scale we 
 Post-presentation: regarding averaging national level patterns by state for some metrics, this means that means are manually calculated for states and the points plotted in the graph are only these single points per state (instead of all the raw data points).
 
 
-### Number of submitted lists
+### Group birding 
 
+Doesn't include duplicate lists as we are interested in Boolean group/solo, and otherwise proportion will be inflated just by having more birders in the group birding session.
 
 ```{r no_lists, cache=TRUE, message=FALSE}
 
@@ -399,7 +400,7 @@ rm(list = c("temp1","temp2"))
 # z = 1.96 for 95% CI
 
 nl_sw <- nl_sw %>% 
-  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2),
+  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS, 2),
          PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS),
          PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
@@ -474,7 +475,7 @@ rm(list = c("nl_sw","nl_nw"))
 * For Arunachal Pradesh, there isn't enough data to make conclusion. Some months have no lists submitted and these cases are total mysteries, while for months with some (limited) data,  monthwise proportions of shared lists weren't notably different.  
 * In Maharashtra also the decrease in proportion of shared lists during the pandemic was mostly during the lockdown/second wave. Moreover, the proportions after the pandemic seem to be returning to pre-COVID levels.  
 
-### Number of submitted lists per observer
+### Group birding per observer
 
 ```{r no_lists_po, cache=TRUE, message=FALSE}
 
@@ -583,66 +584,103 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 
 ### Hotspot birding  
 
-Not sure if we should explore this metric "per observer"; I think it isn't necessary. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-hot_sw <- data_sub %>% 
+temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE, LOCALITY.TYPE) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% group_by(COVID) %>% 
-  complete(YEAR, MONTH, STATE, LOCALITY.TYPE, fill = list(NO.LISTS = 0)) %>% 
-  ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
-  pivot_wider(names_from = LOCALITY.TYPE, values_from = NO.LISTS) %>% 
-  mutate(PROP.H = if_else(H == 0 | P ==0,
-                          0,
-                          round(H/(H+P),2)), 
-         PROP.P = if_else(H == 0 | P ==0,
-                          0,
-                          round(P/(H+P),2))) %>% 
-  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9))
+  ungroup() 
+
+temp2 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  filter(LOCALITY.TYPE == "H") %>% 
+  summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup()
+
+hot_sw <- left_join(temp1, temp2)
+rm(list = c("temp1","temp2"))
+
+hot_sw <- hot_sw %>% 
+  # filling zeroes for states
+  complete(COVID, MONTH, STATE, 
+           fill = list(NO.LISTS = 0, NO.HLISTS = 0)) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
+  # calculating prop. and SE
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  mutate(PROP.HLISTS = round(NO.HLISTS/NO.LISTS, 2),
+         PROP.SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
+         PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
+         PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE) 
+
 
 hot_nw <- hot_sw %>% ungroup() %>% 
-  filter(!(H == 0 & P == 0)) %>% 
+  filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(H = ceiling(mean(H)),
-            P = ceiling(mean(P)),
-            PROP.H = if_else(H == 0 | P ==0,
-                             0,
-                             round(H/(H+P),2)), 
-            PROP.P = if_else(H == 0 | P ==0,
-                             0,
-                             round(P/(H+P),2)))
+  summarise(NO.LISTS = sum(NO.LISTS),
+            NO.HLISTS = sum(NO.HLISTS),
+            PROP.HLISTS = round(mean(PROP.HLISTS), 2),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE)
 
 # Daman and Diu lists not appearing from 2020--2021
 
 
-(ggplot(hot_nw, aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Proportion of lists from hotspots at national level")) /
-((ggplot(filter(hot_sw, STATE == "Kerala"), 
-         aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Kerala")) |
-(ggplot(filter(hot_sw, STATE == "Karnataka"), 
-        aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Karnataka"))) /
-((ggplot(filter(hot_sw, STATE == "Gujarat"), 
-         aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Gujarat")) |
-(ggplot(filter(hot_sw, STATE == "Maharashtra"), 
-        aes(MONTH, PROP.H, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 2, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Maharashtra")))
+(ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Change in monthly hotspot birding with pandemic at national level",
+       x = "Month", y = "Proportion of hotspot lists")) /
+((ggplot(filter(hot_sw, STATE == "Kerala"),
+         aes(MONTH, PROP.HLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Kerala",
+       x = "Month", y = "Proportion of hotspot lists")) |
+(ggplot(filter(hot_sw, STATE == "Karnataka"),
+         aes(MONTH, PROP.HLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Karnataka",
+       x = "Month", y = "Proportion of hotspot lists"))) /
+((ggplot(filter(hot_sw, STATE == "Gujarat"),
+         aes(MONTH, PROP.HLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Gujarat",
+       x = "Month", y = "Proportion of hotspot lists")) |
+(ggplot(filter(hot_sw, STATE == "Maharashtra"),
+         aes(MONTH, PROP.HLISTS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Maharashtra",
+       x = "Month", y = "Proportion of hotspot lists"))) +
+plot_layout(guides = "collect")
 
 rm(list = c("hot_nw","hot_sw"))
 
@@ -1629,6 +1667,8 @@ temp2 <- data_sub %>%
 
 media_nw <- left_join(temp1, temp2)
 rm(list = c("temp1","temp2"))
+
+# CORRECT THE PROPORTION FORMULA!
 
 media_sw <- media_sw %>% 
   mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
