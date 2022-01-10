@@ -692,63 +692,102 @@ rm(list = c("hot_nw","hot_sw"))
 
 ### Birding protocol  
 
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+
 ```{r protocol, cache=TRUE, message=FALSE}
 
-prot_sw <- data_sub %>% 
+temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE, PROTOCOL.TYPE) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% group_by(COVID) %>% 
-  complete(YEAR, MONTH, STATE, PROTOCOL.TYPE, fill = list(NO.LISTS = 0)) %>% 
-  ungroup() %>% group_by(COVID, YEAR, MONTH, STATE) %>% 
-  pivot_wider(names_from = PROTOCOL.TYPE, values_from = NO.LISTS) %>% 
-  mutate(PROP.S = if_else(Stationary == 0 | Traveling ==0,
-                          0,
-                          round(Stationary/(Stationary+Traveling),2)),
-         PROP.T = if_else(Stationary == 0 | Traveling ==0,
-                          0,
-                          round(Traveling/(Stationary+Traveling),2))) %>% 
-  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9))
+  ungroup() 
+
+temp2 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  filter(PROTOCOL.TYPE == "Traveling") %>% 
+  summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup()
+
+prot_sw <- left_join(temp1, temp2)
+# rm(list = c("temp1","temp2"))
+
+prot_sw <- prot_sw %>% 
+  # filling zeroes for states
+  complete(COVID, MONTH, STATE, 
+           fill = list(NO.LISTS = 0, NO.TLISTS = 0)) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
+  # calculating prop. and SE
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  mutate(PROP.TLISTS = round(NO.TLISTS/NO.LISTS, 2),
+         PROP.SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
+         PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
+         PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE) 
+
 
 prot_nw <- prot_sw %>% ungroup() %>% 
-  filter(!(Stationary == 0 & Traveling == 0)) %>% 
+  filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(Stationary = ceiling(mean(Stationary)),
-            Traveling = ceiling(mean(Traveling)),
-            PROP.S = if_else(Stationary == 0 | Traveling ==0,
-                          0,
-                          round(Stationary/(Stationary+Traveling),2)),
-            PROP.T = if_else(Stationary == 0 | Traveling ==0,
-                          0,
-                          round(Traveling/(Stationary+Traveling),2)))
+  summarise(NO.LISTS = sum(NO.LISTS),
+            NO.TLISTS = sum(NO.TLISTS),
+            PROP.TLISTS = round(mean(PROP.TLISTS), 2),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE)
 
 # Daman and Diu lists not appearing from 2020--2021
 
-(ggplot(prot_nw, aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Proportion of stationary lists at national level")) /
+(ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Change in monthly travelling birding with pandemic at national level",
+         x = "Month", y = "Proportion of travelling lists")) /
 ((ggplot(filter(prot_sw, STATE == "Kerala"), 
-         aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Kerala")) |
+         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Proportion of travelling lists")) |
 (ggplot(filter(prot_sw, STATE == "Karnataka"), 
-        aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Karnataka"))) /
+         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Proportion of travelling lists"))) /
 ((ggplot(filter(prot_sw, STATE == "Gujarat"), 
-         aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Gujarat")) |
+         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Proportion of travelling lists")) |
 (ggplot(filter(prot_sw, STATE == "Maharashtra"), 
-        aes(MONTH, PROP.S, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + geom_point(size = 3, shape = "diamond") +
-  scale_color_brewer(palette = "Dark2") +
-  ggtitle("Maharashtra")))
+         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Proportion of travelling lists"))) +
+plot_layout(guides = "collect")
 
 rm(list = c("prot_nw","prot_sw"))
 
@@ -765,6 +804,8 @@ rm(list = c("prot_nw","prot_sw"))
 
 
 ### Birding distance
+
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
 
 ```{r distance, cache=TRUE, message=FALSE}
 
