@@ -1093,68 +1093,78 @@ rm(dist_sw, dist_nw)
 
 ### List duration
 
-```{r duration, cache=TRUE, message=FALSE}
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
 
-# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
+```{r duration, cache=TRUE, message=FALSE}
 
 dur_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() 
-
-dur_nw <- dur_sw %>% 
+  slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(DURATION.MINUTES = ceiling(mean(DURATION.MINUTES))) %>% 
+  summarise(DURATION = mean(DURATION.MINUTES),
+            DURATION.SE = boot_se(DURATION.MINUTES, mean),
+            DURATION.CI.L = DURATION - 1.96*DURATION.SE,
+            DURATION.CI.U = DURATION + 1.96*DURATION.SE) %>% 
   ungroup()
 
-(ggplot(dur_nw, aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("Duration (mins)") +
-    ggtitle("Average checklist duration at national level")) /
+dur_nw <- dur_sw %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(DURATION = mean(DURATION),
+            DURATION.SE = sqrt(sum((DURATION.SE)^2))/n(),
+            DURATION.CI.L = DURATION - 1.96*DURATION.SE,
+            DURATION.CI.U = DURATION + 1.96*DURATION.SE) 
+
+
+(ggplot(dur_nw, aes(MONTH, DURATION, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Average checklist duration at national level",
+         x = "Month", y = "Duration (mins)")) /
 ((ggplot(filter(dur_sw, STATE == "Kerala"), 
-         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("Duration (mins)") +
-    ggtitle("Kerala")) |
+         aes(MONTH, DURATION, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Duration (mins)")) |
 (ggplot(filter(dur_sw, STATE == "Karnataka"), 
-         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("Duration (mins)") +
-    ggtitle("Karnataka"))) /
+         aes(MONTH, DURATION, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Duration (mins)"))) /
 ((ggplot(filter(dur_sw, STATE == "Gujarat"), 
-         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("Duration (mins)") +
-    ggtitle("Gujarat")) |
+         aes(MONTH, DURATION, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Duration (mins)")) |
 (ggplot(filter(dur_sw, STATE == "Maharashtra"), 
-         aes(MONTH, DURATION.MINUTES, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("Duration (mins)") +
-    ggtitle("Maharashtra")))
+         aes(MONTH, DURATION, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Duration (mins)"))) +
+plot_layout(guides = "collect")
 
 rm(dur_sw, dur_nw)
 
