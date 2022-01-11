@@ -35,23 +35,6 @@ boot_fn = function(x, fn = median, B = 100) {
 }
 
 
-boot_fn2 = function(x, fn = median, B = 100) {
-  1:B %>%
-    # For each iteration, generate a sample of x with replacement
-    map_dbl(~ x[sample(1:length(x), replace = TRUE)]) %>%
-    # Obtain the fn estimate for each bootstrap sample
-    map_dbl(fn) %>%
-    # Obtain the standard error
-    sd()
-}
-
-set.seed(420)
-z <- x %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO = median(NO.SLISTS),
-            NO.SE = boot_fn2(NO.SLISTS, B = 100))
-
-
 set.seed(57575)
 rbind(system.time(x %>% ungroup() %>% 
                     group_by(COVID, YEAR, MONTH, STATE) %>% 
