@@ -601,6 +601,184 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 * Maharashtra showed lower proportions of group birding across all months of the year, but most prominently during the lockdown/second wave months. There is a suggestion that proportions after the pandemic returned to pre-COVID levels.
 
 
+### Site fidelity per observer  
+
+```{r fidelity, cache=TRUE, message=FALSE}
+
+# not averaged by state 
+
+# 111 km = 1 deg
+# 111 * n * 1 km = n deg
+# 111 * n (5K) = n deg * 5
+# 111/5 * n (5K) = n deg 
+
+# doing 25kmx25km
+
+fidel_nw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
+  mutate(LAT.5K = LATITUDE*111/5, 
+         LON.5K = LONGITUDE*111/5,
+         LAT.25K = LATITUDE*111/25, 
+         LON.25K = LONGITUDE*111/25) %>% 
+  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
+         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(NO.SITES = n_distinct(COORD.25K))
+
+fidel_sw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
+  mutate(LAT.5K = LATITUDE*111/5, 
+         LON.5K = LONGITUDE*111/5,
+         LAT.25K = LATITUDE*111/25, 
+         LON.25K = LONGITUDE*111/25) %>% 
+  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
+         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(NO.SITES = n_distinct(COORD.25K))
+
+  
+(ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("No. of sites (unique 25kmx25km cells) visited by observers at national level") + 
+   xlab("Month") + ylab("No. of sites")) /
+((ggplot(filter(fidel_sw, STATE == "Kerala"), 
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Kerala") + 
+   xlab("Month") + ylab("No. of sites")) |
+(ggplot(filter(fidel_sw, STATE == "Karnataka"), 
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Karnataka") + 
+   xlab("Month") + ylab("No. of sites"))) /
+((ggplot(filter(fidel_sw, STATE == "Gujarat"), 
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Gujarat") + 
+   xlab("Month") + ylab("No. of sites")) |
+(ggplot(filter(fidel_sw, STATE == "Maharashtra"), 
+                aes(MONTH, NO.SITES, colour = COVID)) + 
+   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
+   scale_colour_brewer(palette = "Dark2") +
+   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+              position = position_dodge(0.5)) + 
+   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                 width = 0.3, position = position_dodge(0.5)) +
+   ggtitle("Maharashtra") + 
+   xlab("Month") + ylab("No. of sites")))
+
+  
+rm(list = c("fidel_nw","fidel_sw"))
+
+```
+
+* At the national level, site fidelity was generally higher during the pandemic than before but mostly only during lockdown/second wave and early winter months. After the pandemic, site fidelity returned to pre-COVID levels.  
+* In Kerala and Karnataka this pattern seemed to be present only during the lockdown/second wave months.  
+* Gujarat didn't show much of a difference.   
+* Arunachal Pradesh has insufficient data to make conclusions from.
+* In Maharashtra, there was marginal decrease during April--May, but otherwise patterns were similar.
+
+
+### Birding time per observer
+
+```{r time, cache=TRUE, message=FALSE}
+
+time_nw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
+  summarise(B.TIME = sum(DURATION.MINUTES))
+
+time_sw <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  summarise(B.TIME = sum(DURATION.MINUTES))
+
+
+ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Monthly birding times of observers at national level") 
+
+((ggplot(filter(time_sw, STATE == "Kerala"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Kerala")) |
+(ggplot(filter(time_sw, STATE == "Karnataka"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Karnataka"))) /
+((ggplot(filter(time_sw, STATE == "Gujarat"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Gujarat")) |
+(ggplot(filter(time_sw, STATE == "Maharashtra"), 
+         aes(MONTH, B.TIME, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12) + 
+  scale_colour_brewer(palette = "Dark2") +
+  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
+             position = position_dodge(0.5)) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
+                width = 0.3, position = position_dodge(0.5)) +
+  xlab("Month") + ylab("Time (mins)") +
+  ggtitle("Maharashtra")))
+
+rm(time_nw, time_sw)
+
+```
+
+* At the national level, birding times were and are lowest during monsoon, but during the pandemic decreased marginally in all months and drastically during the national lockdown.  
+* In Kerala, pre-COVID birding times per observer showed a massive dip during the monsoon, even compared to the neighbouring state Karnataka where the monsoon is not as strong (dip nonexistent in Gujarat). The relatively low average birding time indicates that Kerala has several eBirders who do little birding.  
+* In individual states, while there are some suggestions of increase during the pandemic in early winter months, overall there are no clear patterns.
+
 ### Hotspot birding  
 
 Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
@@ -909,184 +1087,6 @@ rm(dist_sw, dist_nw)
 * Once again, due to data scarcity, there is no clear pattern that can be identified from Arunachal Pradesh.
 * Only in Kerala and Maharashtra does there seem to be some effect of the pandemic on birding distances. In Kerala this was notable in April--June and September--October. In Maharashtra, this was more or less prominent over all months. 
 
-
-### Site fidelity per observer  
-
-```{r fidelity, cache=TRUE, message=FALSE}
-
-# not averaged by state 
-
-# 111 km = 1 deg
-# 111 * n * 1 km = n deg
-# 111 * n (5K) = n deg * 5
-# 111/5 * n (5K) = n deg 
-
-# doing 25kmx25km
-
-fidel_nw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
-  mutate(LAT.5K = LATITUDE*111/5, 
-         LON.5K = LONGITUDE*111/5,
-         LAT.25K = LATITUDE*111/25, 
-         LON.25K = LONGITUDE*111/25) %>% 
-  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
-         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.SITES = n_distinct(COORD.25K))
-
-fidel_sw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
-  mutate(LAT.5K = LATITUDE*111/5, 
-         LON.5K = LONGITUDE*111/5,
-         LAT.25K = LATITUDE*111/25, 
-         LON.25K = LONGITUDE*111/25) %>% 
-  mutate(COORD.5K = paste0(ceiling(LAT.5K), ",", ceiling(LON.5K)),
-         COORD.25K = paste0(ceiling(LAT.25K), ",", ceiling(LON.25K))) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SITES = n_distinct(COORD.25K))
-
-  
-(ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("No. of sites (unique 25kmx25km cells) visited by observers at national level") + 
-   xlab("Month") + ylab("No. of sites")) /
-((ggplot(filter(fidel_sw, STATE == "Kerala"), 
-                aes(MONTH, NO.SITES, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Kerala") + 
-   xlab("Month") + ylab("No. of sites")) |
-(ggplot(filter(fidel_sw, STATE == "Karnataka"), 
-                aes(MONTH, NO.SITES, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Karnataka") + 
-   xlab("Month") + ylab("No. of sites"))) /
-((ggplot(filter(fidel_sw, STATE == "Gujarat"), 
-                aes(MONTH, NO.SITES, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Gujarat") + 
-   xlab("Month") + ylab("No. of sites")) |
-(ggplot(filter(fidel_sw, STATE == "Maharashtra"), 
-                aes(MONTH, NO.SITES, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Maharashtra") + 
-   xlab("Month") + ylab("No. of sites")))
-
-  
-rm(list = c("fidel_nw","fidel_sw"))
-
-```
-
-* At the national level, site fidelity was generally higher during the pandemic than before but mostly only during lockdown/second wave and early winter months. After the pandemic, site fidelity returned to pre-COVID levels.  
-* In Kerala and Karnataka this pattern seemed to be present only during the lockdown/second wave months.  
-* Gujarat didn't show much of a difference.   
-* Arunachal Pradesh has insufficient data to make conclusions from.
-* In Maharashtra, there was marginal decrease during April--May, but otherwise patterns were similar.
-
-
-### Birding time per observer
-
-```{r time, cache=TRUE, message=FALSE}
-
-time_nw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(B.TIME = sum(DURATION.MINUTES))
-
-time_sw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(B.TIME = sum(DURATION.MINUTES))
-
-
-ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Monthly birding times of observers at national level") 
-
-((ggplot(filter(time_sw, STATE == "Kerala"), 
-         aes(MONTH, B.TIME, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Kerala")) |
-(ggplot(filter(time_sw, STATE == "Karnataka"), 
-         aes(MONTH, B.TIME, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Karnataka"))) /
-((ggplot(filter(time_sw, STATE == "Gujarat"), 
-         aes(MONTH, B.TIME, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Gujarat")) |
-(ggplot(filter(time_sw, STATE == "Maharashtra"), 
-         aes(MONTH, B.TIME, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Maharashtra")))
-
-rm(time_nw, time_sw)
-
-```
-
-* At the national level, birding times were and are lowest during monsoon, but during the pandemic decreased marginally in all months and drastically during the national lockdown.  
-* In Kerala, pre-COVID birding times per observer showed a massive dip during the monsoon, even compared to the neighbouring state Karnataka where the monsoon is not as strong (dip nonexistent in Gujarat). The relatively low average birding time indicates that Kerala has several eBirders who do little birding.  
-* In individual states, while there are some suggestions of increase during the pandemic in early winter months, overall there are no clear patterns.
 
 ### List duration
 
