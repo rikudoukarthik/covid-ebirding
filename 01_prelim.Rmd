@@ -709,69 +709,70 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 ```{r time, cache=TRUE, message=FALSE}
 
-time_nw <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(B.TIME = sum(DURATION.MINUTES))
-
 time_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(B.TIME = sum(DURATION.MINUTES))
+  summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(B.TIME.SE = boot_se(B.TIME, mean),
+            B.TIME = mean(B.TIME),
+            B.TIME.CI.L = B.TIME - 1.96*B.TIME.SE,
+            B.TIME.CI.U = B.TIME + 1.96*B.TIME.SE)
+
+time_nw <- time_sw %>% 
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(B.TIME = mean(B.TIME),
+            B.TIME.SE = sqrt(sum((B.TIME.SE)^2))/n(),
+            B.TIME.CI.L = B.TIME - 1.96*B.TIME.SE,
+            B.TIME.CI.U = B.TIME + 1.96*B.TIME.SE)
 
 
-ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
+(ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Monthly birding times of observers at national level") 
-
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Monthly birding times of observers at national level",
+       x = "Month", y = "Time (mins)")) /
 ((ggplot(filter(time_sw, STATE == "Kerala"), 
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Kerala")) |
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Kerala",
+       x = "Month", y = "Time (mins)")) |
 (ggplot(filter(time_sw, STATE == "Karnataka"), 
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Karnataka"))) /
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Karnataka",
+       x = "Month", y = "Time (mins)"))) /
 ((ggplot(filter(time_sw, STATE == "Gujarat"), 
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Gujarat")) |
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Gujarat",
+       x = "Month", y = "Time (mins)")) |
 (ggplot(filter(time_sw, STATE == "Maharashtra"), 
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Time (mins)") +
-  ggtitle("Maharashtra")))
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Maharashtra",
+       x = "Month", y = "Time (mins)")))
 
 rm(time_nw, time_sw)
 
