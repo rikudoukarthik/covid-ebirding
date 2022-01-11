@@ -24,6 +24,8 @@ library(boot)
 theme_set(theme_bw())
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
+covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
+
 covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
@@ -1180,9 +1182,11 @@ rm(dur_sw, dur_nw)
 
 ### List length
 
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+
 ```{r length, cache=TRUE, message=FALSE}
 
-# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
+# var(mean(x))/var(median(x)) = 4n/(pi*(2n + 1))
 
 length_sw <- data_sub %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
@@ -1190,7 +1194,13 @@ length_sw <- data_sub %>%
                                TRUE ~ CATEGORY)) %>% 
   filter(CATEGORY %in% c("issf","species")) %>% 
   group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
-  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% ungroup() 
+  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% 
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(LENGTH.SE = boot_se(LENGTH, mean),
+            LENGTH = mean(LENGTH),
+            LENGTH.CI.L = LENGTH - 1.96*LENGTH.SE,
+            LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
 
 length_nw <- length_sw %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -1508,56 +1518,58 @@ data_LULC <- rasterToPolygons(rast)
 
 ### Temporal spread
 
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  mutate(DAYW = wday(OBSERVATION.DATE, 
-                     week_start = getOption("lubridate.week.start", 1)),
-         TIMED = hour(as_datetime(paste(OBSERVATION.DATE,
-                                              TIME.OBSERVATIONS.STARTED)))) 
-
-
-t_dow_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, STATE, DAYW) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%  
-  ungroup() %>% group_by(COVID) %>% 
-  complete(YEAR, MONTH, STATE, DAYW, fill = list(NO.LISTS = 0)) %>%
-  ungroup() %>% 
-  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  # not grouping by DAYW because need to sum over all obs in group
-  summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
-  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.LISTS = 0)) %>% 
+  group_by(COVID) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  ungroup() %>% 
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8))
 
-t_dow_nw <- t_dow_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, DAYW) %>% 
-  summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
+temp2 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      week_start = getOption("lubridate.week.start", 1))) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, DAY.W) %>% 
+  summarise(DAY.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  # not grouping by DAYW because need to sum over all obs in group
-  summarise(DAYW = DAYW, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
-  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
-  
-t_tod_sw <- temp1 %>% group_by(COVID, YEAR, MONTH, STATE, TIMED) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%  
-  ungroup() %>% group_by(COVID) %>% 
-  complete(YEAR, MONTH, STATE, TIMED, fill = list(NO.LISTS = 0)) %>%
+  complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0)) %>% 
+  group_by(COVID) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
   ungroup() %>% 
-  filter(!(COVID == "DUR" & YEAR == 2021 & MONTH >= 9)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  # not grouping by TIMED because need to sum over all obs in group
-  summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
-  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
-  
-t_tod_nw <- t_tod_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, TIMED) %>% 
-  summarise(NO.LISTS = ceiling(mean(NO.LISTS))) %>% 
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8))
+
+temp3 <- data_sub %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
+                                         TIME.OBSERVATIONS.STARTED)))) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, TIME.D) %>% 
+  summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  # not grouping by TIMED because need to sum over all obs in group
-  summarise(TIMED = TIMED, NO.LISTS = NO.LISTS, M.LISTS = sum(NO.LISTS)) %>% 
-  mutate(PROP.LISTS = round(NO.LISTS/M.LISTS,2))
+  complete(COVID, MONTH, STATE, TIME.D, fill = list(TIME.LISTS = 0)) %>% 
+  group_by(COVID) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  ungroup() %>% 
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8))
 
 # Daman and Diu issue
 
@@ -1567,143 +1579,149 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
 
 ```{r t_spread_2, cache=TRUE, message=FALSE}
 
+# month is not important in this metric, so first only taking 9:12 which have "AFT" also, then dropping month identity and averaging across the months
+
+t_dow_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  filter(MONTH %in% 9:12) %>% 
+  filter(NO.LISTS != 0) %>% 
+  group_by(COVID, YEAR, STATE, DAY.W) %>% 
+  summarise(NO.LISTS = mean(NO.LISTS),
+            DAY.LISTS = mean(DAY.LISTS),
+            PROP.LISTS = DAY.LISTS/NO.LISTS,
+            PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
+            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+
+t_dow_nw <- t_dow_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, DAY.W) %>% 
+  summarise(NO.LISTS = sum(NO.LISTS),
+            DAY.LISTS = sum(DAY.LISTS),
+            PROP.LISTS = mean(PROP.LISTS),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+
 (ggplot(t_dow_nw, 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Day") + ylab("Proportion of lists") + 
-   ggtitle("Temporal spread over all months")) /
-(ggplot(filter(t_dow_nw, MONTH == 9), 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Day") + ylab("Proportion of lists") + 
-   ggtitle("Temporal spread in September"))
+       aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Temporal spread (DoW) of checklists at national level (Sep to Dec)",
+         x = "Day", y = "Proportion of lists")) /
+((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
+         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Kerala",
+         x = "Day", y = "Proportion of lists")) |
+ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
+         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Karnataka",
+         x = "Day", y = "Proportion of lists")) /
+((ggplot(filter(t_dow_sw, STATE == "Gujarat"), 
+         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Gujarat",
+         x = "Day", y = "Proportion of lists")) |
+ggplot(filter(t_dow_sw, STATE == "Maharashtra"), 
+         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Maharashtra",
+         x = "Day", y = "Proportion of lists")) +
+plot_layout(guides = "collect")
 
 ```
 
 * At the national level, weekend birding seems to have decreased marginally. This pattern becomes clear when considering only one month instead of all 12. After the pandemic, these proportions look like they are returning to pre-COVID levels.  
-
-```{r t_spread_3, cache=TRUE, message=FALSE}
-
-((ggplot(filter(t_dow_sw, STATE == "Kerala", MONTH == 9), 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Kerala (September)") |
-ggplot(filter(t_dow_sw, STATE == "Karnataka", MONTH == 9), 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Karnataka (September)") ) /
-(ggplot(filter(t_dow_sw, STATE == "Gujarat", MONTH == 9), 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-   ggtitle("Gujarat (September)")  |
-ggplot(filter(t_dow_sw, STATE == "Maharashtra", MONTH == 9), 
-       aes(as.factor(DAYW), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Maharashtra (September)") ))
-
-```
-
 * Birding over the 7 days of a week became more uniform during the pandemic, with decrease in weekend birding and increase in weekday birding. This was mostly true, except in Karnataka which didn't show much of a difference. (Gujarat probably needs the full dataset to show patterns.)
 
 #### Time-of-day
 
-```{r t_spread_4, cache=TRUE, message=FALSE}
+```{r t_spread_3, cache=TRUE, message=FALSE}
+
+# month is not important in this metric, so first only taking 9:12 which have "AFT" also, then dropping month identity and averaging across the months
+  
+t_tod_sw <- temp1 %>% 
+  left_join(temp3) %>% 
+  filter(MONTH %in% 9:12) %>% 
+  filter(NO.LISTS != 0) %>% 
+  group_by(COVID, YEAR, STATE, TIME.D) %>% 
+  summarise(NO.LISTS = mean(NO.LISTS),
+            TIME.LISTS = mean(TIME.LISTS),
+            PROP.LISTS = TIME.LISTS/NO.LISTS,
+            PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
+            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+
+t_tod_nw <- t_tod_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, TIME.D) %>% 
+  summarise(NO.LISTS = sum(NO.LISTS),
+            TIME.LISTS = sum(TIME.LISTS),
+            PROP.LISTS = mean(PROP.LISTS),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+
 
 (ggplot(t_tod_nw, 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Time") + ylab("Proportion of lists") + 
-   ggtitle("Temporal spread over all months")) /
-(ggplot(filter(t_tod_nw, MONTH == 9), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Time") + ylab("Proportion of lists") + 
-   ggtitle("Temporal spread in September"))
+       aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Temporal spread (ToD) of checklists at national level (Sep to Dec)",
+         x = "Time (hours)", y = "Proportion of lists")) /
+((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
+         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Kerala",
+         x = "Time (hours)", y = "Proportion of lists")) |
+ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
+         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Karnataka",
+         x = "Time (hours)", y = "Proportion of lists")) /
+((ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
+         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Gujarat",
+         x = "Time (hours)", y = "Proportion of lists")) |
+ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
+         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette3) +
+    labs(title = "Maharashtra",
+         x = "Time (hours)", y = "Proportion of lists")) +
+plot_layout(guides = "collect")
 
 ```
 
-* At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. But there was greater birding around 17:00--18:00. 
-
-```{r t_spread_5, cache=TRUE, message=FALSE}
-
-((ggplot(filter(t_tod_sw, STATE == "Kerala", MONTH == 9), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-   scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Kerala (September)") |
-ggplot(filter(t_tod_sw, STATE == "Karnataka", MONTH == 9), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Karnataka (September)") ) /
-(ggplot(filter(t_tod_sw, STATE == "Gujarat", MONTH == 9), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-   scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-   ggtitle("Gujarat (September)")  |
-ggplot(filter(t_tod_sw, STATE == "Maharashtra", MONTH == 9), 
-       aes(as.factor(TIMED), PROP.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, 
-              size = 2, position = position_dodge(0.5)) +
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-   xlab("Day") + ylab("Proportion of lists") +
-    ggtitle("Maharashtra (September)") ))
-
-
-rm(list = c("temp1","t_dow_nw","t_dow_sw","t_tod_nw","t_tod_sw"))
-
-```
-
+* At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. But there was greater birding around 17:00--18:00.  
 * Increase in birding at 17:00 was most prominent in Karnataka and Maharashtra, possibly due to the change in lifestyle of people living in metros like Mumbai and Bangalore.
 
 ### Media
