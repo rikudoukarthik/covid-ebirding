@@ -100,6 +100,25 @@ save(data_sub, file = "data/data_sub.RData")
 load("data/data_sub.RData")
 ```
 
+```{r bootSE_fun, include=FALSE, cache=TRUE}
+
+# Useful resources: 
+# https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/variability-and-uncertainty-standard-deviations-standard-errors-confidence-intervals.html#bootstrap 
+# https://websites.pmc.ucsc.edu/~mclapham/Rtips/resampling
+
+# For some metrics like birding distance, it is possible to calculate SE from the data itself ("expected SE" = SD of sample / root sample size). But when there is a possibility to calculate the empirical SE instead (via bootstrapping) which is more accurate, there is no point in going for the former. 
+
+boot_se = function(x, fn = median, B = 1000) {
+  1:B %>%
+    # For each iteration, generate a sample of x with replacement
+    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
+    # Obtain the fn estimate for each bootstrap sample
+    map_dbl(fn) %>%
+    # Obtain the standard error
+    sd()
+}
+
+```
 
 
 # Introduction
@@ -812,65 +831,72 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 dist_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  filter(PROTOCOL.TYPE == "Traveling",
-         !is.na(EFFORT.DISTANCE.KM))
-
-dist_nw <- dist_sw %>% 
+  filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(EFFORT.DISTANCE.KM = mean(EFFORT.DISTANCE.KM)) %>% 
+  summarise(DIST = mean(EFFORT.DISTANCE.KM),
+            DIST.SE = boot_se(EFFORT.DISTANCE.KM, mean),
+            DIST.CI.L = DIST - 1.96*DIST.SE,
+            DIST.CI.U = DIST + 1.96*DIST.SE) %>% 
   ungroup()
 
-# here, the statewise data is not summarised by state. instead, the plotting using mean+-SE will do that. similarly, nationwise data is summarised only by state, after which the plotting will summarise the individual states at national level.
+dist_nw <- dist_sw %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(DIST = mean(DIST),
+            DIST.SE = sqrt(sum((DIST.SE)^2))/n(),
+            DIST.CI.L = DIST - 1.96*DIST.SE,
+            DIST.CI.U = DIST + 1.96*DIST.SE)
 
-(ggplot(dist_nw, aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-  scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-  scale_colour_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-             position = position_dodge(0.5)) + 
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                width = 0.3, position = position_dodge(0.5)) +
-  ggtitle("Average distance travelled at national level") +
-  xlab("Month") + ylab("Distance travelled (km)")) /
+
+(ggplot(dist_nw, aes(MONTH, DIST, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Average distance travelled per checklist at national level",
+         x = "Month", y = "Distance travelled (km)")) /
 ((ggplot(filter(dist_sw, STATE == "Kerala"), 
-         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    ggtitle("Kerala") +
-    xlab("Month") + ylab("Distance travelled (km)")) |
+         aes(MONTH, DIST, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Distance travelled (km)")) |
 (ggplot(filter(dist_sw, STATE == "Karnataka"), 
-         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Karnataka") +
-   xlab("Month") + ylab("Distance travelled (km)"))) /
+         aes(MONTH, DIST, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Distance travelled (km)"))) /
 ((ggplot(filter(dist_sw, STATE == "Gujarat"), 
-         aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    ggtitle("Gujarat") +
-    xlab("Month") + ylab("Distance travelled (km)")) |
+         aes(MONTH, DIST, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Distance travelled (km)")) |
 (ggplot(filter(dist_sw, STATE == "Maharashtra"), 
-        aes(MONTH, EFFORT.DISTANCE.KM, colour = COVID)) + 
-   scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-   scale_colour_brewer(palette = "Dark2") +
-   geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-              position = position_dodge(0.5)) + 
-   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                 width = 0.3, position = position_dodge(0.5)) +
-   ggtitle("Maharashtra") +
-   xlab("Month") + ylab("Distance travelled (km)")))
+         aes(MONTH, DIST, colour = COVID)) + 
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Distance travelled (km)"))) +
+plot_layout(guides = "collect")
 
 rm(dist_sw, dist_nw)
 
