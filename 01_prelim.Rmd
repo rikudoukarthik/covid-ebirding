@@ -1188,6 +1188,8 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 # var(mean(x))/var(median(x)) = 4n/(pi*(2n + 1))
 
+# used mean here because it was proving extremely difficult to work with errors in the case of median
+
 length_sw <- data_sub %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
@@ -1203,60 +1205,64 @@ length_sw <- data_sub %>%
             LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
 
 length_nw <- length_sw %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(LENGTH = ceiling(mean(LENGTH))) %>% 
-  ungroup()
+  ungroup() %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(LENGTH = mean(LENGTH),
+            LENGTH.SE = sqrt(sum((LENGTH.SE)^2))/n(),
+            LENGTH.CI.L = LENGTH - 1.96*LENGTH.SE,
+            LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
 
 
 (ggplot(length_nw, aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("List length (no. of species)") +
-    ggtitle("Average checklist length at national level")) /
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Average checklist length at national level",
+         x = "Month", y = "List length (no. of species)")) /
 ((ggplot(filter(length_sw, STATE == "Kerala"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("List length (no. of species)") +
-    ggtitle("Kerala")) |
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "List length (no. of species)")) |
 (ggplot(filter(length_sw, STATE == "Karnataka"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("List length (no. of species)") +
-    ggtitle("Karnataka"))) /
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "List length (no. of species)"))) /
 ((ggplot(filter(length_sw, STATE == "Gujarat"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("List length (no. of species)") +
-    ggtitle("Gujarat")) |
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "List length (no. of species)")) |
 (ggplot(filter(length_sw, STATE == "Maharashtra"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + scale_x_continuous(breaks = 1:12) + 
-    scale_colour_brewer(palette = "Dark2") +
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("Month") + ylab("List length (no. of species)") +
-    ggtitle("Maharashtra")))
+    scale_y_log10() + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "List length (no. of species)"))) +
+plot_layout(guides = "collect")
 
 rm(length_nw, length_sw)
 
