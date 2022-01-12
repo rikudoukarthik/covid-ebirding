@@ -102,7 +102,7 @@ save(data_sub, file = "data/data_sub.RData")
 load("data/data_sub.RData")
 ```
 
-```{r bootSE_fun, include=FALSE, cache=TRUE}
+```{r bootSE_fun, include=FALSE}
 
 # Useful resources: 
 # https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/variability-and-uncertainty-standard-deviations-standard-errors-confidence-intervals.html#bootstrap 
@@ -1726,109 +1726,109 @@ plot_layout(guides = "collect")
 
 ### Media
 
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+
 ```{r media, cache=TRUE, message=FALSE}
 
-# not averaged by state
-
 temp1 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.LISTS = 0)) %>% 
+  group_by(COVID) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  ungroup() %>% 
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8)) 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(TIME.LISTS = 0)) %>% 
+  group_by(COVID) %>% 
+  mutate(YEAR = as.numeric(
+    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
+  # removing incorrect COVID-YEAR combos produced by complete()
+  ungroup() %>% 
+  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
+         !(COVID == "AFT_21" & MONTH %in% 1:8))
 
-media_sw <- left_join(temp1, temp2)
-rm(list = c("temp1","temp2"))
-
-temp1 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-temp2 <- data_sub %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH, OBSERVER.ID) %>% 
-  summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-media_nw <- left_join(temp1, temp2)
-rm(list = c("temp1","temp2"))
-
-# CORRECT THE PROPORTION FORMULA!
-
-media_sw <- media_sw %>% 
+media_sw <- temp1 %>% 
+  left_join(temp2) %>% 
   mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
-  mutate(PROP.MLISTS = round(NO.MLISTS/NO.MLISTS,2))
-media_nw <- media_nw %>% 
-  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
-  mutate(PROP.MLISTS = round(NO.MLISTS/NO.MLISTS,2))
+  # calculating prop. and SE
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  mutate(PROP.MLISTS = NO.MLISTS/NO.LISTS,
+         PROP.SE = sqrt((PROP.MLISTS)*(1 - PROP.MLISTS)/NO.LISTS),
+         PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
+         PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE) 
 
+media_nw <- media_sw %>% ungroup() %>% 
+  filter(NO.LISTS != 0) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(PROP.MLISTS = mean(PROP.MLISTS),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE)
+
+rm(list = c("temp1","temp2"))
 
 # Daman and Diu lists not appearing from 2020--2021
 
 
-(ggplot(media_nw, aes(MONTH, NO.LISTS, colour = COVID)) + 
-    scale_color_brewer(palette = "Dark2") +
+(ggplot(media_nw, aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("MONTH") + ylab("Proportion of media lists per observer") +
-    ggtitle("Change in no. of media lists per observer with pandemic at national level")) 
-
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Change in proportion of media lists at national level",
+         x = "Month", y = "Proportion of media lists")) /
 ((ggplot(filter(media_sw, STATE == "Kerala"), 
-         aes(MONTH, NO.LISTS, colour = COVID)) + 
-    scale_color_brewer(palette = "Dark2") +
+         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("MONTH") + ylab("Proportion of media lists per observer") +
-    ggtitle("Kerala")) |
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Proportion of media lists")) |
 (ggplot(filter(media_sw, STATE == "Karnataka"), 
-         aes(MONTH, NO.LISTS, colour = COVID)) + 
-    scale_color_brewer(palette = "Dark2") +
+         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("MONTH") + ylab("Proportion of media lists per observer") +
-    ggtitle("Karnataka"))) /
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Proportion of media lists"))) /
 ((ggplot(filter(media_sw, STATE == "Gujarat"), 
-         aes(MONTH, NO.LISTS, colour = COVID)) + 
-    scale_color_brewer(palette = "Dark2") +
+         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("MONTH") + ylab("Proportion of media lists per observer") +
-    ggtitle("Gujarat")) |
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Proportion of media lists")) |
 (ggplot(filter(media_sw, STATE == "Maharashtra"), 
-         aes(MONTH, NO.LISTS, colour = COVID)) + 
-    scale_color_brewer(palette = "Dark2") +
+         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
-    geom_point(stat = "summary", fun.data = mean_cl_boot, size = 3, 
-               position = position_dodge(0.5)) + 
-    geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, size = 1.25, 
-                  width = 0.3, position = position_dodge(0.5)) +
-    xlab("MONTH") + ylab("Proportion of media lists per observer") +
-    ggtitle("Maharashtra")))
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Proportion of media lists"))) +
+plot_layout(guides= "collect")
 
 rm(list = c("media_nw","media_sw"))
 
