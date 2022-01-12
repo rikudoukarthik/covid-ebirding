@@ -110,7 +110,7 @@ load("data/data_sub.RData")
 
 # For some metrics like birding distance, it is possible to calculate SE from the data itself ("expected SE" = SD of sample / root sample size). But when there is a possibility to calculate the empirical SE instead (via bootstrapping) which is more accurate, there is no point in going for the former. 
 
-boot_se = function(x, fn = median, B = 1000) {
+boot_se = function(x, fn = mean, B = 1000) {
   1:B %>%
     # For each iteration, generate a sample of x with replacement
     map(~ x[sample(1:length(x), replace = TRUE)]) %>%
@@ -421,7 +421,7 @@ rm(list = c("temp1","temp2"))
 # z = 1.96 for 95% CI
 
 nl_sw <- nl_sw %>% 
-  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS, 2),
+  mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS, 2,
          PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS),
          PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
@@ -430,7 +430,7 @@ nl_nw <- nl_sw %>% ungroup() %>%
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(NO.LISTS = sum(NO.LISTS),
             NO.SLISTS = sum(NO.SLISTS),
-            PROP.SLISTS = round(mean(PROP.SLISTS), 2),
+            PROP.SLISTS = mean(PROP.SLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
@@ -520,7 +520,7 @@ nl_po_sw <- left_join(temp1, temp2) %>%
 rm(list = c("temp1","temp2"))
 
 nl_po_sw <- nl_po_sw %>%
-  mutate(PROP.SLISTS = round(NO.SLISTS/NO.LISTS,2),
+  mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS))
 
 # this is for each observer, but we are interested in plotting mean value of all observers combined
@@ -528,7 +528,7 @@ nl_po_sw <- nl_po_sw %>%
 
 nl_po_sw <- nl_po_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(PROP.SLISTS = round(mean(PROP.SLISTS), 2),
+  summarise(PROP.SLISTS = mean(PROP.SLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
@@ -536,7 +536,7 @@ nl_po_sw <- nl_po_sw %>% ungroup() %>%
 
 nl_po_nw <- nl_po_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.SLISTS = round(mean(PROP.SLISTS), 2),
+  summarise(PROP.SLISTS = mean(PROP.SLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
@@ -614,6 +614,8 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 #
 # here, doing 25km x 25km (SoIB and also more lenient and appropriate)
 
+set.seed(213)
+
 fidel_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -629,7 +631,7 @@ fidel_sw <- data_sub %>%
   summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.SE = boot_se(NO.SITES, mean),
+  summarise(NO.SE = boot_se(NO.SITES),
             NO.SITES = mean(NO.SITES),
             NO.CI.L = NO.SITES - 1.96*NO.SE,
             NO.CI.U = NO.SITES + 1.96*NO.SE)
@@ -711,13 +713,15 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 ```{r time, cache=TRUE, message=FALSE}
 
+set.seed(423) 
+
 time_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(B.TIME.SE = boot_se(B.TIME, mean),
+  summarise(B.TIME.SE = boot_se(B.TIME),
             B.TIME = mean(B.TIME),
             B.TIME.CI.L = B.TIME - 1.96*B.TIME.SE,
             B.TIME.CI.U = B.TIME + 1.96*B.TIME.SE)
@@ -819,7 +823,7 @@ hot_sw <- hot_sw %>%
          !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
   # calculating prop. and SE
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(PROP.HLISTS = round(NO.HLISTS/NO.LISTS, 2),
+  mutate(PROP.HLISTS = NO.HLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
          PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE) 
@@ -830,7 +834,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(NO.LISTS = sum(NO.LISTS),
             NO.HLISTS = sum(NO.HLISTS),
-            PROP.HLISTS = round(mean(PROP.HLISTS), 2),
+            PROP.HLISTS = mean(PROP.HLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE)
@@ -914,7 +918,7 @@ temp2 <- data_sub %>%
   ungroup()
 
 prot_sw <- left_join(temp1, temp2)
-# rm(list = c("temp1","temp2"))
+rm(list = c("temp1","temp2"))
 
 prot_sw <- prot_sw %>% 
   # filling zeroes for states
@@ -927,7 +931,7 @@ prot_sw <- prot_sw %>%
          !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
   # calculating prop. and SE
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(PROP.TLISTS = round(NO.TLISTS/NO.LISTS, 2),
+  mutate(PROP.TLISTS = NO.TLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
          PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE) 
@@ -938,7 +942,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(NO.LISTS = sum(NO.LISTS),
             NO.TLISTS = sum(NO.TLISTS),
-            PROP.TLISTS = round(mean(PROP.TLISTS), 2),
+            PROP.TLISTS = mean(PROP.TLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE)
@@ -1011,13 +1015,15 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r distance, cache=TRUE, message=FALSE}
 
+set.seed(192) 
+
 dist_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DIST = mean(EFFORT.DISTANCE.KM),
-            DIST.SE = boot_se(EFFORT.DISTANCE.KM, mean),
+            DIST.SE = boot_se(EFFORT.DISTANCE.KM),
             DIST.CI.L = DIST - 1.96*DIST.SE,
             DIST.CI.U = DIST + 1.96*DIST.SE) %>% 
   ungroup()
@@ -1099,12 +1105,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r duration, cache=TRUE, message=FALSE}
 
+set.seed(834)
+
 dur_sw <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DURATION = mean(DURATION.MINUTES),
-            DURATION.SE = boot_se(DURATION.MINUTES, mean),
+            DURATION.SE = boot_se(DURATION.MINUTES),
             DURATION.CI.L = DURATION - 1.96*DURATION.SE,
             DURATION.CI.U = DURATION + 1.96*DURATION.SE) %>% 
   ungroup()
@@ -1190,6 +1198,8 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
+set.seed(98)
+
 length_sw <- data_sub %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
@@ -1199,7 +1209,7 @@ length_sw <- data_sub %>%
   summarise(LENGTH = n_distinct(COMMON.NAME)) %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(LENGTH.SE = boot_se(LENGTH, mean),
+  summarise(LENGTH.SE = boot_se(LENGTH),
             LENGTH = mean(LENGTH),
             LENGTH.CI.L = LENGTH - 1.96*LENGTH.SE,
             LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
@@ -1852,6 +1862,8 @@ rm(list = c("media_nw","media_sw"))
 
 load("data/new_obsr_data.RData")
 
+set.seed(765)
+
 # not new to the state, but new overall, just grouped by state of first eBirding
 new_obsr_sw <- new_obsr_data %>% 
   filter(COVID != "NA") %>% 
@@ -1861,7 +1873,7 @@ new_obsr_sw <- new_obsr_data %>%
 new_obsr_nw <- new_obsr_sw %>% 
   ungroup() %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  summarise(NEW.SE = boot_se(NEW, mean),
+  summarise(NEW.SE = boot_se(NEW),
             NEW = mean(NEW),
             NEW.CI.L = NEW - 1.96*NEW.SE,
             NEW.CI.U = NEW + 1.96*NEW.SE)
