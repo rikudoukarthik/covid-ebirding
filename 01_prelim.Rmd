@@ -405,13 +405,10 @@ temp2 <- data_sub %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
   summarise(NO.SLISTS = n_distinct(GROUP.ID)) %>%
-  ungroup() 
-
-nl_sw <- left_join(temp1, temp2) %>% 
-  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS))
-rm(list = c("temp1","temp2"))
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.SLISTS = 0))
 
 # unequal values for lower and upper: bracketing the CI(?)
 # https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Bracketing_the_confidence_interval
@@ -420,70 +417,69 @@ rm(list = c("temp1","temp2"))
 # SE of proportions = sqrt((p)(1-p)/n)
 # z = 1.96 for 95% CI
 
-nl_sw <- nl_sw %>% 
-  mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS, 2,
+
+nl_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS),
          PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
+rm(list = c("temp1","temp2"))
+
 nl_nw <- nl_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            NO.SLISTS = sum(NO.SLISTS),
-            PROP.SLISTS = mean(PROP.SLISTS),
+  summarise(PROP.SLISTS = mean(PROP.SLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
 
-ggplot(nl_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+(ggplot(nl_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Change in monthly group birding with pandemic at national level",
-       x = "Month", y = "Proportion of group birding lists")
-
-ggplot(filter(nl_sw, STATE == "Kerala"), 
+       x = "Month", y = "Proportion of group birding lists")) /
+((ggplot(filter(nl_sw, STATE == "Kerala"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding with pandemic in Kerala",
-       x = "Month", y = "Proportion of group birding lists")
-
-ggplot(filter(nl_sw, STATE == "Karnataka"), 
+  labs(title = "Kerala",
+       x = "Month", y = "Proportion of group birding lists")) |
+(ggplot(filter(nl_sw, STATE == "Karnataka"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding with pandemic in Karnataka",
-       x = "Month", y = "Proportion of group birding lists")
-
-ggplot(filter(nl_sw, STATE == "Gujarat"), 
+  labs(title = "Karnataka",
+       x = "Month", y = "Proportion of group birding lists"))) /
+((ggplot(filter(nl_sw, STATE == "Gujarat"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding with pandemic in Gujarat",
-       x = "Month", y = "Proportion of group birding lists")
-
-ggplot(filter(nl_sw, STATE == "Maharashtra"), 
+  labs(title = "Gujarat",
+       x = "Month", y = "Proportion of group birding lists")) |
+(ggplot(filter(nl_sw, STATE == "Maharashtra"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding with pandemic in Maharashtra",
-       x = "Month", y = "Proportion of group birding lists")
+  labs(title = "Maharashtra",
+       x = "Month", y = "Proportion of group birding lists"))) +
+plot_layout(guides = "collect")
 
 rm(list = c("nl_sw","nl_nw"))
 
@@ -511,28 +507,28 @@ temp2 <- data_sub %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.SLISTS = n_distinct(GROUP.ID)) %>%
-  ungroup() 
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.SLISTS = 0))
 
-nl_po_sw <- left_join(temp1, temp2) %>% 
-  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS))
-rm(list = c("temp1","temp2"))
-
-nl_po_sw <- nl_po_sw %>%
-  mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
-         PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS))
 
 # this is for each observer, but we are interested in plotting mean value of all observers combined
 # hence, averaging proportions and its SE by propagation of error
 
-nl_po_sw <- nl_po_sw %>% ungroup() %>% 
+nl_po_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(NO.SLISTS = ifelse(is.na(NO.SLISTS), 0, NO.SLISTS),
+         PROP.SLISTS = NO.SLISTS/NO.LISTS,
+         PROP.SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS)) %>%
+  ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(PROP.SLISTS = mean(PROP.SLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.SLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
+rm(list = c("temp1","temp2"))
 
 nl_po_nw <- nl_po_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
@@ -542,54 +538,51 @@ nl_po_nw <- nl_po_sw %>% ungroup() %>%
             PROP.CI.U = PROP.SLISTS + 1.96*PROP.SE)
 
 
-ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
+(ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Change in monthly group birding per observer with pandemic at national level",
-       x = "Month", y = "Proportion of group birding lists per observer")
-
-ggplot(filter(nl_po_sw, STATE == "Kerala"), 
+       x = "Month", y = "Proportion of group birding lists per observer")) /
+((ggplot(filter(nl_po_sw, STATE == "Kerala"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding per observer with pandemic in Kerala",
-       x = "Month", y = "Proportion of group birding lists per observer")
-
-ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
+  labs(title = "Kerala",
+       x = "Month", y = "Proportion of group birding lists per observer")) |
+(ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding per observer with pandemic in Karnataka",
-       x = "Month", y = "Proportion of group birding lists per observer")
-
-ggplot(filter(nl_po_sw, STATE == "Gujarat"), 
+  labs(title = "Karnataka",
+       x = "Month", y = "Proportion of group birding lists per observer"))) /
+((ggplot(filter(nl_po_sw, STATE == "Gujarat"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding per observer with pandemic in Gujarat",
-       x = "Month", y = "Proportion of group birding lists per observer")
-
-ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
+  labs(title = "Gujarat",
+       x = "Month", y = "Proportion of group birding lists per observer")) |
+(ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding per observer with pandemic in Maharashtra",
-       x = "Month", y = "Proportion of group birding lists per observer")
+  labs(title = "Maharashtra",
+       x = "Month", y = "Proportion of group birding lists per observer"))) +
+plot_layout(guides = "collect")
 
 rm(list = c("nl_po_sw","nl_po_nw"))
 
@@ -644,13 +637,12 @@ fidel_nw <- fidel_sw %>%
             NO.CI.L = NO.SITES - 1.96*NO.SE,
             NO.CI.U = NO.SITES + 1.96*NO.SE)
 
-
   
 (ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "No. of sites (unique 25 km x 25 km cells) visited by observers at national level",
@@ -660,7 +652,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -670,7 +662,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -680,7 +672,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -690,7 +682,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -738,7 +730,7 @@ time_nw <- time_sw %>%
 (ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Monthly birding times of observers at national level",
@@ -747,7 +739,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
@@ -756,7 +748,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
@@ -765,7 +757,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
@@ -774,7 +766,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
@@ -804,37 +796,28 @@ temp1 <- data_sub %>%
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
   filter(LOCALITY.TYPE == "H") %>% 
-  summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup()
-
-hot_sw <- left_join(temp1, temp2)
-rm(list = c("temp1","temp2"))
-
-hot_sw <- hot_sw %>% 
-  # filling zeroes for states
-  complete(COVID, MONTH, STATE, 
-           fill = list(NO.LISTS = 0, NO.HLISTS = 0)) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
-  # calculating prop. and SE
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(PROP.HLISTS = NO.HLISTS/NO.LISTS,
+  summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.SLISTS = 0))
+
+
+hot_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  mutate(NO.HLISTS = ifelse(is.na(NO.HLISTS), 0, NO.HLISTS),
+         PROP.HLISTS = NO.HLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
          PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE) 
 
+rm(list = c("temp1","temp2"))
 
 hot_nw <- hot_sw %>% ungroup() %>% 
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            NO.HLISTS = sum(NO.HLISTS),
-            PROP.HLISTS = mean(PROP.HLISTS),
+  summarise(PROP.HLISTS = mean(PROP.HLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE)
@@ -845,7 +828,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
 (ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Change in monthly hotspot birding with pandemic at national level",
@@ -854,7 +837,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
@@ -863,7 +846,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
@@ -872,7 +855,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
@@ -881,7 +864,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
@@ -912,37 +895,28 @@ temp1 <- data_sub %>%
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
   filter(PROTOCOL.TYPE == "Traveling") %>% 
   summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup()
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.TLISTS = 0))
 
-prot_sw <- left_join(temp1, temp2)
-rm(list = c("temp1","temp2"))
 
-prot_sw <- prot_sw %>% 
-  # filling zeroes for states
-  complete(COVID, MONTH, STATE, 
-           fill = list(NO.LISTS = 0, NO.TLISTS = 0)) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8)) %>% 
-  # calculating prop. and SE
+prot_sw <- temp1 %>% 
+  left_join(temp2) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(PROP.TLISTS = NO.TLISTS/NO.LISTS,
+  mutate(NO.TLISTS = ifelse(is.na(NO.TLISTS), 0, NO.TLISTS),
+         PROP.TLISTS = NO.TLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
          PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE) 
 
+rm(list = c("temp1","temp2"))
 
 prot_nw <- prot_sw %>% ungroup() %>% 
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            NO.TLISTS = sum(NO.TLISTS),
-            PROP.TLISTS = mean(PROP.TLISTS),
+  summarise(PROP.TLISTS = mean(PROP.TLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE)
@@ -952,7 +926,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
 (ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Change in monthly travelling birding with pandemic at national level",
@@ -961,7 +935,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -970,7 +944,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -979,7 +953,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -988,7 +962,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -1011,7 +985,7 @@ rm(list = c("prot_nw","prot_sw"))
 
 ### Birding distance
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. Includes duplicate lists, of course. Only considers travelling lists.
 
 ```{r distance, cache=TRUE, message=FALSE}
 
@@ -1025,8 +999,7 @@ dist_sw <- data_sub %>%
   summarise(DIST = mean(EFFORT.DISTANCE.KM),
             DIST.SE = boot_se(EFFORT.DISTANCE.KM),
             DIST.CI.L = DIST - 1.96*DIST.SE,
-            DIST.CI.U = DIST + 1.96*DIST.SE) %>% 
-  ungroup()
+            DIST.CI.U = DIST + 1.96*DIST.SE)
 
 dist_nw <- dist_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
@@ -1040,17 +1013,17 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Average distance travelled per checklist at national level",
+    labs(title = "Average distance travelled per travelling checklist at national level",
          x = "Month", y = "Distance travelled (km)")) /
 ((ggplot(filter(dist_sw, STATE == "Kerala"), 
          aes(MONTH, DIST, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -1060,7 +1033,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -1070,7 +1043,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -1080,7 +1053,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -1114,10 +1087,10 @@ dur_sw <- data_sub %>%
   summarise(DURATION = mean(DURATION.MINUTES),
             DURATION.SE = boot_se(DURATION.MINUTES),
             DURATION.CI.L = DURATION - 1.96*DURATION.SE,
-            DURATION.CI.U = DURATION + 1.96*DURATION.SE) %>% 
-  ungroup()
+            DURATION.CI.U = DURATION + 1.96*DURATION.SE)
 
 dur_nw <- dur_sw %>% 
+  ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(DURATION = mean(DURATION),
             DURATION.SE = sqrt(sum((DURATION.SE)^2))/n(),
@@ -1129,7 +1102,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Average checklist duration at national level",
@@ -1139,7 +1112,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -1149,7 +1122,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -1159,7 +1132,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -1169,7 +1142,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(x = MONTH, ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -1543,49 +1516,27 @@ temp1 <- data_sub %>%
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.LISTS = 0)) %>% 
-  group_by(COVID) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  ungroup() %>% 
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8))
+  ungroup()
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, DAY.W) %>% 
+  group_by(COVID, MONTH, STATE, DAY.W) %>% 
   summarise(DAY.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0)) %>% 
-  group_by(COVID) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  ungroup() %>% 
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8))
+  complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0))
 
 temp3 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
                                          TIME.OBSERVATIONS.STARTED)))) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, TIME.D) %>% 
+  group_by(COVID, MONTH, STATE, TIME.D) %>% 
   summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  complete(COVID, MONTH, STATE, TIME.D, fill = list(TIME.LISTS = 0)) %>% 
-  group_by(COVID) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  ungroup() %>% 
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8))
+  complete(COVID, MONTH, STATE, TIME.D, fill = list(TIME.LISTS = 0))
 
 # Daman and Diu issue
 
@@ -1600,10 +1551,10 @@ temp3 <- data_sub %>%
 t_dow_sw <- temp1 %>% 
   left_join(temp2) %>% 
   filter(MONTH %in% 9:12) %>% 
-  filter(NO.LISTS != 0) %>% 
+  mutate(DAY.LISTS = ifelse(is.na(DAY.LISTS), 0, DAY.LISTS)) %>% 
   group_by(COVID, YEAR, STATE, DAY.W) %>% 
-  summarise(NO.LISTS = mean(NO.LISTS),
-            DAY.LISTS = mean(DAY.LISTS),
+  summarise(NO.LISTS = sum(NO.LISTS),
+            DAY.LISTS = sum(DAY.LISTS),
             PROP.LISTS = DAY.LISTS/NO.LISTS,
             PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
             PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
@@ -1611,9 +1562,7 @@ t_dow_sw <- temp1 %>%
 
 t_dow_nw <- t_dow_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, DAY.W) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            DAY.LISTS = sum(DAY.LISTS),
-            PROP.LISTS = mean(PROP.LISTS),
+  summarise(PROP.LISTS = mean(PROP.LISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
@@ -1670,14 +1619,14 @@ plot_layout(guides = "collect")
 ```{r t_spread_3, cache=TRUE, message=FALSE}
 
 # month is not important in this metric, so first only taking 9:12 which have "AFT" also, then dropping month identity and averaging across the months
-  
+
 t_tod_sw <- temp1 %>% 
   left_join(temp3) %>% 
   filter(MONTH %in% 9:12) %>% 
-  filter(NO.LISTS != 0) %>% 
+  mutate(TIME.LISTS = ifelse(is.na(TIME.LISTS), 0, TIME.LISTS)) %>% 
   group_by(COVID, YEAR, STATE, TIME.D) %>% 
-  summarise(NO.LISTS = mean(NO.LISTS),
-            TIME.LISTS = mean(TIME.LISTS),
+  summarise(NO.LISTS = sum(NO.LISTS),
+            TIME.LISTS = sum(TIME.LISTS),
             PROP.LISTS = TIME.LISTS/NO.LISTS,
             PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
             PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
@@ -1685,9 +1634,7 @@ t_tod_sw <- temp1 %>%
 
 t_tod_nw <- t_tod_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, TIME.D) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            TIME.LISTS = sum(TIME.LISTS),
-            PROP.LISTS = mean(PROP.LISTS),
+  summarise(PROP.LISTS = mean(PROP.LISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
@@ -1735,6 +1682,8 @@ ggplot(filter(t_tod_sw, STATE == "Maharashtra"),
          x = "Time (hours)", y = "Proportion of lists")) +
 plot_layout(guides = "collect")
 
+rm(temp1, temp2, temp3, t_dow_nw, t_dow_sw, t_tod_nw, t_tod_sw)
+
 ```
 
 * At the national level, there are two peaks in the day that see highest birding activity: early morning and evening. This did not change with the pandemic. But there was greater birding around 17:00--18:00.  
@@ -1751,51 +1700,35 @@ temp1 <- data_sub %>%
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.LISTS = 0)) %>% 
-  group_by(COVID) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  ungroup() %>% 
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8)) 
+  ungroup() 
 
 temp2 <- data_sub %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
   summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(TIME.LISTS = 0)) %>% 
-  group_by(COVID) %>% 
-  mutate(YEAR = as.numeric(
-    paste0("20", unlist(strsplit(as.character(COVID), "_"))[2]))) %>% 
-  # removing incorrect COVID-YEAR combos produced by complete()
-  ungroup() %>% 
-  filter(!(COVID == "DUR_21" & MONTH %in% 9:12),
-         !(COVID == "AFT_21" & MONTH %in% 1:8))
+  complete(COVID, MONTH, STATE, fill = list(NO.MLISTS = 0))
+
 
 media_sw <- temp1 %>% 
   left_join(temp2) %>% 
-  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS)) %>% 
-  # calculating prop. and SE
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(PROP.MLISTS = NO.MLISTS/NO.LISTS,
+  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS),
+         PROP.MLISTS = NO.MLISTS/NO.LISTS,
          PROP.SE = sqrt((PROP.MLISTS)*(1 - PROP.MLISTS)/NO.LISTS),
          PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
          PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE) 
 
+rm(list = c("temp1","temp2"))
+
 media_nw <- media_sw %>% ungroup() %>% 
-  filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(PROP.MLISTS = mean(PROP.MLISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE)
 
-rm(list = c("temp1","temp2"))
 
 # Daman and Diu lists not appearing from 2020--2021
 
