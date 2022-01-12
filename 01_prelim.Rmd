@@ -1846,47 +1846,63 @@ rm(list = c("media_nw","media_sw"))
 
 load("data/new_obsr_data.RData")
 
-new_obsr_nw <- new_obsr_data %>% 
-  filter(COVID != "NA") %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  summarise(NEW = n_distinct(OBSERVER.ID))
-
 # not new to the state, but new overall, just grouped by state of first eBirding
 new_obsr_sw <- new_obsr_data %>% 
   filter(COVID != "NA") %>% 
   group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
   summarise(NEW = n_distinct(OBSERVER.ID))
 
+new_obsr_nw <- new_obsr_sw %>% 
+  ungroup() %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
+  summarise(NEW.SE = boot_se(NEW, mean),
+            NEW = mean(NEW),
+            NEW.CI.L = NEW - 1.96*NEW.SE,
+            NEW.CI.U = NEW + 1.96*NEW.SE)
+
 
 (ggplot(new_obsr_nw, aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
-    scale_color_brewer(palette = "Dark2") +
-    geom_point(size = 2) +
-    ggtitle("Monthly number of new eBirders at national level")) /
+    scale_y_log10() +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NEW.CI.L, ymax = NEW.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Monthly number of new eBirders at national level",
+         x = "Month", y = "Number of new eBirders")) /
 ((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
-    scale_color_brewer(palette = "Dark2") +
-    geom_point(size = 2) +
-    ggtitle("Kerala"))  |
+    scale_y_log10() +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Number of new eBirders")) |
 (ggplot(filter(new_obsr_sw, STATE == "Karnataka"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
-    scale_color_brewer(palette = "Dark2") +
-    geom_point(size = 2) +
-    ggtitle("Karnataka"))) /
+    scale_y_log10() +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Number of new eBirders"))) /
 ((ggplot(filter(new_obsr_sw, STATE == "Gujarat"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
-    scale_color_brewer(palette = "Dark2") +
-    geom_point(size = 2) +
-    ggtitle("Gujarat")) |
+    scale_y_log10() +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Number of new eBirders")) |
 (ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + scale_y_log10() +
-    scale_color_brewer(palette = "Dark2") +
-    geom_point(size = 2) +
-    ggtitle("Maharashtra")))
+    scale_y_log10() +
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Number of new eBirders"))) +
+plot_layout(guides = "collect")
 
 
 # Gujarat and ArP showing zero eBirders in certain cases. Probably due to random subsampling.
