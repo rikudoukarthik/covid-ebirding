@@ -1,14 +1,18 @@
 ### data filters -----------------
 
-# data object
-# list of group accounts to be filtered out
+# data file path
+# path to list of group accounts to be filtered out
 
 
-dataqual_filt <- function(data, groupaccspath){
+dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
 
+  ### importing from usual modified ebd RData
+  load(datapath) 
+  
   require(tidyverse)
   require(lubridate)
 
+  ### list of group accounts to be filtered
   groupaccs <- read.csv(groupaccspath, 
                         na.strings = c(""," ",NA), quote = "", header = T, 
                         nrows = 401)  # excluding empty cells
@@ -20,7 +24,8 @@ dataqual_filt <- function(data, groupaccspath){
   
   
   
-  ### new observer data (to calculate no. of new observers metric)
+  ### new observer data (to calculate no. of new observers metric) #######
+
   new_obsr_data <- data %>% 
     select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
              "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
@@ -37,22 +42,81 @@ dataqual_filt <- function(data, groupaccspath){
                                     LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR_21",
                                     LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT_21"),
                           levels = c("BEF_19","DUR_20","DUR_21","AFT_21")))
-  
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
-  
   save(new_obsr_data, file = "data/new_obsr_data.RData")
   
   
   
-  ### main data
-  data <- data %>% filter(YEAR >= 2019) 
-  save(data, file = "data/rawdata.RData")
+  ### main data filtering ######
   
-  # filters
-  data0 <- data %>% anti_join(filtGA) %>% 
-    filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
+  data0 <- data %>% 
+    filter(YEAR >= 2019) %>% # retaining only data from 2019 onward
+    anti_join(filtGA) %>% # removing data from group accounts
+    # creating COVID factor
+    mutate(COVID = factor(case_when(YEAR == 2019 ~ "BEF_19",
+                                    YEAR == 2020 ~ "DUR_20",
+                                    YEAR == 2021 & MONTH < 9 ~ "DUR_21",
+                                    YEAR == 2021 & MONTH >= 9 ~ "AFT_21"),
+                          levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21"))) %>% 
+    group_by(GROUP.ID) %>% 
+    mutate(NO.SP = n_distinct(COMMON.NAME)) %>%
+    ungroup() %>% 
+    mutate(HOUR = hour(TIME.OBSERVATIONS.STARTED),
+           MIN = minute(TIME.OBSERVATIONS.STARTED),
+           SPEED = EFFORT.DISTANCE.KM*60/DURATION.MINUTES, # kmph
+           SUT = NO.SP*60/DURATION.MINUTES, # species per hour
+           # calculate hour checklist ended
+           END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60))
+  
+  # choose checklists without info on duration with 3 or fewer species
+  temp <- data0 %>%
+    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
+    group_by(GROUP.ID) %>% slice(1) %>%
+    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
+    distinct(GROUP.ID) # %>% 
+    # select(GROUP.ID)
+  
+  # exclude records based on various criteria 
+  data0 <- data0 %>%
+    mutate(ALL.SPECIES.REPORTED = 
+             case_when(ALL.SPECIES.REPORTED == 1 & 
+                         (GROUP.ID %in% temp | 
+                            SPEED > maxvel |
+                            (SUT < minsut & NO.SP <= 3) | 
+                            PROTOCOL.TYPE == "Incidental" | 
+                            (!is.na(HOUR) & ((HOUR <= 4 & END <= 4) | 
+                                             (HOUR >= 20 & END <= 28)
+                                           )
+                             )
+                          ) ~ 0, 
+                       ALL.SPECIES.REPORTED == 0 ~ 0,
+                       TRUE ~ 1)) %>% 
+    select(-SPEED, -SUT, -MIN, -END) %>% 
+    filter(ALL.SPECIES.REPORTED == 1)
+    
+  
   
   rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
   save.image("data/data0.RData")
 }
+
+
+### bootstrapping standard error -----------------
+
+# Useful resources: 
+# https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/variability-and-uncertainty-standard-deviations-standard-errors-confidence-intervals.html#bootstrap 
+# https://websites.pmc.ucsc.edu/~mclapham/Rtips/resampling
+
+# For some metrics like birding distance, it is possible to calculate SE from the data itself ("expected SE" = SD of sample / root sample size). But when there is a possibility to calculate the empirical SE instead (via bootstrapping) which is more accurate, there is no point in going for the former. 
+
+boot_se = function(x, fn = mean, B = 1000) {
+  1:B %>%
+    # For each iteration, generate a sample of x with replacement
+    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
+    # Obtain the fn estimate for each bootstrap sample
+    map_dbl(fn) %>%
+    # Obtain the standard error
+    sd()
+}
+
