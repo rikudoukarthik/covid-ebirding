@@ -62,18 +62,20 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
     group_by(GROUP.ID) %>% 
     mutate(NO.SP = n_distinct(COMMON.NAME)) %>%
     ungroup() %>% 
-    mutate(HOUR = hour(TIME.OBSERVATIONS.STARTED),
-           MIN = minute(TIME.OBSERVATIONS.STARTED),
+    mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
+                                                  TIME.OBSERVATIONS.STARTED))),
+           MIN = minute(as_datetime(paste(OBSERVATION.DATE,
+                                          TIME.OBSERVATIONS.STARTED))),
            SPEED = EFFORT.DISTANCE.KM*60/DURATION.MINUTES, # kmph
            SUT = NO.SP*60/DURATION.MINUTES, # species per hour
            # calculate hour checklist ended
-           END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60))
+           END = floor((TIME.D*60 + MIN + DURATION.MINUTES)/60))
   
   # choose checklists without info on duration with 3 or fewer species
   temp <- data0 %>%
     filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
-    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
+    filter(NO.SP <= 3, is.na(DURATION.MINUTES)) %>%
     distinct(GROUP.ID) # %>% 
     # select(GROUP.ID)
   
@@ -85,8 +87,8 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
                             SPEED > maxvel |
                             (SUT < minsut & NO.SP <= 3) | 
                             PROTOCOL.TYPE == "Incidental" | 
-                            (!is.na(HOUR) & ((HOUR <= 4 & END <= 4) | 
-                                             (HOUR >= 20 & END <= 28)
+                            (!is.na(TIME.D) & ((TIME.D <= 4 & END <= 4) | 
+                                             (TIME.D >= 20 & END <= 28)
                                            )
                              )
                           ) ~ 0, 
@@ -94,11 +96,10 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
                        TRUE ~ 1)) %>% 
     select(-SPEED, -SUT, -MIN, -END) %>% 
     filter(ALL.SPECIES.REPORTED == 1)
-    
   
-  
-  rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
-  save.image("data/data0.RData")
+  assign("data0", data0, .GlobalEnv)
+         
+  save(data0, file = "data/data0.RData")
 }
 
 

@@ -27,7 +27,6 @@ covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
 covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
-
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
 
@@ -38,12 +37,12 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 source("scripts/functions.R")
 
 datapath <- "data/ebd_IN_relNov-2021.RData"
-groupaccspath <- "ebd_users_GA_relSep-2021.csv"
+groupaccspath <- "data/ebd_users_GA_relSep-2021.csv"
 
 # filtering the data for current use
 dataqual_filt(datapath, groupaccspath)
 
-source("scripts/functions.R")
+# load("data/data0.RData")
 
 ```
 
@@ -56,6 +55,7 @@ data_sub <- data0 %>%
 save(data_sub, file = "data/data_sub.RData")
 
 load("data/data_sub.RData")
+
 ```
 
 
@@ -290,25 +290,25 @@ ggplot(filter(states, state == "Uttarakhand"), aes(date, cases)) + geom_line()
 Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
 
 1. Number of submitted checklists  
-1.1. Total lists  
-1.1. Shared lists (use no. of obs.)  
+    1.1. Total lists  
+    1.1. Shared lists (use no. of obs.)  
 1. Number of submitted checklists per observer  
-1.1. Total lists  
-1.1. Shared lists (use no. of obs.)  
+    1.1. Total lists  
+    1.1. Shared lists (use no. of obs.)  
 1. Hotspot birding  
 1. Birding protocol  
 1. Birding distance
 1. Site fidelity per observer  
 1. Habitats surveyed  
 1. Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.  
-1.1. Spatial spread by absences  
-1.1. Spatial spread by densities  
+    1.1. Spatial spread by absences  
+    1.1. Spatial spread by densities  
 1. List duration
 1. List length  
 1. Birding time per observer (monthly for prelim, later maybe daily)  
 1. Temporal spread of birding activity  
-1.1. Temporal spread within day (time-of-day)  
-1.1. Temporal spread within week (day-of-week)  
+    1.1. Temporal spread within day (time-of-day)  
+    1.1. Temporal spread within week (day-of-week)  
 1. Media  
 1. Number of new birders
 
@@ -330,14 +330,14 @@ Doesn't include duplicate lists as we are interested in Boolean group/solo, and 
 # since we need to look at each month separately and since this is not per observer, there is no source of variation in the counts (no. of lists).
 # hence, stick to proportion CIs
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
@@ -432,14 +432,14 @@ rm(list = c("nl_sw","nl_nw"))
 
 ```{r no_lists_po, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
@@ -542,7 +542,7 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 
 set.seed(213)
 
-fidel_sw <- data_sub %>% 
+fidel_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
@@ -636,7 +636,7 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 set.seed(423) 
 
-time_sw <- data_sub %>% 
+time_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
@@ -714,14 +714,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(LOCALITY.TYPE == "H") %>% 
@@ -814,14 +814,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, MONTH, STATE) %>% 
@@ -915,7 +915,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(192) 
 
-dist_sw <- data_sub %>% 
+dist_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
@@ -1003,7 +1003,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(834)
 
-dur_sw <- data_sub %>% 
+dur_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -1094,7 +1094,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(98)
 
-length_sw <- data_sub %>% 
+length_sw <- data0 %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
                                TRUE ~ CATEGORY)) %>% 
@@ -1191,7 +1191,7 @@ states <- readOGR(dsn = "data/in_states_2019", layer = "in_states_2019")
 load("data/maps.RData")
 load("data/clips.RData")
 
-data_sp <- data_sub %>% 
+data_sp <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() 
 
@@ -1398,7 +1398,7 @@ rast_aoi <- mask(rast_aoi, aoi)
 
 writeRaster(rast_aoi, paste0(datapath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
 
-rm(list = setdiff(ls(), "data_sub"), pos = .GlobalEnv)
+rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
 ```
 
@@ -1428,14 +1428,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
@@ -1445,11 +1445,9 @@ temp2 <- data_sub %>%
   ungroup() %>% 
   complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0))
 
-temp3 <- data_sub %>% 
+temp3 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
-                                         TIME.OBSERVATIONS.STARTED)))) %>% 
   group_by(COVID, MONTH, STATE, TIME.D) %>% 
   summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
@@ -1617,14 +1615,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r media, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(HAS.MEDIA == 1) %>% 
