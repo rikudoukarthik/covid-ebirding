@@ -40,7 +40,7 @@ datapath <- "data/ebd_IN_relNov-2021.RData"
 groupaccspath <- "data/ebd_users_GA_relSep-2021.csv"
 
 # filtering the data for current use
-dataqual_filt(datapath, groupaccspath)
+dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
 
 # load("data/data0.RData")
 
@@ -556,6 +556,7 @@ fidel_sw <- data0 %>%
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
   ungroup() %>% 
+  mutate(NO.SITES = ifelse(is.na(NO.SITES), 0, NO.SITES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.SE = boot_se(NO.SITES),
             NO.SITES = mean(NO.SITES),
@@ -641,6 +642,8 @@ time_sw <- data0 %>%
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  ungroup() %>% 
+  mutate(B.TIME = ifelse(is.na(B.TIME), 0, B.TIME)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(B.TIME.SE = boot_se(B.TIME),
             B.TIME = mean(B.TIME),
@@ -699,7 +702,8 @@ time_nw <- time_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
-       x = "Month", y = "Time (mins)")))
+       x = "Month", y = "Time (mins)"))) +
+plot_layout(guides = "collect")
 
 rm(time_nw, time_sw)
 
@@ -1005,7 +1009,9 @@ set.seed(834)
 
 dur_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+  slice(1) %>% 
+  filter(!is.na(DURATION.MINUTES)) %>% 
+  ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DURATION = mean(DURATION.MINUTES),
             DURATION.SE = boot_se(DURATION.MINUTES),
@@ -1711,13 +1717,23 @@ rm(list = c("media_nw","media_sw"))
 
 load("data/new_obsr_data.RData")
 
-set.seed(765)
-
+# for left joining YEAR with COVID
+temp1 <- new_obsr_data %>% 
+  distinct(COVID, LE.YEAR, LE.MONTH)
+         
 # not new to the state, but new overall, just grouped by state of first eBirding
-new_obsr_sw <- new_obsr_data %>% 
+temp2 <- new_obsr_data %>% 
   filter(COVID != "NA") %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
-  summarise(NEW = n_distinct(OBSERVER.ID))
+  group_by(COVID, LE.MONTH, STATE) %>% 
+  summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
+  ungroup() %>% 
+  complete(COVID, LE.MONTH, STATE, fill = list(NEW = 0))
+
+new_obsr_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(NEW = ifelse(is.na(NEW), 0, NEW))
+
+set.seed(765)
 
 new_obsr_nw <- new_obsr_sw %>% 
   ungroup() %>% 
