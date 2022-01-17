@@ -27,98 +27,34 @@ covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
 covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
-
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
 
 ```
 
 ```{r data_filt, cache=TRUE}
-### importing from modified ebd RData
-load("data/ebd_IN_relNov-2021.RData") 
 
-### list of group accounts to be filtered
-groupaccs <- read.csv("data/ebd_users_GA_relSep-2021.csv", 
-                      na.strings = c(""," ",NA), quote = "", header = T, 
-                      nrows = 401)  # excluding empty cells
-groupaccs <- groupaccs %>% 
-  mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
-                              GA.2 == 1 ~ "GA.2", 
-                              TRUE ~ "NG"))
-filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
+source("scripts/functions.R")
 
+datapath <- "data/ebd_IN_relNov-2021.RData"
+groupaccspath <- "data/ebd_users_GA_relSep-2021.csv"
 
+# filtering the data for current use
+dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
 
-### new observer data (to calculate no. of new observers metric)
-new_obsr_data <- data %>% 
-  select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
-           "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
-  mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>% 
-  group_by(OBSERVER.ID) %>% 
-  arrange(LAST.EDITED.DATE) %>% 
-  ungroup() %>% 
-  distinct(OBSERVER.ID, .keep_all = TRUE) %>%
-  mutate(LE.YEAR = year(LAST.EDITED.DATE),
-         LE.MONTH = month(LAST.EDITED.DATE)) %>% 
-  filter(LE.YEAR >= 2019) %>% 
-  mutate(COVID = factor(case_when(LE.YEAR == 2019 ~ "BEF_19", 
-                                  LE.YEAR == 2020 ~ "DUR_20",
-                                  LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR_21",
-                                  LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT_21",
-                                  TRUE ~ "NA"),
-                        levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21")))
+# load("data/data0.RData")
 
-# filtering
-new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
+```
 
-save(new_obsr_data, file = "data/new_obsr_data.RData")
+```{r data_subset, eval=FALSE, cache=TRUE, dependson="data_filt"}
 
-
-
-### main data
-data <- data %>% filter(YEAR >= 2019) 
-save(data, file = "data/rawdata.RData")
-
-# filters
-data0 <- data %>% anti_join(filtGA) %>% 
-  filter(PROTOCOL.TYPE %in% c("Traveling","Stationary"))
-
-rm(list = setdiff(ls(envir = .GlobalEnv), c("data0")), pos = ".GlobalEnv")
-save.image("data/data0.RData")
-
-# random subset for analysis + adding COVID category
+# random subset for analysis
 set.seed(10)
 data_sub <- data0 %>% 
-  filter(GROUP.ID %in% sample(unique(data0$GROUP.ID),100000)) %>% 
-  mutate(COVID = factor(case_when(YEAR == 2019 ~ "BEF_19", 
-                                  YEAR == 2020 ~ "DUR_20",
-                                  YEAR == 2021 & MONTH < 9 ~ "DUR_21",
-                                  YEAR == 2021 & MONTH >= 9 ~ "AFT_21"),
-                        levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21")))
+  filter(GROUP.ID %in% sample(unique(data0$GROUP.ID), 100000))
 save(data_sub, file = "data/data_sub.RData")
-```
 
-```{r data_load, eval=FALSE, cache=TRUE, dependson="data_filt"}
 load("data/data_sub.RData")
-```
-
-```{r bootSE_fun, include=FALSE}
-
-# Useful resources: 
-# https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/variability-and-uncertainty-standard-deviations-standard-errors-confidence-intervals.html#bootstrap 
-# https://websites.pmc.ucsc.edu/~mclapham/Rtips/resampling
-
-# For some metrics like birding distance, it is possible to calculate SE from the data itself ("expected SE" = SD of sample / root sample size). But when there is a possibility to calculate the empirical SE instead (via bootstrapping) which is more accurate, there is no point in going for the former. 
-
-boot_se = function(x, fn = mean, B = 1000) {
-  1:B %>%
-    # For each iteration, generate a sample of x with replacement
-    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
-    # Obtain the fn estimate for each bootstrap sample
-    map_dbl(fn) %>%
-    # Obtain the standard error
-    sd()
-}
 
 ```
 
@@ -354,25 +290,25 @@ ggplot(filter(states, state == "Uttarakhand"), aes(date, cases)) + geom_line()
 Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
 
 1. Number of submitted checklists  
-1.1. Total lists  
-1.1. Shared lists (use no. of obs.)  
+    1.1. Total lists  
+    1.1. Shared lists (use no. of obs.)  
 1. Number of submitted checklists per observer  
-1.1. Total lists  
-1.1. Shared lists (use no. of obs.)  
+    1.1. Total lists  
+    1.1. Shared lists (use no. of obs.)  
 1. Hotspot birding  
 1. Birding protocol  
 1. Birding distance
 1. Site fidelity per observer  
 1. Habitats surveyed  
 1. Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.  
-1.1. Spatial spread by absences  
-1.1. Spatial spread by densities  
+    1.1. Spatial spread by absences  
+    1.1. Spatial spread by densities  
 1. List duration
 1. List length  
 1. Birding time per observer (monthly for prelim, later maybe daily)  
 1. Temporal spread of birding activity  
-1.1. Temporal spread within day (time-of-day)  
-1.1. Temporal spread within week (day-of-week)  
+    1.1. Temporal spread within day (time-of-day)  
+    1.1. Temporal spread within week (day-of-week)  
 1. Media  
 1. Number of new birders
 
@@ -394,14 +330,14 @@ Doesn't include duplicate lists as we are interested in Boolean group/solo, and 
 # since we need to look at each month separately and since this is not per observer, there is no source of variation in the counts (no. of lists).
 # hence, stick to proportion CIs
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
@@ -496,14 +432,14 @@ rm(list = c("nl_sw","nl_nw"))
 
 ```{r no_lists_po, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
@@ -606,7 +542,7 @@ rm(list = c("nl_po_sw","nl_po_nw"))
 
 set.seed(213)
 
-fidel_sw <- data_sub %>% 
+fidel_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
@@ -620,6 +556,7 @@ fidel_sw <- data_sub %>%
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
   ungroup() %>% 
+  mutate(NO.SITES = ifelse(is.na(NO.SITES), 0, NO.SITES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.SE = boot_se(NO.SITES),
             NO.SITES = mean(NO.SITES),
@@ -700,11 +637,13 @@ rm(list = c("fidel_nw","fidel_sw"))
 
 set.seed(423) 
 
-time_sw <- data_sub %>% 
+time_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  ungroup() %>% 
+  mutate(B.TIME = ifelse(is.na(B.TIME), 0, B.TIME)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(B.TIME.SE = boot_se(B.TIME),
             B.TIME = mean(B.TIME),
@@ -763,7 +702,8 @@ time_nw <- time_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
-       x = "Month", y = "Time (mins)")))
+       x = "Month", y = "Time (mins)"))) +
+plot_layout(guides = "collect")
 
 rm(time_nw, time_sw)
 
@@ -778,14 +718,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(LOCALITY.TYPE == "H") %>% 
@@ -878,14 +818,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, MONTH, STATE) %>% 
@@ -979,7 +919,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(192) 
 
-dist_sw <- data_sub %>% 
+dist_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
@@ -1067,9 +1007,11 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(834)
 
-dur_sw <- data_sub %>% 
+dur_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+  slice(1) %>% 
+  filter(!is.na(DURATION.MINUTES)) %>% 
+  ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(DURATION = mean(DURATION.MINUTES),
             DURATION.SE = boot_se(DURATION.MINUTES),
@@ -1158,7 +1100,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 set.seed(98)
 
-length_sw <- data_sub %>% 
+length_sw <- data0 %>% 
   mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
                                TRUE ~ CATEGORY)) %>% 
@@ -1255,7 +1197,7 @@ states <- readOGR(dsn = "data/in_states_2019", layer = "in_states_2019")
 load("data/maps.RData")
 load("data/clips.RData")
 
-data_sp <- data_sub %>% 
+data_sp <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() 
 
@@ -1462,7 +1404,7 @@ rast_aoi <- mask(rast_aoi, aoi)
 
 writeRaster(rast_aoi, paste0(datapath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
 
-rm(list = setdiff(ls(), "data_sub"), pos = .GlobalEnv)
+rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
 ```
 
@@ -1492,14 +1434,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
@@ -1509,11 +1451,9 @@ temp2 <- data_sub %>%
   ungroup() %>% 
   complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0))
 
-temp3 <- data_sub %>% 
+temp3 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
-                                         TIME.OBSERVATIONS.STARTED)))) %>% 
   group_by(COVID, MONTH, STATE, TIME.D) %>% 
   summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
@@ -1681,14 +1621,14 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r media, cache=TRUE, message=FALSE}
 
-temp1 <- data_sub %>% 
+temp1 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_sub %>% 
+temp2 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(HAS.MEDIA == 1) %>% 
@@ -1777,13 +1717,23 @@ rm(list = c("media_nw","media_sw"))
 
 load("data/new_obsr_data.RData")
 
-set.seed(765)
-
+# for left joining YEAR with COVID
+temp1 <- new_obsr_data %>% 
+  distinct(COVID, LE.YEAR, LE.MONTH)
+         
 # not new to the state, but new overall, just grouped by state of first eBirding
-new_obsr_sw <- new_obsr_data %>% 
+temp2 <- new_obsr_data %>% 
   filter(COVID != "NA") %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
-  summarise(NEW = n_distinct(OBSERVER.ID))
+  group_by(COVID, LE.MONTH, STATE) %>% 
+  summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
+  ungroup() %>% 
+  complete(COVID, LE.MONTH, STATE, fill = list(NEW = 0))
+
+new_obsr_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(NEW = ifelse(is.na(NEW), 0, NEW))
+
+set.seed(765)
 
 new_obsr_nw <- new_obsr_sw %>% 
   ungroup() %>% 
