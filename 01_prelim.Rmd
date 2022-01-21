@@ -36,7 +36,7 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 source("scripts/functions.R")
 
-datapath <- "data/ebd_IN_relNov-2021.RData"
+datapath <- "data/ebd_IN_relDec-2021.RData"
 groupaccspath <- "data/ebd_users_GA_relSep-2021.csv"
 
 # filtering the data for current use
@@ -1221,7 +1221,8 @@ temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
 coordinates(temp) <- ~LONGITUDE + LATITUDE
 temp <- temp %>% over(g2clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
 data_sp <- left_join(temp, data_sp)
-names(data_sp)[2] <- "G2CLIP"
+names(data_sp)[2] <- "G2CLIP"    
+
 ```
 
 ```{r s_spread_cover, cache=TRUE, message=FALSE, eval=FALSE}
@@ -1232,36 +1233,31 @@ data_cov <- data_sp %>%
   group_by(COVID, YEAR, MONTH, GRIDG1) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
             TOT.GRIDS = min(TOT.GRIDS)) %>% 
-  ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(SD.LISTS = sd(NO.LISTS),
             TOT.GRIDS = min(TOT.GRIDS),
             NO.GRIDS = n_distinct(GRIDG1),
-            PROP.GRIDS = round(NO.GRIDS/TOT.GRIDS,2))
+            PROP.GRIDS = NO.GRIDS/TOT.GRIDS,
+            PROP.SE = sqrt((PROP.GRIDS)*(1 - PROP.GRIDS)/TOT.GRIDS),
+            PROP.CI.L = PROP.GRIDS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.GRIDS + 1.96*PROP.SE)
+
+ggplot(data_cov, aes(MONTH, PROP.GRIDS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Change in spatial coverage of monthly birding with pandemic",
+         x = "Month", y = "Proportion of grid cells with birding activity")
 
 ggplot(data_cov, aes(as.factor(MONTH), SD.LISTS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
+  scale_color_manual(values = covid_palette) +
   geom_point(stat = "summary", fun.data = mean_cl_boot, 
              size = 4, position = position_dodge(0.5)) +
   geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
                 size = 1.25, width = 0.3, position = position_dodge(0.5)) +
   xlab("Month") + ylab("Standard deviation of lists across cells")
-
-ggplot(data_cov, aes(as.factor(MONTH), PROP.GRIDS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Proportion of cells with birding activity")
-
-ggplot(data_cov, aes(as.factor(MONTH), NO.GRIDS, colour = COVID)) + 
-  scale_color_brewer(palette = "Dark2") +
-  geom_point(stat = "summary", fun.data = mean_cl_boot, 
-             size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(stat = 'summary', fun.data = mean_cl_boot, 
-                size = 1.25, width = 0.3, position = position_dodge(0.5)) +
-  xlab("Month") + ylab("Number of cells with birding activity")
 
 ```
 
@@ -1279,7 +1275,7 @@ ggplot() +
   geom_polygon(data = fortify(india), 
                aes(long, lat, group = group),
                fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "BEF"), 
+  geom_polygon(data = filter(data_map, COVID == "BEF_19"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
@@ -1289,7 +1285,7 @@ ggplot() +
   geom_polygon(data = fortify(india), 
                aes(long, lat, group = group),
                fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "DUR"), 
+  geom_polygon(data = filter(data_map, COVID == "DUR_20"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
@@ -1298,7 +1294,7 @@ ggplot() +
   geom_polygon(data = fortify(india), 
                aes(long, lat, group = group),
                fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "AFT"), 
+  geom_polygon(data = filter(data_map, COVID == "AFT_21"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
@@ -1306,6 +1302,7 @@ ggplot() +
 ```
 
 * Both the maps and the graphs show that there were overall more cells covered during the pandemic, and even more after. This can be attributed to general growth in eBirding.  
+* Proportion of grid cells covered was impacted in both 2020 and 2021 in May, while in 2020 only in April.  
 * SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
 
 ```{r s_spread_city, cache=TRUE, message=FALSE, eval=FALSE}
@@ -1331,12 +1328,12 @@ plot(chenn)
 
 ```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
-
 library(raster)
 library(sp)
 library(gdalUtils)
 library(geodata)
 library(terra)
+# install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 library(luna)
 
 
