@@ -35,15 +35,17 @@ Quantity as well as quality of data. Spatial (clustered data) and temporal bias.
 
 @randler2020 found that the pandemic-induced lockdown has caused significant changes in spatial, temporal, social, demographic and country-related aspects of birding. 
 
-## Bird behaviour
+@basile2021 found an increase in urban citizen science (iNat) observations during the pandemic year, compared to previous years. Non-urban observations decreased in some countries but remained similar in others. They also found a general decrease in "new records". 
 
-@gordo2021 found that in urban areas the lockdown did not cause higher occurrence rates than before. Some species showed marginal increases, probably due to more intensive urban sampling during the lockdown. Detection probability of birds in urban areas throughout the day increased during the lockdown, especially during the early hours. (Ornitho)
+## Bird behaviour
 
 @schrimpf2021 found that birds mostly increased in abundance in areas that saw decrease in human activity, during the period of most stringent restrictions, although some species showed the opposite pattern. They used various metrics of human activity. 
 
-@basile2021 found an increase in urban citizen science (iNat) observations during the pandemic year, compared to previous years. Non-urban observations decreased in some countries but remained similar in others. They also found a general decrease in "new records". 
-
 @derryberry2020 showed that behavioural traits can change rapidly in response to new changes in environmental conditions. They found that traffic noise levels in urban areas during the lockdown decreased significantly, going down to mid-1950s levels, and that birds produced higher performance songs at lower amplitudes, maximising communication distance and salience. (Acoustic differences)
+
+@gordo2021 found that in urban areas the lockdown did not cause higher occurrence rates than before. Some species showed marginal increases, probably due to more intensive urban sampling during the lockdown. Detection probability of birds in urban areas throughout the day increased during the lockdown, especially during the early hours. (Ornitho)
+
+@mikula2021 showed that the wearing of face masks did not result in changes in antipredatory behaviour of birds as measured by flight initiation distance. 
 
 
 
