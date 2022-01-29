@@ -1101,7 +1101,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 set.seed(98)
 
 length_sw <- data0 %>% 
-  mutate(CATEGORY == case_when(CATEGORY == "domestic" & 
+  mutate(CATEGORY = case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
                                TRUE ~ CATEGORY)) %>% 
   filter(CATEGORY %in% c("issf","species")) %>% 
