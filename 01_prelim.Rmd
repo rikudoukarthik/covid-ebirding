@@ -1305,27 +1305,6 @@ ggplot() +
 * Proportion of grid cells covered was impacted in both 2020 and 2021 in May, while in 2020 only in April.  
 * SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
 
-```{r s_spread_city, cache=TRUE, message=FALSE, eval=FALSE}
-
-blr <- readOGR(dsn = "data/boundaries_IN_metro/Bangalore", 
-               layer = "Bangalore Divisions")
-plot(blr)
-
-blr2 <- blr
-coordinates(blr2) <- ~ LON + LAT
-proj4string(blr2) <- CRS("+proj=longlat +datum=WGS84")
-library(rgeos)
-blr_buff <- gBuffer(blr, width = 50000)
-
-plot(blr_buff)
-
-
-chenn <- readOGR(dsn = "data/boundaries_IN_metro/Chennai", 
-               layer = "Zones")
-plot(chenn)
-
-```
-
 ```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
 library(raster)
