@@ -1333,8 +1333,8 @@ end <- "2019-12-31" # time period of mapping
 aoi <- geodata::gadm("India", level = 1, path = "data")
 
 # creating folder to store MODIS data that will be downloaded
-datapath <- "data/in_LULC_MODIS/"
-dir.create(datapath, showWarnings=FALSE)
+MODISpath <- "data/in_LULC_MODIS/"
+dir.create(MODISpath, showWarnings=FALSE)
 
 
 # ## create RDS file containing login credentials for EOSDIS account
@@ -1348,7 +1348,7 @@ userpass <- readRDS("userpass.rds")
 # downloading MODIS tiled data (16 tiles for our defined area of interest, India)
 # resulting object is a list of file names
 modis <- luna::getModis(prod, start, end, 
-                        aoi = aoi, download = T, path = datapath, 
+                        aoi = aoi, download = T, path = MODISpath, 
                         username = userpass$UN, password = userpass$PW)
 
 # choose the band (SDS) that you want using sds[] option and write GTiff files.
@@ -1359,7 +1359,8 @@ for (i in (modis)) {
   }
 
 # listing all the different tiles present as .tif files, to later merge into one
-rast_list <- list.files(path = datapath, pattern = ".tif",
+rast_list <- list.files(path = MODISpath, 
+                        pattern = ".tif",
                         all.files = TRUE, full.names = TRUE)
 
 # merge into one raster
@@ -1378,7 +1379,7 @@ rast_aoi <- crop(rast_proj, aoi)
 rast_aoi <- mask(rast_aoi, aoi)
 
 
-writeRaster(rast_aoi, paste0(datapath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
+writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
 
 rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
