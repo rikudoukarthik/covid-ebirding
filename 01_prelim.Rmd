@@ -34,14 +34,14 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 ```{r data_filt, cache=TRUE}
 
-source("scripts/functions.R")
-
 datapath <- "data/ebd_IN_relDec-2021.RData"
 groupaccspath <- "data/ebd_users_GA_relSep-2021.csv"
 
+source("scripts/functions.R")
 # filtering the data for current use
 dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
 
+# save(data0, file = "data/data0.RData")
 # load("data/data0.RData")
 
 ```
