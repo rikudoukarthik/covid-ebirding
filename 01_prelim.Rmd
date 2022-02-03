@@ -1214,14 +1214,14 @@ temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
 coordinates(temp) <- ~LONGITUDE + LATITUDE
 temp <- temp %>% over(gridmapg1) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
 data_sp <- left_join(temp, data_sp)
-names(data_sp)[2] <- "GRIDG1"
+names(data_sp)[2] <- "GRIDG1" # 25km2
 
 temp <- data_sp %>% group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1)
 temp <- temp %>% column_to_rownames("SAMPLING.EVENT.IDENTIFIER")
 coordinates(temp) <- ~LONGITUDE + LATITUDE
 temp <- temp %>% over(g2clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER") 
 data_sp <- left_join(temp, data_sp)
-names(data_sp)[2] <- "G2CLIP"    
+names(data_sp)[2] <- "G2CLIP"     # 50km2
 
 ```
 
@@ -1360,7 +1360,7 @@ for (i in (modis)) {
 
 # listing all the different tiles present as .tif files, to later merge into one
 rast_list <- list.files(path = MODISpath, 
-                        pattern = ".tif",
+                        pattern = "MCD12Q1*.*tif",
                         all.files = TRUE, full.names = TRUE)
 
 # merge into one raster
@@ -1369,17 +1369,18 @@ rast_full <- rast_list %>%
   do.call(what = merge) %>% # merge the files
   rast()
 
-
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
 projto <- crs(aoi) 
-rast_proj <- project(rast_full, projto) # takes a few minutes
+# takes a few minutes
+# "near" because LC values are categories despite being numerical
+rast_proj <- terra::project(rast_full, projto, method = "near") 
 
 ## cropping and masking the raster to our area of interest
-rast_aoi <- crop(rast_proj, aoi)
-rast_aoi <- mask(rast_aoi, aoi)
+rast_aoi <- terra::crop(rast_proj, aoi)
+rast_aoi <- terra::mask(rast_aoi, aoi)
 
 
-writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite=TRUE)
+writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
 rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
@@ -1398,9 +1399,25 @@ require(luna)
 rast <- raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
 plot(rast)
 
-data_LULC <- rasterToPolygons(rast)
+# reclassifying the raster as urban vs. non-urban (help from:
+# http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html
+# http://zevross.com/blog/2015/03/30/map-and-analyze-raster-data-in-r/)
+# category 13 corresponds to "urban and built-up lands"
+categs <- unique(values(rast))
 
+# ocean also becomes "non-urban" but that's fine since we won't be looking at 
+# those locations
+reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
+reclass
 
+rast_UNU <- reclassify(rast, rcl = reclass)
+plot(rast_UNU)
+
+# MODIS data has 500m resolution
+# https://stackoverflow.com/questions/37956422/resample-raster
+rast_UNU_G1 <- raster::aggregate()
+
+save(data_LULC, file = "data/data_LULC.RData")
 
 ```
 
