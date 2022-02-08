@@ -1305,13 +1305,12 @@ ggplot() +
 * Proportion of grid cells covered was impacted in both 2020 and 2021 in May, while in 2020 only in April.  
 * SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
 
-```{r s_spread_LULC_getMODIS, cache=TRUE, message=FALSE, eval=FALSE}
+```{r s_spread_LULC_MODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
 library(raster)
-library(sp)
+require(terra)
 library(gdalUtils)
 library(geodata)
-library(terra)
 # install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 library(luna)
 
@@ -1342,8 +1341,8 @@ dir.create(MODISpath, showWarnings=FALSE)
 #                    PW = "yyy")
 # saveRDS(cred, "userpass.rds")
 
-
 userpass <- readRDS("userpass.rds")
+
 
 # downloading MODIS tiled data (16 tiles for our defined area of interest, India)
 # resulting object is a list of file names
@@ -1384,16 +1383,9 @@ writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
 rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
-```
 
-```{r s_spread_LULC_analMODIS, cache=TRUE, message=FALSE, eval=FALSE}
+###### analysing the MODIS data
 
-require(raster)
-require(sp)
-require(gdalUtils)
-require(geodata)
-require(terra)
-require(luna)
 
 # read in cropped and masked .tif
 rast <- raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
@@ -1404,7 +1396,6 @@ plot(rast)
 # http://zevross.com/blog/2015/03/30/map-and-analyze-raster-data-in-r/)
 # category 13 corresponds to "urban and built-up lands"
 categs <- unique(values(rast))
-
 # ocean also becomes "non-urban" but that's fine since we won't be looking at 
 # those locations
 reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
@@ -1413,11 +1404,12 @@ reclass
 rast_UNU <- reclassify(rast, rcl = reclass)
 plot(rast_UNU)
 
-# MODIS data has 500m resolution
+# MODIS data has 500m2 resolution
 # https://stackoverflow.com/questions/37956422/resample-raster
-rast_UNU_G1 <- raster::aggregate()
+rast_UNU_G1 <- raster::aggregate(rast_UNU, fact = 50, fun = modal)
 
-save(data_LULC, file = "data/data_LULC.RData")
+save(rast_UNU, file = "data/rast_UNU.RData")
+save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
 
 ```
 
