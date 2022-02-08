@@ -1406,12 +1406,24 @@ plot(rast_UNU)
 
 # MODIS data has 500m2 resolution
 # https://stackoverflow.com/questions/37956422/resample-raster
-rast_UNU_G1 <- raster::aggregate(rast_UNU, fact = 50, fun = modal)
+rast_UNU_G1 <- raster::aggregate(rast_UNU, fact = 50, fun = rast_agg_fn)
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
 
 ```
+
+```{r}
+factr <- 50
+
+x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30))
+
+rast_agg_fn <- function(x, ...){
+  if_else(sum(x) >= length(x)*0.25, 1, 0)
+}
+
+```
+
 
 
 ### Temporal spread
