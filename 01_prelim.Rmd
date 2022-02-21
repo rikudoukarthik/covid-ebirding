@@ -1307,7 +1307,7 @@ ggplot() +
 
 ```{r s_spread_LULC_MODIS, cache=TRUE, message=FALSE, eval=FALSE}
 
-library(raster)
+# library(raster) # masks dplyr functions, so have used raster::function()
 require(terra)
 library(gdalUtils)
 library(geodata)
@@ -1366,10 +1366,10 @@ rast_list <- list.files(path = MODISpath,
 rast_full <- rast_list %>% 
   lapply(raster) %>% # rasterise the different files
   do.call(what = merge) %>% # merge the files
-  rast()
+  terra::rast()
 
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
-projto <- crs(aoi) 
+projto <- raster::crs(aoi) 
 # takes a few minutes
 # "near" because LC values are categories despite being numerical
 rast_proj <- terra::project(rast_full, projto, method = "near") 
@@ -1379,7 +1379,7 @@ rast_aoi <- terra::crop(rast_proj, aoi)
 rast_aoi <- terra::mask(rast_aoi, aoi)
 
 
-writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
+raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
 rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
@@ -1388,8 +1388,8 @@ rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
 
 # read in cropped and masked .tif
-rast <- raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
-plot(rast)
+rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
+raster::plot(rast)
 
 # reclassifying the raster as urban vs. non-urban (help from:
 # http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html
@@ -1399,10 +1399,9 @@ categs <- unique(values(rast))
 # ocean also becomes "non-urban" but that's fine since we won't be looking at 
 # those locations
 reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
-reclass
 
-rast_UNU <- reclassify(rast, rcl = reclass)
-plot(rast_UNU)
+rast_UNU <- raster::reclassify(rast, rcl = reclass)
+raster::plot(rast_UNU)
 
 # MODIS data has 500m2 resolution
 # https://stackoverflow.com/questions/37956422/resample-raster
@@ -1415,9 +1414,18 @@ rast_agg_fn <- function(x, ...){
 }
 
 rast_UNU_G1 <- raster::aggregate(rast_UNU, fact = 50, fun = rast_agg_fn)
+raster::plot(rast_UNU_G1)
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
+
+
+# extracting land cover values at eBird data points
+latlong <- data0 %>% 
+  dplyr::select(LONGITUDE, LATITUDE)
+
+data_LULC <- data0 %>% 
+  mutate(URBAN = raster::extract(rast_UNU_G1, cbind(LONGITUDE, LATITUDE)))
 
 ```
 
