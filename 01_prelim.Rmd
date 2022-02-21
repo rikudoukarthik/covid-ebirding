@@ -1384,6 +1384,7 @@ raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite
 rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
 
+
 ###### analysing the MODIS data
 
 
@@ -1403,7 +1404,7 @@ reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
 rast_UNU <- raster::reclassify(rast, rcl = reclass)
 raster::plot(rast_UNU)
 
-# MODIS data has 500m2 resolution
+# MODIS data has 500m*500m resolution
 # https://stackoverflow.com/questions/37956422/resample-raster
 #
 # making function to supply in raster::aggregate() with 25% threshold for "urban"
@@ -1413,7 +1414,11 @@ rast_agg_fn <- function(x, ...){
   if_else(sum(x) >= length(x)*0.25, 1, 0)
 }
 
-rast_UNU_G1 <- raster::aggregate(rast_UNU, fact = 50, fun = rast_agg_fn)
+# g1 grid is 25km*25km
+rast_UNU_G1 <- rast_UNU %>% 
+  raster::aggregate(fact = 2, fun = rast_agg_fn) %>%
+  raster::aggregate(fact = 5, fun = rast_agg_fn) %>%
+  raster::aggregate(fact = 5, fun = rast_agg_fn)
 raster::plot(rast_UNU_G1)
 
 save(rast_UNU, file = "data/rast_UNU.RData")
@@ -1421,14 +1426,99 @@ save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
 
 
 # extracting land cover values at eBird data points
-latlong <- data0 %>% 
-  dplyr::select(LONGITUDE, LATITUDE)
-
 data_LULC <- data0 %>% 
   mutate(URBAN = raster::extract(rast_UNU_G1, cbind(LONGITUDE, LATITUDE)))
 
+
+# searching for effect of pandemic
+
+temp1 <- data_LULC %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+temp2 <- data_LULC %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% 
+  filter(URBAN == 1) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
+  summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() %>% 
+  complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
+
+
+urban_sw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(NO.ULISTS = ifelse(is.na(NO.ULISTS), 0, NO.ULISTS),
+         PROP.ULISTS = NO.ULISTS/NO.LISTS,
+         PROP.SE = sqrt((PROP.ULISTS)*(1 - PROP.ULISTS)/NO.LISTS),
+         PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
+         PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE) 
+
+rm(list = c("temp1","temp2"))
+
+urban_nw <- urban_sw %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(PROP.ULISTS = mean(PROP.ULISTS),
+            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+            PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
+            PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
+
+
+
+(ggplot(urban_nw, aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Change in proportion of urban lists at national level",
+         x = "Month", y = "Proportion of urban lists")) /
+((ggplot(filter(urban_sw, STATE == "Kerala"), 
+         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Kerala",
+         x = "Month", y = "Proportion of urban lists")) |
+(ggplot(filter(urban_sw, STATE == "Karnataka"), 
+         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Proportion of urban lists"))) /
+((ggplot(filter(urban_sw, STATE == "Gujarat"), 
+         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Proportion of urban lists")) |
+(ggplot(filter(urban_sw, STATE == "Maharashtra"), 
+         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Proportion of urban lists"))) +
+plot_layout(guides= "collect")
+
+rm(list = c("urban_nw","urban_sw"))
+
 ```
 
+* From this, it looks like only the month of April (or Mar-May) was affected by the pandemic in 2020, while 2021 saw some increased urban birding in October and December.
 
 
 ### Temporal spread
