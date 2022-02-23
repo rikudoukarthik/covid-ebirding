@@ -19,6 +19,8 @@ data/boundaries_IN_PA_WII/
 data/boundaries_IN_admin_old/
 data/in_LULC/
 data/in_LULC_USGS/
+# to stop tracking the MODIS TIFs that get downloaded with each full run
+data/in_LULC_MODIS/
 
 # RMD caches
 *_cache/

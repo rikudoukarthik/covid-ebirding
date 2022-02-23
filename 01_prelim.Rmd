@@ -1,11 +1,11 @@
 ---
 title: "COVID eBirding: Preliminary analyses"
-date: "2021/12/17"
+date: "2022/02/23"
 author: "Karthik Thrikkadeeri"
 editor_options: 
   chunk_output_type: console
-bibliography: covid-ebirding.bib
-link-citations: yes
+# bibliography: covid-ebirding.bib
+# link-citations: yes
 output: 
   html_document:
     toc: true
@@ -26,7 +26,7 @@ theme_set(theme_bw())
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
-covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
+# covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
 
@@ -41,7 +41,7 @@ source("scripts/functions.R")
 # filtering the data for current use
 dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
 
-# save(data0, file = "data/data0.RData")
+save(data0, file = "data/data0.RData")
 # load("data/data0.RData")
 
 ```
@@ -1186,7 +1186,7 @@ rm(length_nw, length_sw)
 
 ### Spatial spread  
 
-```{r s_spread_1, cache=TRUE, message=FALSE, eval=FALSE}
+```{r s_spread_cover, cache=TRUE, message=FALSE}
 
 library(sp)
 library(rgdal)
@@ -1223,9 +1223,7 @@ temp <- temp %>% over(g2clip) %>% rownames_to_column("SAMPLING.EVENT.IDENTIFIER"
 data_sp <- left_join(temp, data_sp)
 names(data_sp)[2] <- "G2CLIP"     # 50km2
 
-```
 
-```{r s_spread_cover, cache=TRUE, message=FALSE, eval=FALSE}
 
 data_cov <- data_sp %>% 
   ungroup() %>% 
@@ -1261,7 +1259,7 @@ ggplot(data_cov, aes(as.factor(MONTH), SD.LISTS, colour = COVID)) +
 
 ```
 
-```{r s_spread_map, cache=TRUE, message=FALSE, eval=FALSE}
+```{r s_spread_map, cache=TRUE, message=FALSE}
 
 data_map <- data_sp %>% 
   ungroup() %>% 
@@ -1279,7 +1277,6 @@ ggplot() +
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
   scale_fill_distiller(palette = "Reds", direction = 1)
-
 
 ggplot() +
   geom_polygon(data = fortify(india), 
@@ -1305,9 +1302,9 @@ ggplot() +
 * Proportion of grid cells covered was impacted in both 2020 and 2021 in May, while in 2020 only in April.  
 * SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
 
-```{r s_spread_LULC_MODIS, cache=TRUE, message=FALSE, eval=FALSE}
+```{r s_spread_LULC_MODIS, cache=TRUE, message=FALSE}
 
-# library(raster) # masks dplyr functions, so have used raster::function()
+library(raster) # masks dplyr functions, so have used raster::function()
 require(terra)
 library(gdalUtils)
 library(geodata)
@@ -1316,7 +1313,7 @@ library(luna)
 
 
 ## Obtaining MODIS data from within R for reproducibility, then saving the cropped and masked raster of area of interest as .tif file.
-## Walkthrough at https://rspatial.org/terra/modis/2-download.html 
+## Walkthrough at https://rspatial.org/terra/modis/2-download.html
 
 # The MODIS Land Cover Type Product (MCD12Q1) provides a suite of science data sets (SDSs) that map global land cover at 500 meter spatial resolution at annual time step for six different land cover legends. The maps were created from classifications of spectro-temporal features derived of data from the Moderate Resolution Imaging Spectroradiometer (MODIS).
 
@@ -1346,8 +1343,8 @@ userpass <- readRDS("userpass.rds")
 
 # downloading MODIS tiled data (16 tiles for our defined area of interest, India)
 # resulting object is a list of file names
-modis <- luna::getModis(prod, start, end, 
-                        aoi = aoi, download = T, path = MODISpath, 
+modis <- luna::getModis(prod, start, end,
+                        aoi = aoi, download = T, path = MODISpath,
                         username = userpass$UN, password = userpass$PW)
 
 # choose the band (SDS) that you want using sds[] option and write GTiff files.
@@ -1358,21 +1355,21 @@ for (i in (modis)) {
   }
 
 # listing all the different tiles present as .tif files, to later merge into one
-rast_list <- list.files(path = MODISpath, 
+rast_list <- list.files(path = MODISpath,
                         pattern = "MCD12Q1*.*tif",
                         all.files = TRUE, full.names = TRUE)
 
 # merge into one raster
-rast_full <- rast_list %>% 
-  lapply(raster) %>% # rasterise the different files
-  do.call(what = merge) %>% # merge the files
+rast_full <- rast_list %>%
+  lapply(raster::raster) %>% # rasterise the different files
+  do.call(what = raster::merge) %>% # merge the files
   terra::rast()
 
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
-projto <- raster::crs(aoi) 
+projto <- raster::crs(aoi)
 # takes a few minutes
 # "near" because LC values are categories despite being numerical
-rast_proj <- terra::project(rast_full, projto, method = "near") 
+rast_proj <- terra::project(rast_full, projto, method = "near")
 
 ## cropping and masking the raster to our area of interest
 rast_aoi <- terra::crop(rast_proj, aoi)
@@ -1436,7 +1433,7 @@ temp1 <- data_LULC %>%
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_LULC %>% 
@@ -1444,7 +1441,7 @@ temp2 <- data_LULC %>%
   slice(1) %>% 
   filter(URBAN == 1) %>% 
   group_by(COVID, MONTH, STATE) %>% 
-  summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
   complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
 
@@ -1461,7 +1458,7 @@ rm(list = c("temp1","temp2"))
 
 urban_nw <- urban_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.ULISTS = mean(PROP.ULISTS),
+  dplyr::summarise(PROP.ULISTS = mean(PROP.ULISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
             PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
@@ -1515,6 +1512,13 @@ urban_nw <- urban_sw %>%
 plot_layout(guides= "collect")
 
 rm(list = c("urban_nw","urban_sw"))
+
+
+detach("package:gdalUtils", unload=T)
+detach("package:geodata", unload=T)
+detach("package:raster", unload=T, force = T)
+detach("package:terra", unload=T, force = T)
+detach("package:luna", unload=T)
 
 ```
 
