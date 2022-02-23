@@ -4,8 +4,8 @@ date: "2022/02/23"
 author: "Karthik Thrikkadeeri"
 editor_options: 
   chunk_output_type: console
-# bibliography: covid-ebirding.bib
-# link-citations: yes
+bibliography: covid-ebirding.bib
+link-citations: yes
 output: 
   html_document:
     toc: true
