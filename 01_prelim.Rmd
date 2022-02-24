@@ -1276,7 +1276,8 @@ ggplot() +
   geom_polygon(data = filter(data_map, COVID == "BEF_19"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1)
+  scale_fill_distiller(palette = "Reds", direction = 1) +
+  labs(title = "BEF_19")
 
 ggplot() +
   geom_polygon(data = fortify(india), 
@@ -1285,7 +1286,8 @@ ggplot() +
   geom_polygon(data = filter(data_map, COVID == "DUR_20"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1)
+  scale_fill_distiller(palette = "Reds", direction = 1) +
+  labs(title = "DUR_20")
 
 ggplot() +
   geom_polygon(data = fortify(india), 
@@ -1294,7 +1296,8 @@ ggplot() +
   geom_polygon(data = filter(data_map, COVID == "AFT_21"), 
                aes(long, lat, group = group, fill = log(NO.LISTS)),
                colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1)
+  scale_fill_distiller(palette = "Reds", direction = 1) +
+  labs(title = "AFT_21")
 
 ```
 
@@ -1378,7 +1381,7 @@ rast_aoi <- terra::mask(rast_aoi, aoi)
 
 raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
-rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
+rm(prod, start, end, aoi, modispath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
 
 
 
@@ -1387,7 +1390,7 @@ rm(list = setdiff(ls(), "data0"), pos = .GlobalEnv)
 
 # read in cropped and masked .tif
 rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
-raster::plot(rast)
+# raster::plot(rast)
 
 # reclassifying the raster as urban vs. non-urban (help from:
 # http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html
@@ -1399,7 +1402,7 @@ categs <- unique(values(rast))
 reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
 
 rast_UNU <- raster::reclassify(rast, rcl = reclass)
-raster::plot(rast_UNU)
+raster::plot(rast_UNU, main = "500mx500m")
 
 # MODIS data has 500m*500m resolution
 # https://stackoverflow.com/questions/37956422/resample-raster
@@ -1416,7 +1419,7 @@ rast_UNU_G1 <- rast_UNU %>%
   raster::aggregate(fact = 2, fun = rast_agg_fn) %>%
   raster::aggregate(fact = 5, fun = rast_agg_fn) %>%
   raster::aggregate(fact = 5, fun = rast_agg_fn)
-raster::plot(rast_UNU_G1)
+raster::plot(rast_UNU_G1, main = "25kmx25km")
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
@@ -1849,7 +1852,7 @@ new_obsr_nw <- new_obsr_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Monthly number of new eBirders at national level",
-         x = "Month", y = "Number of new eBirders")) /
+         x = "Month")) /
 ((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -1865,7 +1868,7 @@ new_obsr_nw <- new_obsr_sw %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
-         x = "Month", y = "Number of new eBirders"))) /
+         x = "Month"))) /
 ((ggplot(filter(new_obsr_sw, STATE == "Gujarat"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -1873,7 +1876,7 @@ new_obsr_nw <- new_obsr_sw %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
-         x = "Month", y = "Number of new eBirders")) |
+         x = "Month")) |
 (ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -1881,7 +1884,7 @@ new_obsr_nw <- new_obsr_sw %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
-         x = "Month", y = "Number of new eBirders"))) +
+         x = "Month"))) +
 plot_layout(guides = "collect")
 
 
