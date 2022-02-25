@@ -1469,9 +1469,8 @@ rast_UNU <- raster::reclassify(rast, rcl = reclass)
 # https://stackoverflow.com/questions/23369579/aggregate-raster-in-r-with-na-values
 # x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30))
 rast_agg_fn <- function(x, ...){
-  if_else(sum(x) >= length(x)*0.25, 1, 0)
+  if_else(sum(x %in% 1) >= 0.25*length(x), 1, 0)
 }
-
 
 # 1km*1km
 rast_UNU_a <- rast_UNU %>% 
@@ -1512,6 +1511,70 @@ save(rast_UNU_b, file = "data/rast_UNU_b.RData")
 # save(rast_UNU_c, file = "data/rast_UNU_c.RData")
 # save(rast_UNU_d, file = "data/rast_UNU_d.RData")
 
+
+
+### leaflet overlay to verify urban-non classification
+
+# https://rstudio.github.io/leaflet/raster.html
+# https://rpubs.com/mgei/drivingtimes
+
+library(leaflet)
+
+leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU_a),
+                         na.color = "#ffba00")
+
+# leaflet uses different crs so must be projected; method should be made categorical
+
+leaflet() %>% 
+  addTiles() %>% 
+  addRasterImage(rast_UNU_b, 
+                 method = "ngb", # nearest neighbour
+                 colors = leafcols,
+                 opacity = 0.7,
+                 maxBytes = 150 * 1024 * 1024) %>% 
+  addLegend(pal = leafcols, values = values(rast_UNU_b))
+
+leaflet() %>% 
+  addTiles() %>% 
+  addRasterImage(rast_UNU_a, 
+                 method = "ngb", # nearest neighbour
+                 colors = leafcols,
+                 opacity = 0.7,
+                 maxBytes = 150 * 1024 * 1024) %>% 
+  addLegend(pal = leafcols, values = values(rast_UNU_a))
+
+# 
+# leaflet() %>% 
+#   addTiles() %>% 
+#   addRasterImage(rast_UNU_G1, 
+#                  colors = leafcols,
+#                  opacity = 0.7,
+#                  maxBytes = 10 * 1024 * 1024) %>% 
+#   addLegend(pal = leafcols, values = values(rast_UNU_G1))
+# 
+# leaflet() %>% 
+#   addTiles() %>% 
+#   addRasterImage(rast_UNU_d, 
+#                  colors = leafcols,
+#                  opacity = 0.7,
+#                  maxBytes = 10 * 1024 * 1024) %>% 
+#   addLegend(pal = leafcols, values = values(rast_UNU_d))
+# 
+# leaflet() %>% 
+#   addTiles() %>% 
+#   addRasterImage(rast_UNU_c, 
+#                  colors = leafcols,
+#                  opacity = 0.7,
+#                  maxBytes = 100 * 1024 * 1024) %>% 
+#   addLegend(pal = leafcols, values = values(rast_UNU_c))
+
+
+
+```
+
+* From this, it looks like only the month of April (or Mar-May) was affected by the pandemic in 2020, while 2021 saw some increased urban birding in October and December.
+
+```{r s_spread_UNU, cache=TRUE, message=FALSE}
 
 # extracting land cover values at eBird data points
 data_LULC <- data0 %>% 
@@ -1617,59 +1680,6 @@ detach("package:geodata", unload=T)
 detach("package:raster", unload=T, force = T)
 detach("package:terra", unload=T, force = T)
 detach("package:luna", unload=T)
-
-```
-
-* From this, it looks like only the month of April (or Mar-May) was affected by the pandemic in 2020, while 2021 saw some increased urban birding in October and December.
-
-```{r leaflet_overlay}
-
-library(leaflet)
-
-leafcols <- colorNumeric(c("transparent", "#0C2C84"), values(rast_UNU_d),
-  na.color = "transparent")
-
-leaflet() %>% 
-  addTiles() %>% 
-  addRasterImage(rast_UNU_b, 
-                 colors = leafcols,
-                 opacity = 0.7,
-                 maxBytes = 100 * 1024 * 1024) %>% 
-  addLegend(pal = leafcols, values = values(rast_UNU_b))
-
-leaflet() %>% 
-  addTiles() %>% 
-  addRasterImage(rast_UNU_a, 
-                 colors = leafcols,
-                 opacity = 0.7,
-                 maxBytes = 150 * 1024 * 1024) %>% 
-  addLegend(pal = leafcols, values = values(rast_UNU_a))
-
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_G1, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 10 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_G1))
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_d, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 10 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_d))
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_c, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 100 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_c))
-
 
 ```
 
