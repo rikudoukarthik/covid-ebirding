@@ -1576,7 +1576,8 @@ leaflet() %>%
 
 ```{r s_spread_UNU, cache=TRUE, message=FALSE}
 
-# extracting land cover values at eBird data points
+# adding extracted land cover values at eBird data points
+# Pakistan-administered Kashmir lists produce NA for URBAN
 data_LULC_a <- data0 %>% 
   mutate(URBAN = raster::extract(rast_UNU_a, cbind(LONGITUDE, LATITUDE)))
 
@@ -1601,7 +1602,6 @@ temp2 <- data_LULC_a %>%
   dplyr::summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
   complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
-
 
 urban_sw_a <- temp1 %>% 
   left_join(temp2) %>% 
@@ -1667,8 +1667,6 @@ urban_nw_a <- urban_sw_a %>%
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of urban lists"))) +
 plot_layout(guides= "collect") -> s_spread_LULC_MODIS_a
-
-
 
 
 
@@ -1764,11 +1762,11 @@ ggsave("01_prelim_figs/12_s_spread_LULC_MODIS_b.png",
 
 
 
-s_spread_LULC_MODIS
-
-ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
-       plot = s_spread_LULC_MODIS,
-       width = 9, height = 9, units = "in")
+# s_spread_LULC_MODIS
+# 
+# ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
+#        plot = s_spread_LULC_MODIS,
+#        width = 9, height = 9, units = "in")
 
 rm(data_LULC, rast, rast_UNU, rast_UNU_G1, reclass, categs,
    urban_nw, urban_sw, s_spread_LULC_MODIS)
@@ -1779,6 +1777,61 @@ detach("package:geodata", unload=T)
 detach("package:raster", unload=T, force = T)
 detach("package:terra", unload=T, force = T)
 detach("package:luna", unload=T)
+
+```
+
+```{r s_spread_UNU_cover, cache=TRUE, message=FALSE}
+
+
+
+data_spread_a <- data_LULC_a %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  filter(!is.na(URBAN)) %>% 
+  group_by(COVID, YEAR, MONTH, URBAN) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+data_spread_b <- data_LULC_b %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  filter(!is.na(URBAN)) %>% 
+  group_by(COVID, YEAR, MONTH, URBAN) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  ungroup() 
+
+
+((ggplot(filter(data_spread_a, URBAN == 1),
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Urban birding effort (1kmx1km)",
+         x = "Month", y = "No. of lists")) /
+  (ggplot(filter(data_spread_a, URBAN == 0),
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Non-urban birding effort (1kmx1km)",
+         x = "Month", y = "No. of lists")) |
+  (ggplot(filter(data_spread_b, URBAN == 1),
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Urban birding effort (2kmx2km)",
+         x = "Month", y = "No. of lists")) /
+  (ggplot(filter(data_spread_b, URBAN == 0),
+        aes(MONTH, NO.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Non-urban birding effort (2kmx2km)",
+         x = "Month", y = "No. of lists"))) +
+  plot_layout(guides = "collect")
 
 ```
 
