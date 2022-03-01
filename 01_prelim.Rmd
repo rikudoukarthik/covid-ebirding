@@ -1579,10 +1579,13 @@ leaflet() %>%
 # adding extracted land cover values at eBird data points
 # Pakistan-administered Kashmir lists produce NA for URBAN
 data_LULC_a <- data0 %>% 
-  mutate(URBAN = raster::extract(rast_UNU_a, cbind(LONGITUDE, LATITUDE)))
+  mutate(URBAN = raster::extract(rast_UNU_a, cbind(LONGITUDE, LATITUDE)),
+         NONURBAN = if_else(URBAN == 1, 0, 1)) 
+
 
 data_LULC_b <- data0 %>% 
-  mutate(URBAN = raster::extract(rast_UNU_b, cbind(LONGITUDE, LATITUDE)))
+  mutate(URBAN = raster::extract(rast_UNU_b, cbind(LONGITUDE, LATITUDE)),
+         NONURBAN = if_else(URBAN == 1, 0, 1)) 
 
 
 # searching for effect of pandemic
@@ -1789,8 +1792,16 @@ data_spread_a <- data_LULC_a %>%
   slice(1) %>% 
   ungroup() %>% 
   filter(!is.na(URBAN)) %>% 
-  group_by(COVID, YEAR, MONTH, URBAN) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(NO.U.SE = boot_se(URBAN, fn = sum),
+                   NO.NU.SE = boot_se(NONURBAN, fn = sum),
+                   NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   NO.ULISTS = sum(URBAN),
+                   NO.NULISTS = sum(NONURBAN),
+                   NO.U.CI.L = NO.ULISTS - 1.96*NO.U.SE,
+                   NO.U.CI.U = NO.ULISTS + 1.96*NO.U.SE,
+                   NO.NU.CI.L = NO.NULISTS - 1.96*NO.NU.SE,
+                   NO.NU.CI.U = NO.NULISTS + 1.96*NO.NU.SE) %>%
   ungroup() 
 
 data_spread_b <- data_LULC_b %>% 
@@ -1798,36 +1809,59 @@ data_spread_b <- data_LULC_b %>%
   slice(1) %>% 
   ungroup() %>% 
   filter(!is.na(URBAN)) %>% 
-  group_by(COVID, YEAR, MONTH, URBAN) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(NO.U.SE = boot_se(URBAN, fn = sum),
+                   NO.NU.SE = boot_se(NONURBAN, fn = sum),
+                   NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   NO.ULISTS = sum(URBAN),
+                   NO.NULISTS = sum(NONURBAN),
+                   NO.U.CI.L = NO.ULISTS - 1.96*NO.U.SE,
+                   NO.U.CI.U = NO.ULISTS + 1.96*NO.U.SE,
+                   NO.NU.CI.L = NO.NULISTS - 1.96*NO.NU.SE,
+                   NO.NU.CI.U = NO.NULISTS + 1.96*NO.NU.SE) %>%
   ungroup() 
 
 
-((ggplot(filter(data_spread_a, URBAN == 1),
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
+(ggplot(length_nw, aes(MONTH, LENGTH, colour = COVID)) + 
+    scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Average checklist length at national level",
+         x = "Month", y = "List length (no. of species)"))
+
+
+((ggplot(data_spread_a, aes(MONTH, NO.ULISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NO.U.CI.L, ymax = NO.U.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Urban birding effort (1kmx1km)",
          x = "Month", y = "No. of lists")) /
-  (ggplot(filter(data_spread_a, URBAN == 0),
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
+  (ggplot(data_spread_a, aes(MONTH, NO.NULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NO.NU.CI.L, ymax = NO.NU.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Non-urban birding effort (1kmx1km)",
          x = "Month", y = "No. of lists")) |
-  (ggplot(filter(data_spread_b, URBAN == 1),
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
+  (ggplot(data_spread_b, aes(MONTH, NO.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NO.U.CI.L, ymax = NO.U.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Urban birding effort (2kmx2km)",
          x = "Month", y = "No. of lists")) /
-  (ggplot(filter(data_spread_b, URBAN == 0),
-        aes(MONTH, NO.LISTS, colour = COVID)) + 
+  (ggplot(data_spread_b, aes(MONTH, NO.NULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NO.NU.CI.L, ymax = NO.NU.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Non-urban birding effort (2kmx2km)",
          x = "Month", y = "No. of lists"))) +
