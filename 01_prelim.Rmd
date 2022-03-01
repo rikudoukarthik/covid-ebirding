@@ -1576,28 +1576,42 @@ leaflet() %>%
 
 ```{r s_spread_UNU, cache=TRUE, message=FALSE}
 
+require(raster) # masks dplyr functions, so have used raster::function()
+require(terra)
+require(gdalUtils)
+require(geodata)
+# install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
+require(luna)
+
+# load("data/rast_UNU_a.RData")
+# load("data/rast_UNU_b.RData")
+
+
+
 # adding extracted land cover values at eBird data points
 # Pakistan-administered Kashmir lists produce NA for URBAN
-data_LULC_a <- data0 %>% 
+dataUNU_a <- data0 %>% 
   mutate(URBAN = raster::extract(rast_UNU_a, cbind(LONGITUDE, LATITUDE)),
-         NONURBAN = if_else(URBAN == 1, 0, 1)) 
+         NONURBAN = if_else(URBAN == 1, 0, 1),
+         CELL.ID = cellFromXY(rast_UNU_a, cbind(LONGITUDE, LATITUDE))) 
 
 
-data_LULC_b <- data0 %>% 
+dataUNU_b <- data0 %>% 
   mutate(URBAN = raster::extract(rast_UNU_b, cbind(LONGITUDE, LATITUDE)),
-         NONURBAN = if_else(URBAN == 1, 0, 1)) 
+         NONURBAN = if_else(URBAN == 1, 0, 1),
+         CELL.ID = cellFromXY(rast_UNU_b, cbind(LONGITUDE, LATITUDE)))  
 
 
 # searching for effect of pandemic
 
-temp1 <- data_LULC_a %>% 
+temp1 <- dataUNU_a %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_LULC_a %>% 
+temp2 <- dataUNU_a %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   filter(URBAN == 1) %>% 
@@ -1674,14 +1688,14 @@ plot_layout(guides= "collect") -> s_spread_LULC_MODIS_a
 
 
 
-temp1 <- data_LULC_b %>% 
+temp1 <- dataUNU_b %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data_LULC_b %>% 
+temp2 <- dataUNU_b %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   filter(URBAN == 1) %>% 
@@ -1785,87 +1799,155 @@ detach("package:luna", unload=T)
 
 ```{r s_spread_UNU_cover, cache=TRUE, message=FALSE}
 
-
-
-data_spread_a <- data_LULC_a %>% 
+data_spread_a <- dataUNU_a %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   ungroup() %>% 
   filter(!is.na(URBAN)) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(NO.U.SE = boot_se(URBAN, fn = sum),
-                   NO.NU.SE = boot_se(NONURBAN, fn = sum),
-                   NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
-                   NO.ULISTS = sum(URBAN),
-                   NO.NULISTS = sum(NONURBAN),
-                   NO.U.CI.L = NO.ULISTS - 1.96*NO.U.SE,
-                   NO.U.CI.U = NO.ULISTS + 1.96*NO.U.SE,
-                   NO.NU.CI.L = NO.NULISTS - 1.96*NO.NU.SE,
-                   NO.NU.CI.U = NO.NULISTS + 1.96*NO.NU.SE) %>%
+  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
+                   NU.SE = boot_se(NONURBAN, fn = sum),
+                   LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   U.LISTS = sum(URBAN),
+                   NU.LISTS = sum(NONURBAN),
+                   U.CI.L = U.LISTS - 1.96*U.SE,
+                   U.CI.U = U.LISTS + 1.96*U.SE,
+                   NU.CI.L = NU.LISTS - 1.96*NU.SE,
+                   NU.CI.U = NU.LISTS + 1.96*NU.SE) %>%
   ungroup() 
 
-data_spread_b <- data_LULC_b %>% 
+data_spread_b <- dataUNU_b %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   ungroup() %>% 
   filter(!is.na(URBAN)) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(NO.U.SE = boot_se(URBAN, fn = sum),
-                   NO.NU.SE = boot_se(NONURBAN, fn = sum),
-                   NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
-                   NO.ULISTS = sum(URBAN),
-                   NO.NULISTS = sum(NONURBAN),
-                   NO.U.CI.L = NO.ULISTS - 1.96*NO.U.SE,
-                   NO.U.CI.U = NO.ULISTS + 1.96*NO.U.SE,
-                   NO.NU.CI.L = NO.NULISTS - 1.96*NO.NU.SE,
-                   NO.NU.CI.U = NO.NULISTS + 1.96*NO.NU.SE) %>%
+  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
+                   NU.SE = boot_se(NONURBAN, fn = sum),
+                   LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   U.LISTS = sum(URBAN),
+                   NU.LISTS = sum(NONURBAN),
+                   U.CI.L = U.LISTS - 1.96*U.SE,
+                   U.CI.U = U.LISTS + 1.96*U.SE,
+                   NU.CI.L = NU.LISTS - 1.96*NU.SE,
+                   NU.CI.U = NU.LISTS + 1.96*NU.SE) %>%
   ungroup() 
 
 
-(ggplot(length_nw, aes(MONTH, LENGTH, colour = COVID)) + 
-    scale_y_log10() + 
+
+((ggplot(data_spread_a, aes(MONTH, U.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Average checklist length at national level",
-         x = "Month", y = "List length (no. of species)"))
+    labs(title = "1kmx1km (urban)",
+         x = "Month", y = " of lists")) /
+  (ggplot(data_spread_a, aes(MONTH, NU.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "1kmx1km (non-urban)",
+         x = "Month", y = " of lists")) |
+  (ggplot(data_spread_b, aes(MONTH, U.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "2kmx2km (urban)",
+         x = "Month", y = " of lists")) /
+  (ggplot(data_spread_b, aes(MONTH, NU.LISTS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "2kmx2km (non-urban)",
+         x = "Month", y = " of lists"))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Birding effort in lists at two resolutions")
 
 
-((ggplot(data_spread_a, aes(MONTH, NO.ULISTS, colour = COVID)) + 
+
+
+### checking no. of cells with at least 1 complete list
+
+
+cells_UNU_a <- dataUNU_a %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1) %>% ungroup() %>% 
+  # below removes any cell with <1 complete list
+  filter(ALL.SPECIES.REPORTED == 1) %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% slice(1) %>% ungroup() %>% 
+  filter(!is.na(URBAN)) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
+                   NU.SE = boot_se(NONURBAN, fn = sum),
+                   U.CELLS = sum(URBAN),
+                   NU.CELLS = sum(NONURBAN),
+                   U.CI.L = U.CELLS - 1.96*U.SE,
+                   U.CI.U = U.CELLS + 1.96*U.SE,
+                   NU.CI.L = NU.CELLS - 1.96*NU.SE,
+                   NU.CI.U = NU.CELLS + 1.96*NU.SE) %>%
+  ungroup() 
+
+cells_UNU_b <- dataUNU_b %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1) %>% ungroup() %>% 
+  # below removes any cell with <1 complete list
+  filter(ALL.SPECIES.REPORTED == 1) %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% slice(1) %>% ungroup() %>% 
+  filter(!is.na(URBAN)) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
+                   NU.SE = boot_se(NONURBAN, fn = sum),
+                   U.CELLS = sum(URBAN),
+                   NU.CELLS = sum(NONURBAN),
+                   U.CI.L = U.CELLS - 1.96*U.SE,
+                   U.CI.U = U.CELLS + 1.96*U.SE,
+                   NU.CI.L = NU.CELLS - 1.96*NU.SE,
+                   NU.CI.U = NU.CELLS + 1.96*NU.SE) %>%
+  ungroup() 
+  
+  
+
+((ggplot(cells_UNU_a, aes(MONTH, U.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.U.CI.L, ymax = NO.U.CI.U), 
+    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Urban birding effort (1kmx1km)",
-         x = "Month", y = "No. of lists")) /
-  (ggplot(data_spread_a, aes(MONTH, NO.NULISTS, colour = COVID)) + 
+    labs(title = "1kmx1km (urban)",
+         x = "Month", y = "No. of cells")) /
+  (ggplot(cells_UNU_a, aes(MONTH, NU.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.NU.CI.L, ymax = NO.NU.CI.U), 
+    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Non-urban birding effort (1kmx1km)",
-         x = "Month", y = "No. of lists")) |
-  (ggplot(data_spread_b, aes(MONTH, NO.ULISTS, colour = COVID)) + 
+    labs(title = "1kmx1km (non-urban)",
+         x = "Month", y = "No. of cells")) |
+  (ggplot(cells_UNU_b, aes(MONTH, U.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.U.CI.L, ymax = NO.U.CI.U), 
+    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Urban birding effort (2kmx2km)",
-         x = "Month", y = "No. of lists")) /
-  (ggplot(data_spread_b, aes(MONTH, NO.NULISTS, colour = COVID)) + 
+    labs(title = "2kmx2km (urban)",
+         x = "Month", y = "No. of cells")) /
+  (ggplot(cells_UNU_b, aes(MONTH, NU.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.NU.CI.L, ymax = NO.NU.CI.U), 
+    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Non-urban birding effort (2kmx2km)",
-         x = "Month", y = "No. of lists"))) +
-  plot_layout(guides = "collect")
+    labs(title = "2kmx2km (non-urban)",
+         x = "Month", y = "No. of cells"))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Birding effort in grid cells at two resolutions",
+                  subtitle = "Y axis show number of cells with at least one complete list")
+
 
 ```
 
