@@ -1842,7 +1842,7 @@ data_spread_b <- dataUNU_b %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "1kmx1km (urban)",
-         x = "Month", y = " of lists")) /
+         x = "Month", y = "No. of lists")) /
   (ggplot(data_spread_a, aes(MONTH, NU.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1850,7 +1850,7 @@ data_spread_b <- dataUNU_b %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "1kmx1km (non-urban)",
-         x = "Month", y = " of lists")) |
+         x = "Month", y = "No. of lists")) |
   (ggplot(data_spread_b, aes(MONTH, U.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1858,7 +1858,7 @@ data_spread_b <- dataUNU_b %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "2kmx2km (urban)",
-         x = "Month", y = " of lists")) /
+         x = "Month", y = "No. of lists")) /
   (ggplot(data_spread_b, aes(MONTH, NU.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1866,11 +1866,15 @@ data_spread_b <- dataUNU_b %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "2kmx2km (non-urban)",
-         x = "Month", y = " of lists"))) +
+         x = "Month", y = "No. of lists"))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Birding effort in lists at two resolutions")
+  plot_annotation(
+    title = "Birding effort in lists at two resolutions"
+    ) -> s_spread_UNU_cover_lists
 
-
+ggsave("01_prelim_figs/12_s_spread_UNU_cover_lists.png",
+       plot = s_spread_UNU_cover_lists,
+       width = 11, height = 7, units = "in")
 
 
 ### checking no. of cells with at least 1 complete list
@@ -1946,7 +1950,12 @@ cells_UNU_b <- dataUNU_b %>%
          x = "Month", y = "No. of cells"))) +
   plot_layout(guides = "collect") +
   plot_annotation(title = "Birding effort in grid cells at two resolutions",
-                  subtitle = "Y axis show number of cells with at least one complete list")
+                  subtitle = "Y axis show number of cells with at least one complete list") -> s_spread_UNU_cover_cells
+
+
+ggsave("01_prelim_figs/12_s_spread_UNU_cover_cells.png",
+       plot = s_spread_UNU_cover_cells,
+       width = 11, height = 7, units = "in")
 
 
 ```
