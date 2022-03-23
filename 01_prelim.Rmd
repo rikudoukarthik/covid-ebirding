@@ -34,14 +34,15 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 ```{r data_filt, cache=TRUE}
 
-datapath <- "data/ebd_IN_relDec-2021.RData"
+datapath <- "data/ebd_IN_relFeb-2022.RData"
 groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
+covidclasspath <- "data/covid_classification.csv"
 
 source("scripts/functions.R")
 # filtering the data for current use
-dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
+dataqual_filt(datapath, groupaccspath, covidclasspath, 
+              maxvel = 20, minsut = 2)
 
-save(data0, file = "data/data0.RData")
 # load("data/data0.RData")
 
 ```
@@ -54,7 +55,7 @@ data_sub <- data0 %>%
   filter(GROUP.ID %in% sample(unique(data0$GROUP.ID), 100000))
 save(data_sub, file = "data/data_sub.RData")
 
-load("data/data_sub.RData")
+# load("data/data_sub.RData")
 
 ```
 
