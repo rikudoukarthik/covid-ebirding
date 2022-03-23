@@ -1472,44 +1472,14 @@ rast_agg_fn <- function(x, ...){
   if_else(sum(x %in% 1) >= 0.25*length(x), 1, 0)
 }
 
-# 1km*1km
-rast_UNU_a <- rast_UNU %>% 
+# aggregating to 2km*2km
+rast_UNU <- rast_UNU %>% 
+  raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
   raster::aggregate(fact = 2, fun = rast_agg_fn)
 
-# 2km*2km
-rast_UNU_b <- rast_UNU_a %>% 
-  raster::aggregate(fact = 2, fun = rast_agg_fn)
-
-
-# # g1 grid is 25km*25km
-# rast_UNU_G1 <- rast_UNU %>% 
-#   raster::aggregate(fact = 2, fun = rast_agg_fn) %>%
-#   raster::aggregate(fact = 5, fun = rast_agg_fn) %>%
-#   raster::aggregate(fact = 5, fun = rast_agg_fn)
-
-# # 4km*4km
-# rast_UNU_c <- rast_UNU %>% 
-#   raster::aggregate(fact = 2, fun = rast_agg_fn) %>%
-#   raster::aggregate(fact = 4, fun = rast_agg_fn)
-# 
-# # 5km*5km
-# rast_UNU_d <- rast_UNU %>% 
-#   raster::aggregate(fact = 2, fun = rast_agg_fn) %>%
-#   raster::aggregate(fact = 5, fun = rast_agg_fn)
-
-raster::plot(rast_UNU, main = "500mx500m") 
-raster::plot(rast_UNU_a, main = "1kmx1km")
-raster::plot(rast_UNU_b, main = "2kmx2km")
-# raster::plot(rast_UNU_G1, main = "25kmx25km")
-# raster::plot(rast_UNU_c, main = "4kmx4km")
-# raster::plot(rast_UNU_d, main = "5kmx5km")
+raster::plot(rast_UNU, main = "2kmx2km") 
 
 save(rast_UNU, file = "data/rast_UNU.RData")
-save(rast_UNU_a, file = "data/rast_UNU_a.RData")
-save(rast_UNU_b, file = "data/rast_UNU_b.RData")
-# save(rast_UNU_G1, file = "data/rast_UNU_G1.RData")
-# save(rast_UNU_c, file = "data/rast_UNU_c.RData")
-# save(rast_UNU_d, file = "data/rast_UNU_d.RData")
 
 
 
@@ -1520,59 +1490,23 @@ save(rast_UNU_b, file = "data/rast_UNU_b.RData")
 
 library(leaflet)
 
-leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU_a),
+leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU),
                          na.color = "#ffba00")
 
 # leaflet uses different crs so must be projected; method should be made categorical
 
 leaflet() %>% 
   addTiles() %>% 
-  addRasterImage(rast_UNU_b, 
+  addRasterImage(rast_UNU, 
                  method = "ngb", # nearest neighbour
                  colors = leafcols,
                  opacity = 0.7,
                  maxBytes = 150 * 1024 * 1024) %>% 
-  addLegend(pal = leafcols, values = values(rast_UNU_b))
-
-leaflet() %>% 
-  addTiles() %>% 
-  addRasterImage(rast_UNU_a, 
-                 method = "ngb", # nearest neighbour
-                 colors = leafcols,
-                 opacity = 0.7,
-                 maxBytes = 150 * 1024 * 1024) %>% 
-  addLegend(pal = leafcols, values = values(rast_UNU_a))
-
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_G1, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 10 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_G1))
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_d, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 10 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_d))
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU_c, 
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 100 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU_c))
+  addLegend(pal = leafcols, values = values(rast_UNU))
 
 
 
 ```
-
-* From this, it looks like only the month of April (or Mar-May) was affected by the pandemic in 2020, while 2021 saw some increased urban birding in October and December.
 
 ```{r s_spread_UNU, cache=TRUE, message=FALSE}
 
@@ -1583,35 +1517,28 @@ require(geodata)
 # install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 require(luna)
 
-# load("data/rast_UNU_a.RData")
-# load("data/rast_UNU_b.RData")
+# load("data/rast_UNU.RData")
 
 
 
 # adding extracted land cover values at eBird data points
 # Pakistan-administered Kashmir lists produce NA for URBAN
-dataUNU_a <- data0 %>% 
-  mutate(URBAN = raster::extract(rast_UNU_a, cbind(LONGITUDE, LATITUDE)),
+data_UNU <- data0 %>% 
+  mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
          NONURBAN = if_else(URBAN == 1, 0, 1),
-         CELL.ID = cellFromXY(rast_UNU_a, cbind(LONGITUDE, LATITUDE))) 
-
-
-dataUNU_b <- data0 %>% 
-  mutate(URBAN = raster::extract(rast_UNU_b, cbind(LONGITUDE, LATITUDE)),
-         NONURBAN = if_else(URBAN == 1, 0, 1),
-         CELL.ID = cellFromXY(rast_UNU_b, cbind(LONGITUDE, LATITUDE)))  
+         CELL.ID = cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)))  
 
 
 # searching for effect of pandemic
 
-temp1 <- dataUNU_a %>% 
+temp1 <- data_UNU %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- dataUNU_a %>% 
+temp2 <- data_UNU %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   filter(URBAN == 1) %>% 
@@ -1620,7 +1547,7 @@ temp2 <- dataUNU_a %>%
   ungroup() %>% 
   complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
 
-urban_sw_a <- temp1 %>% 
+urban_sw <- temp1 %>% 
   left_join(temp2) %>% 
   mutate(NO.ULISTS = ifelse(is.na(NO.ULISTS), 0, NO.ULISTS),
          PROP.ULISTS = NO.ULISTS/NO.LISTS,
@@ -1630,7 +1557,7 @@ urban_sw_a <- temp1 %>%
 
 rm(list = c("temp1","temp2"))
 
-urban_nw_a <- urban_sw_a %>% 
+urban_nw <- urban_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   dplyr::summarise(PROP.ULISTS = mean(PROP.ULISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
@@ -1638,8 +1565,7 @@ urban_nw_a <- urban_sw_a %>%
             PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
 
 
-
-(ggplot(urban_nw_a, aes(MONTH, PROP.ULISTS, colour = COVID)) + 
+(ggplot(urban_nw, aes(MONTH, PROP.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
@@ -1647,7 +1573,7 @@ urban_nw_a <- urban_sw_a %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Change in proportion of urban lists at national level",
          x = "Month", y = "Proportion of urban lists")) /
-((ggplot(filter(urban_sw_a, STATE == "Kerala"), 
+((ggplot(filter(urban_sw, STATE == "Kerala"), 
          aes(MONTH, PROP.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1656,7 +1582,7 @@ urban_nw_a <- urban_sw_a %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
          x = "Month", y = "Proportion of urban lists")) |
-(ggplot(filter(urban_sw_a, STATE == "Karnataka"), 
+(ggplot(filter(urban_sw, STATE == "Karnataka"), 
          aes(MONTH, PROP.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1665,7 +1591,7 @@ urban_nw_a <- urban_sw_a %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
          x = "Month", y = "Proportion of urban lists"))) /
-((ggplot(filter(urban_sw_a, STATE == "Gujarat"), 
+((ggplot(filter(urban_sw, STATE == "Gujarat"), 
          aes(MONTH, PROP.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1674,7 +1600,7 @@ urban_nw_a <- urban_sw_a %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
          x = "Month", y = "Proportion of urban lists")) |
-(ggplot(filter(urban_sw_a, STATE == "Maharashtra"), 
+(ggplot(filter(urban_sw, STATE == "Maharashtra"), 
          aes(MONTH, PROP.ULISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -1683,109 +1609,15 @@ urban_nw_a <- urban_sw_a %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of urban lists"))) +
-plot_layout(guides= "collect") -> s_spread_LULC_MODIS_a
+plot_layout(guides= "collect") -> s_spread_LULC_MODIS
 
 
-
-
-temp1 <- dataUNU_b %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-temp2 <- dataUNU_b %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
-  filter(URBAN == 1) %>% 
-  group_by(COVID, MONTH, STATE) %>% 
-  dplyr::summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
-
-
-urban_sw_b <- temp1 %>% 
-  left_join(temp2) %>% 
-  mutate(NO.ULISTS = ifelse(is.na(NO.ULISTS), 0, NO.ULISTS),
-         PROP.ULISTS = NO.ULISTS/NO.LISTS,
-         PROP.SE = sqrt((PROP.ULISTS)*(1 - PROP.ULISTS)/NO.LISTS),
-         PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
-         PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE) 
-
-rm(list = c("temp1","temp2"))
-
-urban_nw_b <- urban_sw_b %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.ULISTS = mean(PROP.ULISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
-
-
-
-(ggplot(urban_nw_b, aes(MONTH, PROP.ULISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Change in proportion of urban lists at national level",
-         x = "Month", y = "Proportion of urban lists")) /
-((ggplot(filter(urban_sw_b, STATE == "Kerala"), 
-         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "Proportion of urban lists")) |
-(ggplot(filter(urban_sw_b, STATE == "Karnataka"), 
-         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "Proportion of urban lists"))) /
-((ggplot(filter(urban_sw_b, STATE == "Gujarat"), 
-         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Gujarat",
-         x = "Month", y = "Proportion of urban lists")) |
-(ggplot(filter(urban_sw_b, STATE == "Maharashtra"), 
-         aes(MONTH, PROP.ULISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "Proportion of urban lists"))) +
-plot_layout(guides= "collect") -> s_spread_LULC_MODIS_b
-
-ggsave("01_prelim_figs/12_s_spread_LULC_MODIS_a.png", 
-       plot = s_spread_LULC_MODIS_a,
-       width = 9, height = 9, units = "in")
-ggsave("01_prelim_figs/12_s_spread_LULC_MODIS_b.png", 
-       plot = s_spread_LULC_MODIS_b,
+ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
+       plot = s_spread_LULC_MODIS,
        width = 9, height = 9, units = "in")
 
 
-
-# s_spread_LULC_MODIS
-# 
-# ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
-#        plot = s_spread_LULC_MODIS,
-#        width = 9, height = 9, units = "in")
-
-rm(data_LULC, rast, rast_UNU, rast_UNU_G1, reclass, categs,
+rm(data_LULC, rast, rast_UNU, reclass, categs,
    urban_nw, urban_sw, s_spread_LULC_MODIS)
 
 
@@ -1799,24 +1631,7 @@ detach("package:luna", unload=T)
 
 ```{r s_spread_UNU_cover, cache=TRUE, message=FALSE}
 
-data_spread_a <- dataUNU_a %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  filter(!is.na(URBAN)) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
-                   NU.SE = boot_se(NONURBAN, fn = sum),
-                   LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
-                   U.LISTS = sum(URBAN),
-                   NU.LISTS = sum(NONURBAN),
-                   U.CI.L = U.LISTS - 1.96*U.SE,
-                   U.CI.U = U.LISTS + 1.96*U.SE,
-                   NU.CI.L = NU.LISTS - 1.96*NU.SE,
-                   NU.CI.U = NU.LISTS + 1.96*NU.SE) %>%
-  ungroup() 
-
-data_spread_b <- dataUNU_b %>% 
+data_spread <- data_UNU %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   ungroup() %>% 
@@ -1834,53 +1649,36 @@ data_spread_b <- dataUNU_b %>%
   ungroup() 
 
 
-
-((ggplot(data_spread_a, aes(MONTH, U.LISTS, colour = COVID)) + 
+(ggplot(data_spread, aes(MONTH, U.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "1kmx1km (urban)",
+    labs(title = "Urban",
          x = "Month", y = "No. of lists")) /
-  (ggplot(data_spread_a, aes(MONTH, NU.LISTS, colour = COVID)) + 
+  (ggplot(data_spread, aes(MONTH, NU.LISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "1kmx1km (non-urban)",
-         x = "Month", y = "No. of lists")) |
-  (ggplot(data_spread_b, aes(MONTH, U.LISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "2kmx2km (urban)",
-         x = "Month", y = "No. of lists")) /
-  (ggplot(data_spread_b, aes(MONTH, NU.LISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "2kmx2km (non-urban)",
-         x = "Month", y = "No. of lists"))) +
+    labs(title = "Non-urban",
+         x = "Month", y = "No. of lists")) +
   plot_layout(guides = "collect") +
   plot_annotation(
-    title = "Birding effort in lists at two resolutions"
+    title = "Birding effort in lists at 2kmx2km resolution"
     ) -> s_spread_UNU_cover_lists
 
 ggsave("01_prelim_figs/12_s_spread_UNU_cover_lists.png",
        plot = s_spread_UNU_cover_lists,
-       width = 11, height = 7, units = "in")
+       width = 7, height = 9, units = "in")
 
 
 ### checking no. of cells with at least 1 complete list
 
 
-cells_UNU_a <- dataUNU_a %>% 
+cells_UNU <- data_UNU %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1) %>% ungroup() %>% 
   # below removes any cell with <1 complete list
   filter(ALL.SPECIES.REPORTED == 1) %>% 
@@ -1897,65 +1695,31 @@ cells_UNU_a <- dataUNU_a %>%
                    NU.CI.U = NU.CELLS + 1.96*NU.SE) %>%
   ungroup() 
 
-cells_UNU_b <- dataUNU_b %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1) %>% ungroup() %>% 
-  # below removes any cell with <1 complete list
-  filter(ALL.SPECIES.REPORTED == 1) %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% slice(1) %>% ungroup() %>% 
-  filter(!is.na(URBAN)) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
-                   NU.SE = boot_se(NONURBAN, fn = sum),
-                   U.CELLS = sum(URBAN),
-                   NU.CELLS = sum(NONURBAN),
-                   U.CI.L = U.CELLS - 1.96*U.SE,
-                   U.CI.U = U.CELLS + 1.96*U.SE,
-                   NU.CI.L = NU.CELLS - 1.96*NU.SE,
-                   NU.CI.U = NU.CELLS + 1.96*NU.SE) %>%
-  ungroup() 
-  
-  
 
-((ggplot(cells_UNU_a, aes(MONTH, U.CELLS, colour = COVID)) + 
+(ggplot(cells_UNU, aes(MONTH, U.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "1kmx1km (urban)",
+    labs(title = "Urban",
          x = "Month", y = "No. of cells")) /
-  (ggplot(cells_UNU_a, aes(MONTH, NU.CELLS, colour = COVID)) + 
+  (ggplot(cells_UNU, aes(MONTH, NU.CELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "1kmx1km (non-urban)",
-         x = "Month", y = "No. of cells")) |
-  (ggplot(cells_UNU_b, aes(MONTH, U.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "2kmx2km (urban)",
-         x = "Month", y = "No. of cells")) /
-  (ggplot(cells_UNU_b, aes(MONTH, NU.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "2kmx2km (non-urban)",
-         x = "Month", y = "No. of cells"))) +
+    labs(title = "Non-urban",
+         x = "Month", y = "No. of cells")) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Birding effort in grid cells at two resolutions",
+  plot_annotation(title = "Birding effort in grid cells at 2kmx2km resolution",
                   subtitle = "Y axis show number of cells with at least one complete list") -> s_spread_UNU_cover_cells
 
 
 ggsave("01_prelim_figs/12_s_spread_UNU_cover_cells.png",
        plot = s_spread_UNU_cover_cells,
-       width = 11, height = 7, units = "in")
+       width = 7, height = 9, units = "in")
 
 
 ```
