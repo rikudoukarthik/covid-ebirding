@@ -1028,11 +1028,10 @@ rm(length_nw, length_sw, length)
 
 ```{r MODIS, cache=TRUE, message=FALSE}
 
-###### obtaining MODIS LULC maps for urban/non-urban classification
+###### Obtaining MODIS LULC maps for urban/non-urban classification ####
 
 
-
-library(raster) # masks dplyr functions, so have used raster::function()
+library(raster) # masks dplyr functions, so have used package::function()
 require(terra)
 library(gdalUtils)
 library(geodata)
@@ -1045,9 +1044,11 @@ library(luna)
 
 # The MODIS Land Cover Type Product (MCD12Q1) provides a suite of science data sets (SDSs) that map global land cover at 500 meter spatial resolution at annual time step for six different land cover legends. The maps were created from classifications of spectro-temporal features derived of data from the Moderate Resolution Imaging Spectroradiometer (MODIS).
 
+
 # ## To see list of MODIS products. We already know which one we want, so ignore.
 # MODISprod <- getProducts("^MOD|^MYD|^MCD")
 # MODISprod
+
 
 prod <- "MCD12Q1" # short name of product of interest
 start <- "2019-12-31" # time period of mapping
@@ -1069,7 +1070,7 @@ dir.create(MODISpath, showWarnings=FALSE)
 userpass <- readRDS("userpass.rds")
 
 
-# downloading MODIS tiled data (16 tiles for our defined area of interest, India)
+## downloading MODIS tiled data (16 tiles for our defined area of interest, India)
 # resulting object is a list of file names
 modis <- luna::getModis(prod, start, end,
                         aoi = aoi, download = T, path = MODISpath,
@@ -1082,7 +1083,8 @@ for (i in (modis)) {
   modis2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))
   }
 
-# listing all the different tiles present as .tif files, to later merge into one
+
+## listing all the different tiles present as .tif files, to later merge into one
 rast_list <- list.files(path = MODISpath,
                         pattern = "MCD12Q1*.*tif",
                         all.files = TRUE, full.names = TRUE)
@@ -1093,11 +1095,13 @@ rast_full <- rast_list %>%
   do.call(what = raster::merge) %>% # merge the files
   terra::rast()
 
+
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
 projto <- raster::crs(aoi)
-# takes a few minutes
+# next step takes a few minutes
 # "near" because LC values are categories despite being numerical
 rast_proj <- terra::project(rast_full, projto, method = "near")
+
 
 ## cropping and masking the raster to our area of interest
 rast_aoi <- terra::crop(rast_proj, aoi)
@@ -1110,30 +1114,30 @@ rm(prod, start, end, aoi, modispath, userpass, modis, sds, modis2, rast_list, ra
 
 
 
-###### analysing the MODIS data
+##### Modifying the MODIS data ####
 
 
-# read in cropped and masked .tif
+## read in cropped and masked .tif
 rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
 # raster::plot(rast)
 
-# reclassifying the raster as urban vs. non-urban (help from:
-# http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html
-# http://zevross.com/blog/2015/03/30/map-and-analyze-raster-data-in-r/)
+
+## reclassifying the raster as urban vs. non-urban 
+
+# (help from: http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html ; http://zevross.com/blog/2015/03/30/map-and-analyze-raster-data-in-r/ )
 # category 13 corresponds to "urban and built-up lands"
 categs <- unique(values(rast))
-# ocean also becomes "non-urban" but that's fine since we won't be looking at 
-# those locations
+# ocean also becomes "non-urban" but that's fine since we won't be looking at those locations
 reclass <- matrix(c(categs, rep(0, 13), 1, rep(0, 4)), ncol = 2)
 
 rast_UNU <- raster::reclassify(rast, rcl = reclass)
 
-# MODIS data has 500m*500m resolution
+
+## changing resolution of data (MODIS data has 500m*500m resolution)
 # https://stackoverflow.com/questions/37956422/resample-raster
-#
-# making function to supply in raster::aggregate() with 25% threshold for "urban"
-# https://stackoverflow.com/questions/23369579/aggregate-raster-in-r-with-na-values
-# x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30))
+
+# making function to supply in raster::aggregate() with 25% threshold for "urban" ( https://stackoverflow.com/questions/23369579/aggregate-raster-in-r-with-na-values )
+# x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30)) # for testing
 rast_agg_fn <- function(x, ...){
   if_else(sum(x %in% 1) >= 0.25*length(x), 1, 0)
 }
@@ -1143,13 +1147,12 @@ rast_UNU <- rast_UNU %>%
   raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
   raster::aggregate(fact = 2, fun = rast_agg_fn)
 
-raster::plot(rast_UNU, main = "2kmx2km") 
+# raster::plot(rast_UNU, main = "2kmx2km") 
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 
 
-
-### leaflet overlay to verify urban-non classification
+##### Leaflet overlay to verify urban/non- classification ####
 
 # https://rstudio.github.io/leaflet/raster.html
 # https://rpubs.com/mgei/drivingtimes
@@ -1171,6 +1174,17 @@ leaflet() %>%
   addLegend(pal = leafcols, values = values(rast_UNU))
 
 
+##### Adding UNU classification to eBird data ####
+
+# adding extracted land cover values at eBird data points
+# Pakistan-administered Kashmir lists produce NA for URBAN
+data_UNU <- data0 %>% 
+  mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
+         NONURBAN = if_else(URBAN == 1, 0, 1),
+         CELL.ID = cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE))) %>% 
+  filter(!is.na(URBAN))
+
+save(data_UNU, file = "data/data_UNU.RData")
 
 ```
 
@@ -1336,7 +1350,9 @@ ggsave("01_prelim_figs/12_s_spread_UNU_cells.png",
 
 ```
 
-```{r s_spread_UNU, cache=TRUE, message=FALSE}
+```{r s_UNU_lists, cache=TRUE, message=FALSE}
+
+##### Checking for pandemic-induced change in ratio of checklists submitted in urban and non-urban areas
 
 require(raster) # masks dplyr functions, so have used raster::function()
 require(terra)
@@ -1345,19 +1361,8 @@ require(geodata)
 # install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 require(luna)
 
-# load("data/rast_UNU.RData")
+# load("data/data_UNU.RData")
 
-
-
-# adding extracted land cover values at eBird data points
-# Pakistan-administered Kashmir lists produce NA for URBAN
-data_UNU <- data0 %>% 
-  mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
-         NONURBAN = if_else(URBAN == 1, 0, 1),
-         CELL.ID = cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)))  
-
-
-# searching for effect of pandemic
 
 temp1 <- data_UNU %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1370,10 +1375,9 @@ temp2 <- data_UNU %>%
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   filter(URBAN == 1) %>% 
-  group_by(COVID, MONTH, STATE) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.ULISTS = 0))
+  ungroup() 
 
 urban_sw <- temp1 %>% 
   left_join(temp2) %>% 
@@ -1388,9 +1392,9 @@ rm(list = c("temp1","temp2"))
 urban_nw <- urban_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   dplyr::summarise(PROP.ULISTS = mean(PROP.ULISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
+                   PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+                   PROP.CI.L = PROP.ULISTS - 1.96*PROP.SE,
+                   PROP.CI.U = PROP.ULISTS + 1.96*PROP.SE)
 
 
 (ggplot(urban_nw, aes(MONTH, PROP.ULISTS, colour = COVID)) + 
@@ -1399,7 +1403,7 @@ urban_nw <- urban_sw %>%
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Change in proportion of urban lists at national level",
+    labs(title = "National level",
          x = "Month", y = "Proportion of urban lists")) /
 ((ggplot(filter(urban_sw, STATE == "Kerala"), 
          aes(MONTH, PROP.ULISTS, colour = COVID)) + 
@@ -1438,11 +1442,11 @@ urban_nw <- urban_sw %>%
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of urban lists"))) +
 plot_layout(guides = "collect") +
-plot_annotation(title = "Urban/non-urban cells at 2kmx2km resolution") -> s_spread_LULC_MODIS
+plot_annotation(title = "Change in proportion of checklists in urban and non-urban cells (2kmx2km) with the pandemic") -> s_UNU_lists
 
 
-ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
-       plot = s_spread_LULC_MODIS,
+ggsave("02_explor_figs/12_s_UNU_lists.png", 
+       plot = s_UNU_lists,
        width = 9, height = 9, units = "in")
 
 
