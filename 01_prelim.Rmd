@@ -34,14 +34,15 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 ```{r data_filt, cache=TRUE}
 
-datapath <- "data/ebd_IN_relDec-2021.RData"
+datapath <- "data/ebd_IN_relFeb-2022.RData"
 groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
+covidclasspath <- "data/covid_classification.csv"
 
 source("scripts/functions.R")
 # filtering the data for current use
-dataqual_filt(datapath, groupaccspath, maxvel = 20, minsut = 2)
+dataqual_filt(datapath, groupaccspath, covidclasspath, 
+              maxvel = 20, minsut = 2)
 
-save(data0, file = "data/data0.RData")
 # load("data/data0.RData")
 
 ```
@@ -54,7 +55,7 @@ data_sub <- data0 %>%
   filter(GROUP.ID %in% sample(unique(data0$GROUP.ID), 100000))
 save(data_sub, file = "data/data_sub.RData")
 
-load("data/data_sub.RData")
+# load("data/data_sub.RData")
 
 ```
 
@@ -1609,7 +1610,8 @@ urban_nw <- urban_sw %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of urban lists"))) +
-plot_layout(guides= "collect") -> s_spread_LULC_MODIS
+plot_layout(guides = "collect") +
+plot_annotation(title = "Urban/non-urban cells at 2kmx2km resolution") -> s_spread_LULC_MODIS
 
 
 ggsave("01_prelim_figs/12_s_spread_LULC_MODIS.png", 
@@ -1631,95 +1633,86 @@ detach("package:luna", unload=T)
 
 ```{r s_spread_UNU_cover, cache=TRUE, message=FALSE}
 
-data_spread <- data_UNU %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  filter(!is.na(URBAN)) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
-                   NU.SE = boot_se(NONURBAN, fn = sum),
-                   LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
-                   U.LISTS = sum(URBAN),
-                   NU.LISTS = sum(NONURBAN),
-                   U.CI.L = U.LISTS - 1.96*U.SE,
-                   U.CI.U = U.LISTS + 1.96*U.SE,
-                   NU.CI.L = NU.LISTS - 1.96*NU.SE,
-                   NU.CI.U = NU.LISTS + 1.96*NU.SE) %>%
-  ungroup() 
-
-
-(ggplot(data_spread, aes(MONTH, U.LISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Urban",
-         x = "Month", y = "No. of lists")) /
-  (ggplot(data_spread, aes(MONTH, NU.LISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Non-urban",
-         x = "Month", y = "No. of lists")) +
-  plot_layout(guides = "collect") +
-  plot_annotation(
-    title = "Birding effort in lists at 2kmx2km resolution"
-    ) -> s_spread_UNU_cover_lists
-
-ggsave("01_prelim_figs/12_s_spread_UNU_cover_lists.png",
-       plot = s_spread_UNU_cover_lists,
-       width = 7, height = 9, units = "in")
-
-
 ### checking no. of cells with at least 1 complete list
 
-
-cells_UNU <- data_UNU %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% slice(1) %>% ungroup() %>% 
-  # below removes any cell with <1 complete list
+cells_UNU_sw <- data_UNU %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% ungroup() %>% 
+  # below removes rows of any cell with <1 complete list
   filter(ALL.SPECIES.REPORTED == 1) %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% slice(1) %>% ungroup() %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  slice(1) %>% ungroup() %>% 
   filter(!is.na(URBAN)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(NO.UCELLS = sum(URBAN),
+                   TOT.CELLS = n_distinct(CELL.ID),
+                   PROP.UCELLS = NO.UCELLS/TOT.CELLS,
+                   PROP.SE = sqrt((PROP.UCELLS)*(1 - PROP.UCELLS)/TOT.CELLS),
+                   PROP.CI.L = PROP.UCELLS - 1.96*PROP.SE,
+                   PROP.CI.U = PROP.UCELLS + 1.96*PROP.SE)
+
+cells_UNU_nw <- cells_UNU_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(U.SE = boot_se(URBAN, fn = sum),
-                   NU.SE = boot_se(NONURBAN, fn = sum),
-                   U.CELLS = sum(URBAN),
-                   NU.CELLS = sum(NONURBAN),
-                   U.CI.L = U.CELLS - 1.96*U.SE,
-                   U.CI.U = U.CELLS + 1.96*U.SE,
-                   NU.CI.L = NU.CELLS - 1.96*NU.SE,
-                   NU.CI.U = NU.CELLS + 1.96*NU.SE) %>%
-  ungroup() 
+  dplyr::summarise(PROP.UCELLS = mean(PROP.UCELLS),
+                   PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
+                   PROP.CI.L = PROP.UCELLS - 1.96*PROP.SE,
+                   PROP.CI.U = PROP.UCELLS + 1.96*PROP.SE)
 
 
-(ggplot(cells_UNU, aes(MONTH, U.CELLS, colour = COVID)) + 
+
+(ggplot(cells_UNU_nw, aes(MONTH, PROP.UCELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = U.CI.L, ymax = U.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Urban",
-         x = "Month", y = "No. of cells")) /
-  (ggplot(cells_UNU, aes(MONTH, NU.CELLS, colour = COVID)) + 
+    labs(title = "National level",
+         x = "Month", y = "Proportion of urban cells")) /
+((ggplot(filter(cells_UNU_sw, STATE == "Kerala"), 
+         aes(MONTH, PROP.UCELLS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NU.CI.L, ymax = NU.CI.U), 
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Non-urban",
-         x = "Month", y = "No. of cells")) +
-  plot_layout(guides = "collect") +
-  plot_annotation(title = "Birding effort in grid cells at 2kmx2km resolution",
-                  subtitle = "Y axis show number of cells with at least one complete list") -> s_spread_UNU_cover_cells
+    labs(title = "Kerala",
+         x = "Month", y = "Proportion of urban cells")) |
+(ggplot(filter(cells_UNU_sw, STATE == "Karnataka"), 
+         aes(MONTH, PROP.UCELLS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Karnataka",
+         x = "Month", y = "Proportion of urban cells"))) /
+((ggplot(filter(cells_UNU_sw, STATE == "Gujarat"), 
+         aes(MONTH, PROP.UCELLS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Gujarat",
+         x = "Month", y = "Proportion of urban cells")) |
+(ggplot(filter(cells_UNU_sw, STATE == "Maharashtra"), 
+         aes(MONTH, PROP.UCELLS, colour = COVID)) + 
+    scale_x_continuous(breaks = 1:12) + 
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Maharashtra",
+         x = "Month", y = "Proportion of urban cells"))) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in proportion of urban birding",
+                subtitle = "Of grid cells (2kmx2km) with at least one complete list for a time period, how many are urban?",
+  ) -> s_spread_UNU_cells
 
 
-ggsave("01_prelim_figs/12_s_spread_UNU_cover_cells.png",
-       plot = s_spread_UNU_cover_cells,
-       width = 7, height = 9, units = "in")
+ggsave("01_prelim_figs/12_s_spread_UNU_cells.png",
+       plot = s_spread_UNU_cells,
+       width = 9, height = 9, units = "in")
 
 
 ```

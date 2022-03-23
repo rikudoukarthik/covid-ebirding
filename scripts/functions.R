@@ -2,9 +2,11 @@
 
 # data file path
 # path to list of group accounts to be filtered out
+# path to classification of year-month as COVID categories
 
 
-dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
+dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
+                          maxvel = 20, minsut = 2){
 
   ### importing from usual modified ebd RData
   load(datapath) 
@@ -22,26 +24,32 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
                                 TRUE ~ "NG"))
   filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
   
+  ### COVID classification
+  covidclass <- read_csv(covidclasspath)
+  
   
   
   ### new observer data (to calculate no. of new observers metric) #######
 
   new_obsr_data <- data %>% 
     select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
-             "LAST.EDITED.DATE", "OBSERVER.ID")) %>% 
+             "LAST.EDITED.DATE", "OBSERVATION.DATE", "OBSERVER.ID")) %>% 
     mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>% 
     group_by(OBSERVER.ID) %>% 
     arrange(LAST.EDITED.DATE) %>% 
     ungroup() %>% 
     distinct(OBSERVER.ID, .keep_all = TRUE) %>%
-    mutate(LE.YEAR = year(LAST.EDITED.DATE),
-           LE.MONTH = month(LAST.EDITED.DATE)) %>% 
-    filter(LE.YEAR >= 2019) %>% 
-    mutate(COVID = factor(case_when(LE.YEAR == 2019 ~ "BEF_19", 
-                                    LE.YEAR == 2020 ~ "DUR_20",
-                                    LE.YEAR == 2021 & LE.MONTH < 9 ~ "DUR_21",
-                                    LE.YEAR == 2021 & LE.MONTH >= 9 ~ "AFT_21"),
-                          levels = c("BEF_19","DUR_20","DUR_21","AFT_21")))
+    mutate(YEAR = year(LAST.EDITED.DATE),
+           MONTH = month(LAST.EDITED.DATE)) %>% 
+    filter(YEAR >= 2019) %>% 
+    left_join(covidclass) %>% 
+    mutate(COVID = factor(COVID,
+                          levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
+    rename(LE.YEAR = YEAR,
+           LE.MONTH = MONTH) %>% 
+    mutate(YEAR = year(OBSERVATION.DATE), 
+           MONTH = month(OBSERVATION.DATE))
+  
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
   save(new_obsr_data, file = "data/new_obsr_data.RData")
@@ -54,11 +62,9 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
     filter(YEAR >= 2019) %>% # retaining only data from 2019 onward
     anti_join(filtGA) %>% # removing data from group accounts
     # creating COVID factor
-    mutate(COVID = factor(case_when(YEAR == 2019 ~ "BEF_19",
-                                    YEAR == 2020 ~ "DUR_20",
-                                    YEAR == 2021 & MONTH < 9 ~ "DUR_21",
-                                    YEAR == 2021 & MONTH >= 9 ~ "AFT_21"),
-                          levels = c("BEF_19","DUR_20", "DUR_21", "AFT_21"))) %>% 
+    left_join(covidclass) %>% 
+    mutate(COVID = factor(COVID,
+                          levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
     group_by(GROUP.ID) %>% 
     mutate(NO.SP = n_distinct(COMMON.NAME)) %>%
     ungroup() %>% 
@@ -76,8 +82,7 @@ dataqual_filt <- function(datapath, groupaccspath, maxvel = 20, minsut = 2){
     filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
     filter(NO.SP <= 3, is.na(DURATION.MINUTES)) %>%
-    distinct(GROUP.ID) # %>% 
-    # select(GROUP.ID)
+    distinct(GROUP.ID)
   
   # exclude records based on various criteria 
   data0 <- data0 %>%
