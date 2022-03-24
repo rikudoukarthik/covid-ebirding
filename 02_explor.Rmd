@@ -215,7 +215,7 @@ plot_layout(guides = "collect") -> no_lists
 
 no_lists # plot
 
-ggsave("01_prelim_figs/01_no_lists.png", plot = no_lists,
+ggsave("02_explor_figs/01_no_lists.png", plot = no_lists,
        width = 8, height = 9, units = "in")
 
 rm(list = c("nl_sw","nl_nw","no_lists"))
@@ -323,7 +323,7 @@ plot_layout(guides = "collect") -> no_lists_po
 
 no_lists_po # plot
 
-ggsave("01_prelim_figs/02_no_lists_po.png", plot = no_lists_po,
+ggsave("02_explor_figs/02_no_lists_po.png", plot = no_lists_po,
        width = 8, height = 9, units = "in")
 
 rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
@@ -431,7 +431,7 @@ plot_layout(guides = "collect") -> fidelity
 
 fidelity # plot
 
-ggsave("01_prelim_figs/03_fidelity.png", plot = fidelity,
+ggsave("02_explor_figs/03_fidelity.png", plot = fidelity,
        width = 9, height = 9, units = "in")
   
 rm(list = c("fidel_nw","fidel_sw","fidelity"))
@@ -517,7 +517,7 @@ plot_layout(guides = "collect") -> time
 
 time # plot
 
-ggsave("01_prelim_figs/04_time.png", plot = time,
+ggsave("02_explor_figs/04_time.png", plot = time,
        width = 9, height = 9, units = "in")
 
 rm(time_nw, time_sw, time)
@@ -620,7 +620,7 @@ plot_layout(guides = "collect") -> hotspot
 
 hotspot # plot
 
-ggsave("01_prelim_figs/05_hotspot.png", plot = hotspot,
+ggsave("02_explor_figs/05_hotspot.png", plot = hotspot,
        width = 9, height = 9, units = "in")
 
 rm(list = c("hot_nw","hot_sw", "hotspot"))
@@ -724,7 +724,7 @@ plot_layout(guides = "collect") -> protocol
 
 protocol 
 
-ggsave("01_prelim_figs/06_protocol.png", plot = protocol,
+ggsave("02_explor_figs/06_protocol.png", plot = protocol,
        width = 9, height = 9, units = "in")
 
 rm(list = c("prot_nw","prot_sw","protocol"))
@@ -815,7 +815,7 @@ plot_layout(guides = "collect") -> distance
 
 distance
 
-ggsave("01_prelim_figs/07_distance.png", plot = distance,
+ggsave("02_explor_figs/07_distance.png", plot = distance,
        width = 9, height = 9, units = "in")
 
 rm(dist_sw, dist_nw, distance)
@@ -910,7 +910,7 @@ plot_layout(guides = "collect") -> duration
 
 duration
 
-ggsave("01_prelim_figs/08_duration.png", plot = duration,
+ggsave("02_explor_figs/08_duration.png", plot = duration,
        width = 9, height = 9, units = "in")
 
 rm(dur_sw, dur_nw, duration)
@@ -1011,7 +1011,7 @@ plot_layout(guides = "collect") -> length
 
 length
 
-ggsave("01_prelim_figs/09_length.png", plot = length,
+ggsave("02_explor_figs/09_length.png", plot = length,
        width = 9, height = 9, units = "in")
 
 rm(length_nw, length_sw, length)
@@ -1258,7 +1258,7 @@ data_cov <- data_sp %>%
   xlab("Month") + ylab("Standard deviation of lists across cells")) +
 plot_layout(guides = "collect") -> s_spread_cover
 
-ggsave("01_prelim_figs/10_s_spread_cover.png", 
+ggsave("02_explor_figs/10_s_spread_cover.png", 
        plot = s_spread_cover,
        width = 9, height = 9, units = "in")
 
@@ -1343,7 +1343,7 @@ plot_annotation(title = "Change in proportion of urban birding",
   ) -> s_spread_UNU_cells
 
 
-ggsave("01_prelim_figs/12_s_spread_UNU_cells.png",
+ggsave("02_explor_figs/12_s_spread_UNU_cells.png",
        plot = s_spread_UNU_cells,
        width = 9, height = 9, units = "in")
 
@@ -1503,7 +1503,7 @@ plot_layout(guides = "collect") -> s_spread_map
 
 s_spread_map
 
-ggsave("01_prelim_figs/11_s_spread_map.png", plot = s_spread_map,
+ggsave("02_explor_figs/11_s_spread_map.png", plot = s_spread_map,
        width = 14, height = 5, units = "in")
 
 rm(data_cov, data_map, data_sp, s_spread_cover, s_spread_map, districtmap,
@@ -1623,7 +1623,7 @@ plot_layout(guides = "collect") -> t_spread2
 
 t_spread2
 
-ggsave("01_prelim_figs/13_t_spread2.png", 
+ggsave("02_explor_figs/13_t_spread2.png", 
        plot = t_spread2,
        width = 11, height = 9, units = "in")
 
@@ -1706,7 +1706,7 @@ plot_layout(guides = "collect") -> t_spread3
 
 t_spread3
 
-ggsave("01_prelim_figs/14_t_spread3.png", 
+ggsave("02_explor_figs/14_t_spread3.png", 
        plot = t_spread3,
        width = 11, height = 9, units = "in")
 
@@ -1813,7 +1813,7 @@ plot_layout(guides= "collect") -> media
 
 media
 
-ggsave("01_prelim_figs/15_media.png", plot = media,
+ggsave("02_explor_figs/15_media.png", plot = media,
        width = 9, height = 9, units = "in")
 
 rm(list = c("media_nw","media_sw","media"))
@@ -1900,7 +1900,7 @@ plot_layout(guides = "collect") -> new
 
 new # plot
 
-ggsave("01_prelim_figs/16_new.png", plot = new,
+ggsave("02_explor_figs/16_new.png", plot = new,
        width = 9, height = 9, units = "in")
 
 
