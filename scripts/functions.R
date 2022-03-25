@@ -126,3 +126,15 @@ boot_se = function(x, fn = mean, B = 1000) {
     sd()
 }
 
+
+### raster aggregation -----------------
+
+# Function to supply in raster::aggregate(), with 25% threshold for classification
+# (works for any binary classification to be aggregated; here it is urban/non-)
+# https://stackoverflow.com/questions/23369579/aggregate-raster-in-r-with-na-values 
+
+rast_agg_fn <- function(x, ...){
+  if_else(sum(x %in% 1) >= 0.25*length(x), 1, 0)
+}
+
+# x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30)) # for testing

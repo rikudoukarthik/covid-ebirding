@@ -1136,12 +1136,6 @@ rast_UNU <- raster::reclassify(rast, rcl = reclass)
 ## changing resolution of data (MODIS data has 500m*500m resolution)
 # https://stackoverflow.com/questions/37956422/resample-raster
 
-# making function to supply in raster::aggregate() with 25% threshold for "urban" ( https://stackoverflow.com/questions/23369579/aggregate-raster-in-r-with-na-values )
-# x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30)) # for testing
-rast_agg_fn <- function(x, ...){
-  if_else(sum(x %in% 1) >= 0.25*length(x), 1, 0)
-}
-
 # aggregating to 2km*2km
 rast_UNU <- rast_UNU %>% 
   raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
