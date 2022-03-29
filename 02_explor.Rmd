@@ -1191,7 +1191,7 @@ save(data_UNU, file = "data/data_UNU.RData")
 
 ```
 
-```{r s_UNU_lists, cache=TRUE, message=FALSE}
+```{r s_listsUNU, cache=TRUE, message=FALSE}
 
 ##### Checking for pandemic-induced change in ratio of checklists submitted in urban and non-urban areas
 
@@ -1283,11 +1283,11 @@ urban_nw <- urban_sw %>%
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of urban lists"))) +
 plot_layout(guides = "collect") +
-plot_annotation(title = "What proportion of checklists were from urban areas (2kmx2km cells)?") -> s_UNU_lists
+plot_annotation(title = "What proportion of checklists were from urban areas (2kmx2km cells)?") -> s_listsUNU
 
 
-ggsave("02_explor_figs/12_s_UNU_lists.png", 
-       plot = s_UNU_lists,
+ggsave("02_explor_figs/12_s_listsUNU.png", 
+       plot = s_listsUNU,
        width = 9, height = 9, units = "in")
 
 
@@ -1471,47 +1471,126 @@ ggsave("02_explor_figs/12_s_spread_UNU_cells.png",
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
+library(rasterVis)
+
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
-# using only months for which data from all 3 COVID categories is present
 
 ##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
-data_map <- data_sp %>% 
-  ungroup() %>% 
-  filter(MONTH %in% 9:10) %>% 
-  group_by(COVID, G2CLIP) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  mutate(id = paste0("g",G2CLIP)) %>% 
-  right_join(fortify(g2clip))
+# load("data/data_UNU.RData")
+# load("data/rast_UNU.RData")
+# load("data/rast_SoIB.RData")
 
-(ggplot() +
-  geom_polygon(data = fortify(india), 
-               aes(long, lat, group = group),
-               fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "BEF_19"), 
-               aes(long, lat, group = group, fill = log(NO.LISTS)),
-               colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1) +
-  labs(title = "BEF_19")) |
-(ggplot() +
-  geom_polygon(data = fortify(india), 
-               aes(long, lat, group = group),
-               fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "DUR_20"), 
-               aes(long, lat, group = group, fill = log(NO.LISTS)),
-               colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1) +
-  labs(title = "DUR_20")) |
-(ggplot() +
-  geom_polygon(data = fortify(india), 
-               aes(long, lat, group = group),
-               fill = NA, colour = "black", lwd = 1) +
-  geom_polygon(data = filter(data_map, COVID == "AFT_21"), 
-               aes(long, lat, group = group, fill = log(NO.LISTS)),
-               colour = NA, lwd = 0.5) +
-  scale_fill_distiller(palette = "Reds", direction = 1) +
-  labs(title = "AFT_21")) +
-plot_layout(guides = "collect") -> s_spread
+
+# choosing only months with data from all 3 COVID categories
+month_compar <- data0 %>% 
+  group_by(MONTH) %>% 
+  mutate(COVID = as.character(COVID)) %>% 
+  mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
+                                  TRUE ~ COVID),
+                        levels = c("BEF","DUR","AFT"))) %>% 
+  summarise(N = n_distinct(COVID)) %>% 
+  filter(N == 3) # all 3 COVID categories
+
+
+data_map0 <- data_UNU %>% 
+  filter(MONTH %in% month_compar$MONTH) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"],
+         SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
+         SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
+  group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT) %>% 
+  summarise(NO.LISTS = mean(NO.LISTS)) %>% 
+  ungroup()
+
+
+data_map1 <- data_map0 %>% 
+  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_map1 <- raster::rasterFromXYZ(xyz = data_map1,
+                                   crs = raster::crs(rast_SoIB))
+
+
+data_map2 <- data_map0 %>% 
+  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
+  summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
+                                 TRUE ~ NO.LISTS),
+            COVID = "DUR") %>% 
+  ungroup() %>% 
+  select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_map2 <- raster::rasterFromXYZ(xyz = data_map2,
+                                   crs = raster::crs(rast_SoIB))
+
+data_map3 <- data_map0 %>% 
+  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_map3 <- raster::rasterFromXYZ(xyz = data_map3,
+                                   crs = raster::crs(rast_SoIB))
+
+
+
+# rast_propchange <- function(x, y)  {
+#   # x is first, y is second, so change from x to y
+#   return((y-x)/x)
+# }
+
+rast_logpropchange <- function(x, y)  {
+  # x is first, y is second, so change from x to y
+  # when no. of lists has been log transformed
+  # log(n2) - log(n1) = log(n2/n1)
+  return(y-x)
+}
+
+
+aoi0 <- geodata::gadm("India", level = 0, path = "data")
+in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
+
+
+data_map <- raster::stack(
+  raster::overlay(x = rast_map1, y = rast_map2, 
+                               fun = rast_logpropchange),
+  raster::overlay(x = rast_map2, y = rast_map3, 
+                               fun = rast_logpropchange),
+  raster::overlay(x = rast_map1, y = rast_map3, 
+                               fun = rast_logpropchange))
+names(data_map) <- c("COVID", "After", "BeforeAfter")
+
+
+mytheme <- list(strip.border$col = 'grey80',
+                strip.background$col = 'grey80',
+                axis.line$col = 'grey80',
+                axis.text$col = 'grey60',
+                plot.symbol$pch = 20,
+                plot.symbol$cex = .5,
+                plot.symbol$col = '#7AC5CD',
+                plot.symbol$alpha = .80)
+
+levelplot(data_map, 
+          par.settings = list(background = list(col = "black"), 
+                              col.regions = viridis::cividis(n = 1000)), 
+          # trial and error to decide breaks and limits
+          margin = F, at = seq(-2.5, 3, 0.1),
+          main = "Log prop. change in monthly (select months) no. of lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, lwd = 1.5))
+
+
+
+rasterVis::gplot(data_map) + geom_tile(aes(fill = value))
+
+
+
 
 s_spread
 
