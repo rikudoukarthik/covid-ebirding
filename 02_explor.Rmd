@@ -1034,7 +1034,7 @@ rm(length_nw, length_sw, length)
     Large spatial and temporal scale---no STATE or MONTH/YEAR in question.
     - Proportional change in birding effort (no. of lists) in each cell with COVID and after
     - Proportional change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell, for urban and non-urban separately.
-3. 
+3. Urban:non-urban ratio in birding effort (no. of lists)
 
 ```{r MODIS, cache=TRUE, message=FALSE}
 
@@ -1503,30 +1503,28 @@ month_compar <- data0 %>%
   filter(N == 3) # all 3 COVID categories
 
 
-data_map0 <- data_UNU %>% 
+data_SoIBmap0 <- data_UNU %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"],
-         SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
-         SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
   group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT) %>% 
+  # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
 
 
-data_map1 <- data_map0 %>% 
+data_SoIBmap1 <- data_SoIBmap0 %>% 
   mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
                               TRUE ~ 0)) %>% 
   select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
   mutate(NO.LISTS = log10(NO.LISTS + 1))
 
-rast_map1 <- raster::rasterFromXYZ(xyz = data_map1,
+rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
                                    crs = raster::crs(rast_SoIB))
 
 
-data_map2 <- data_map0 %>% 
+data_SoIBmap2 <- data_SoIBmap0 %>% 
   mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
                               TRUE ~ 0)) %>% 
   group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
@@ -1537,33 +1535,34 @@ data_map2 <- data_map0 %>%
   select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
   mutate(NO.LISTS = log10(NO.LISTS + 1))
 
-rast_map2 <- raster::rasterFromXYZ(xyz = data_map2,
+rast_SoIBmap2 <- raster::rasterFromXYZ(xyz = data_SoIBmap2,
                                    crs = raster::crs(rast_SoIB))
 
 
-data_map3 <- data_map0 %>% 
+data_SoIBmap3 <- data_SoIBmap0 %>% 
   mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
                               TRUE ~ 0)) %>% 
   select(CELL.LONG, CELL.LAT, NO.LISTS) %>% 
   mutate(NO.LISTS = log10(NO.LISTS + 1))
 
-rast_map3 <- raster::rasterFromXYZ(xyz = data_map3,
+rast_SoIBmap3 <- raster::rasterFromXYZ(xyz = data_SoIBmap3,
                                    crs = raster::crs(rast_SoIB))
+
+
+
+rast_SoIBmap <- raster::stack(
+  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap2, 
+                               fun = rast_logpropchange),
+  raster::overlay(x = rast_SoIBmap2, y = rast_SoIBmap3, 
+                               fun = rast_logpropchange),
+  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
+                               fun = rast_logpropchange))
+names(rast_SoIBmap) <- c("COVID", "After", "BeforeAfter")
 
 
 
 aoi0 <- geodata::gadm("India", level = 0, path = "data")
 in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
-
-
-data_map <- raster::stack(
-  raster::overlay(x = rast_map1, y = rast_map2, 
-                               fun = rast_logpropchange),
-  raster::overlay(x = rast_map2, y = rast_map3, 
-                               fun = rast_logpropchange),
-  raster::overlay(x = rast_map1, y = rast_map3, 
-                               fun = rast_logpropchange))
-names(data_map) <- c("COVID", "After", "BeforeAfter")
 
 
 mytheme <- list(strip.border = list(col = "black"),
@@ -1573,20 +1572,20 @@ mytheme <- list(strip.border = list(col = "black"),
                 axis.text = list(col = "white"), 
                 col.regions = RColorBrewer::RdBu(n = 1000))
 
-levelplot(data_map, 
+levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
           # col = brewer.pal(n = 3, name = "RdBu")
           # trial and error to decide breaks and limits
           margin = F, 
-          at = seq(cellStats(data_map, "min"), 
-                   cellStats(data_map, "max"), 
+          at = seq(cellStats(rast_SoIBmap, "min"), 
+                   cellStats(rast_SoIBmap, "max"), 
                    length.out = 201),
           main = "Log prop. change in monthly (select months) no. of lists per 25kmx25km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, lwd = 1, col = "grey"))
 
 
 
-# rasterVis::gplot(data_map) + geom_tile(aes(fill = value))
+# rasterVis::gplot(rast_SoIBmap) + geom_tile(aes(fill = value))
 
 
 
@@ -1596,9 +1595,160 @@ s_spread
 ggsave("02_explor_figs/11_s_spread.png", plot = s_spread,
        width = 14, height = 5, units = "in")
 
-rm(data_cov, data_map, data_sp, s_cover, s_spread, districtmap,
-   g2clip, g3clip, gridmapg1, gridmapg2, gridmapg3, gridmapg4, india,
-   indiamap, statemap, states, temp, gridlevels)
+
+
+
+##### Change in birding effort (no. of lists) in each 2x2 cell averaged across 25x25 cell with COVID ####
+
+
+data_UNUmap0 <- data_UNU %>% 
+  filter(MONTH %in% month_compar$MONTH) %>% 
+  mutate(SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
+         SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
+  group_by(COVID, CELL.ID, URBAN, SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  # summarise removes one grouping variable so no need to repeat group_by() 
+  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
+  ungroup()
+
+
+data_UNUmap1 <- data_UNUmap0 %>% 
+  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_UNUmap1 <- raster::rasterFromXYZ(xyz = data_UNUmap1,
+                                      crs = raster::crs(rast_UNU))
+
+
+data_UNUmap2 <- data_UNUmap0 %>% 
+  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  group_by(SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT) %>% 
+  dplyr::summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
+                                        TRUE ~ NO.LISTS),
+            COVID = "DUR") %>% 
+  ungroup() %>% 
+  select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_UNUmap2 <- raster::rasterFromXYZ(xyz = data_UNUmap2,
+                                   crs = raster::crs(rast_UNU))
+
+
+data_UNUmap3 <- data_UNUmap0 %>% 
+  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
+                              TRUE ~ 0)) %>% 
+  select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS) %>% 
+  mutate(NO.LISTS = log10(NO.LISTS + 1))
+
+rast_UNUmap3 <- raster::rasterFromXYZ(xyz = data_UNUmap3,
+                                      crs = raster::crs(rast_UNU))
+
+
+temp1a <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap2, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN == 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+temp1b <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap2, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN != 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+
+temp2a <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, y = rast_UNUmap3, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN == 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+temp2b <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, y = rast_UNUmap3, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN != 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+
+temp3a <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap3, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN == 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+temp3b <- data_UNUmap0 %>% 
+  # extracting values of log prop. change for each subcell to then average for cell
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap3, 
+                                                     fun = rast_logpropchange), 
+                                  y = SUBCELL.ID)) %>% 
+  group_by(COVID, CELL.ID, URBAN) %>% 
+  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
+  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
+  ungroup() %>% 
+  filter(URBAN != 1) %>% 
+  select(CELL.LONG, CELL.LAT, CHANGE)
+
+
+
+rast_UNUmapU <- raster::stack(
+  raster::rasterFromXYZ(xyz = temp1a,
+                        crs = raster::crs(rast_SoIB)),
+  raster::rasterFromXYZ(xyz = temp2a,
+                        crs = raster::crs(rast_SoIB)),
+  raster::rasterFromXYZ(xyz = temp3a,
+                        crs = raster::crs(rast_SoIB)))
+names(rast_UNUmapU) <- c("COVID", "After", "BeforeAfter")
+
+
+
+rast_UNUmapN <- raster::stack(
+  raster::rasterFromXYZ(xyz = temp1b,
+                        crs = raster::crs(rast_SoIB)),
+  raster::rasterFromXYZ(xyz = temp2b,
+                        crs = raster::crs(rast_SoIB)),
+  raster::rasterFromXYZ(xyz = temp3b,
+                        crs = raster::crs(rast_SoIB)))
+names(rast_UNUmapN) <- c("COVID", "After", "BeforeAfter")
+
 
 
 ```
