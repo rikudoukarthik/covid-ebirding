@@ -1556,26 +1556,27 @@ data_map <- raster::stack(
 names(data_map) <- c("COVID", "After", "BeforeAfter")
 
 
-mytheme <- list(strip.border$col = 'grey80',
-                strip.background$col = 'grey80',
-                axis.line$col = 'grey80',
-                axis.text$col = 'grey60',
-                plot.symbol$pch = 20,
-                plot.symbol$cex = .5,
-                plot.symbol$col = '#7AC5CD',
-                plot.symbol$alpha = .80)
+mytheme <- list(strip.border = list(col = "black"),
+                strip.background = list(col = "black"),
+                panel.background = list(col = "black"),
+                axis.line = list(col = "white"),
+                axis.text = list(col = "white"), 
+                col.regions = RColorBrewer::RdBu(n = 1000))
 
 levelplot(data_map, 
-          par.settings = list(background = list(col = "black"), 
-                              col.regions = viridis::cividis(n = 1000)), 
+          par.settings = mytheme, 
+          # col = brewer.pal(n = 3, name = "RdBu")
           # trial and error to decide breaks and limits
-          margin = F, at = seq(-2.5, 3, 0.1),
+          margin = F, 
+          at = seq(cellStats(data_map, "min"), 
+                   cellStats(data_map, "max"), 
+                   length.out = 201),
           main = "Log prop. change in monthly (select months) no. of lists per 25kmx25km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, lwd = 1.5))
+  latticeExtra::layer(sp::sp.polygons(in_bound, lwd = 1, col = "grey"))
 
 
 
-rasterVis::gplot(data_map) + geom_tile(aes(fill = value))
+# rasterVis::gplot(data_map) + geom_tile(aes(fill = value))
 
 
 
