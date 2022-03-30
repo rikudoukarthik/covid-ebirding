@@ -1483,14 +1483,15 @@ ggsave("02_explor_figs/12_s_spread_UNU_cells.png",
 
 library(rasterVis)
 
-# using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
-
-##### Change in birding effort (no. of lists) per grid cell with COVID ####
-
 # load("data/data_UNU.RData")
 # load("data/rast_UNU.RData")
 # load("data/rast_SoIB.RData")
 
+# using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
+
+
+
+##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
 # choosing only months with data from all 3 COVID categories
 month_compar <- data0 %>% 
@@ -1557,43 +1558,43 @@ rast_SoIBmap <- raster::stack(
                                fun = rast_logpropchange),
   raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
                                fun = rast_logpropchange))
-names(rast_SoIBmap) <- c("COVID", "After", "BeforeAfter")
+names(rast_SoIBmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
 
 aoi0 <- geodata::gadm("India", level = 0, path = "data")
+aoi <- geodata::gadm("India", level = 1, path = "data")
 in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
 
 
-mytheme <- list(strip.border = list(col = "black"),
-                strip.background = list(col = "black"),
-                panel.background = list(col = "black"),
-                axis.line = list(col = "white"),
-                axis.text = list(col = "white"), 
-                col.regions = RColorBrewer::RdBu(n = 1000))
+library(RColorBrewer)
+
+plotfrom <- round(raster::cellStats(rast_SoIBmap, "min")[1], 2)
+plotto <- round(raster::cellStats(rast_SoIBmap, "max")[1], 2)
+
+mytheme <- rasterTheme(region = viridis::viridis(100),
+                       pch = 19, cex = 0.7,
+                       box.rectangle = list(col = "white", fill = "black"),
+                       box.umbrella = list(col = 'black', lty = 1),
+                       panel.background = list(col = "#F0F0F0"),
+                       strip.background = list(col = "transparent"),
+                       strip.border = list(col = "transparent"))
 
 levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
-          # col = brewer.pal(n = 3, name = "RdBu")
-          # trial and error to decide breaks and limits
           margin = F, 
-          at = seq(cellStats(rast_SoIBmap, "min"), 
-                   cellStats(rast_SoIBmap, "max"), 
-                   length.out = 201),
-          main = "Log prop. change in monthly (select months) no. of lists per 25kmx25km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, lwd = 1, col = "grey"))
-
-
+          at = seq(plotfrom, plotto, 0.1),
+          main = "Log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
 
 # rasterVis::gplot(rast_SoIBmap) + geom_tile(aes(fill = value))
 
 
+png(file = "02_explor_figs/12a_s_spread_SoIBmap.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_SoIBmap)
+dev.off()
 
-
-s_spread
-
-ggsave("02_explor_figs/11_s_spread.png", plot = s_spread,
-       width = 14, height = 5, units = "in")
 
 
 
