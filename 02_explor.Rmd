@@ -1530,6 +1530,7 @@ data_map2 <- data_map0 %>%
 rast_map2 <- raster::rasterFromXYZ(xyz = data_map2,
                                    crs = raster::crs(rast_SoIB))
 
+
 data_map3 <- data_map0 %>% 
   mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
                               TRUE ~ 0)) %>% 
@@ -1539,19 +1540,6 @@ data_map3 <- data_map0 %>%
 rast_map3 <- raster::rasterFromXYZ(xyz = data_map3,
                                    crs = raster::crs(rast_SoIB))
 
-
-
-# rast_propchange <- function(x, y)  {
-#   # x is first, y is second, so change from x to y
-#   return((y-x)/x)
-# }
-
-rast_logpropchange <- function(x, y)  {
-  # x is first, y is second, so change from x to y
-  # when no. of lists has been log transformed
-  # log(n2) - log(n1) = log(n2/n1)
-  return(y-x)
-}
 
 
 aoi0 <- geodata::gadm("India", level = 0, path = "data")

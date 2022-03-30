@@ -138,3 +138,19 @@ rast_agg_fn <- function(x, ...){
 }
 
 # x = c(rep(1, 2), rep(0, 8), rep(1, 10), rep(0, 30)) # for testing
+
+### raster calc: proportional change in number of lists -----------------
+
+rast_propchange <- function(x, y)  {
+  # x is first, y is second, so change from x to y
+  return((y-x)/x)
+}
+
+### raster calc: log proportional change in number of lists -----------------
+
+rast_logpropchange <- function(x, y)  {
+  # x is first, y is second, so change from x to y
+  # when no. of lists has been log transformed
+  # log(n2) - log(n1) = log(n2/n1)
+  return(y-x)
+}
