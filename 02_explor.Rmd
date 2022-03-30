@@ -1347,10 +1347,10 @@ data_cov <- data_sp %>%
   ungroup() %>% 
   mutate(TOT.GRIDS = n_distinct(GRIDG1)) %>% 
   group_by(COVID, YEAR, MONTH, GRIDG1) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
             TOT.GRIDS = min(TOT.GRIDS)) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(SD.LISTS = sd(NO.LISTS),
+  dplyr::summarise(SD.LISTS = sd(NO.LISTS),
             TOT.GRIDS = min(TOT.GRIDS),
             NO.GRIDS = n_distinct(GRIDG1),
             PROP.GRIDS = NO.GRIDS/TOT.GRIDS,
@@ -1489,7 +1489,7 @@ month_compar <- data0 %>%
   mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
                                   TRUE ~ COVID),
                         levels = c("BEF","DUR","AFT"))) %>% 
-  summarise(N = n_distinct(COVID)) %>% 
+  dplyr::summarise(N = n_distinct(COVID)) %>% 
   filter(N == 3) # all 3 COVID categories
 
 
@@ -1500,9 +1500,9 @@ data_map0 <- data_UNU %>%
          SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
          SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
   group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  summarise(NO.LISTS = mean(NO.LISTS)) %>% 
+  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
 
 
@@ -1520,7 +1520,7 @@ data_map2 <- data_map0 %>%
   mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
                               TRUE ~ 0)) %>% 
   group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
+  dplyr::summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
                                  TRUE ~ NO.LISTS),
             COVID = "DUR") %>% 
   ungroup() %>% 
