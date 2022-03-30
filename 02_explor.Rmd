@@ -1026,6 +1026,16 @@ rm(length_nw, length_sw, length)
 
 ### Spatial spread and coverage 
 
+1. Spatial coverage
+    - Proportion of total cells in country/state covered across months
+    - Proportions of total urban and non-urban cells in country/state covered across months
+    - Proportion of covered cells urban (vs. non-urban)
+2. Spatial spread/evenness (24kmx24km cells; only months with 3 COVID categories)
+    Large spatial and temporal scale---no STATE or MONTH/YEAR in question.
+    - Proportional change in birding effort (no. of lists) in each cell with COVID and after
+    - Proportional change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell, for urban and non-urban separately.
+3. 
+
 ```{r MODIS, cache=TRUE, message=FALSE}
 
 ###### Obtaining MODIS LULC maps for urban/non-urban classification ####
@@ -1380,7 +1390,7 @@ ggsave("02_explor_figs/10_s_cover.png",
        width = 9, height = 9, units = "in")
 
 
-##### Proportion of total urban vs. non-urban cells covered ####
+##### Proportions of total urban vs. non-urban cells covered ####
 
 
 ##### Proportion of covered cells urban (vs. non-urban)  ####
