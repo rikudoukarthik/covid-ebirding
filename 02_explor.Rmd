@@ -1494,7 +1494,7 @@ library(rasterVis)
 ##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
 # choosing only months with data from all 3 COVID categories
-month_compar <- data0 %>% 
+month_compar <- data_UNU %>% 
   group_by(MONTH) %>% 
   mutate(COVID = as.character(COVID)) %>% 
   mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
@@ -1561,7 +1561,6 @@ rast_SoIBmap <- raster::stack(
 names(rast_SoIBmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
-
 aoi0 <- geodata::gadm("India", level = 0, path = "data")
 aoi <- geodata::gadm("India", level = 1, path = "data")
 in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
@@ -1572,6 +1571,14 @@ library(RColorBrewer)
 plotfrom <- round(raster::cellStats(rast_SoIBmap, "min")[1], 2)
 plotto <- round(raster::cellStats(rast_SoIBmap, "max")[1], 2)
 
+
+rast_SoIBmap_a <- rast_SoIBmap
+rast_SoIBmap_a[rast_SoIBmap_a > 0] <- NA
+
+rast_SoIBmap_b <- rast_SoIBmap
+rast_SoIBmap_b[rast_SoIBmap_b < 0] <- NA
+
+
 mytheme <- rasterTheme(region = viridis::viridis(100),
                        pch = 19, cex = 0.7,
                        box.rectangle = list(col = "white", fill = "black"),
@@ -1580,19 +1587,30 @@ mytheme <- rasterTheme(region = viridis::viridis(100),
                        strip.background = list(col = "transparent"),
                        strip.border = list(col = "transparent"))
 
-levelplot(rast_SoIBmap, 
+levelplot(rast_SoIBmap_a, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.1),
-          main = "Log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
+          main = "Negative log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_a
 
-# rasterVis::gplot(rast_SoIBmap) + geom_tile(aes(fill = value))
+levelplot(rast_SoIBmap_b, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfrom, plotto, 0.1),
+          main = "Positive log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_b
 
 
-png(file = "02_explor_figs/12a_s_spread_SoIBmap.png", 
+
+png(file = "02_explor_figs/12a_s_spread_SoIBmap_a.png", 
     width = 17, height = 8, units = "in", res = 300)
-print(s_spread_SoIBmap)
+print(s_spread_SoIBmap_a)
+dev.off()
+
+png(file = "02_explor_figs/12a_s_spread_SoIBmap_b.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_SoIBmap_b)
 dev.off()
 
 
