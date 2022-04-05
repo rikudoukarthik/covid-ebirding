@@ -1944,6 +1944,14 @@ print(s_spread_UNUpropmap_b)
 dev.off()
 
 
+##### Removing workspace objects ####
+
+
+rm(list = setdiff(ls(), 
+                  c("covid_palette", "covid_palette3",
+                    # "data_UNU", "rast_UNU", 
+                    "boot_se", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
+
 
 ```
 
