@@ -1573,10 +1573,10 @@ plotto <- round(raster::cellStats(rast_SoIBmap, "max")[1], 2)
 
 
 rast_SoIBmap_a <- rast_SoIBmap
-rast_SoIBmap_a[rast_SoIBmap_a > 0] <- NA
+rast_SoIBmap_a[rast_SoIBmap_a >= 0] <- NA
 
 rast_SoIBmap_b <- rast_SoIBmap
-rast_SoIBmap_b[rast_SoIBmap_b < 0] <- NA
+rast_SoIBmap_b[rast_SoIBmap_b <= 0] <- NA
 
 
 mytheme <- rasterTheme(region = viridis::viridis(100),
@@ -1617,7 +1617,7 @@ dev.off()
 
 
 
-##### Change in birding effort (no. of lists) in each 2x2 cell averaged across 25x25 cell with COVID ####
+##### Change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell with COVID ####
 
 
 data_UNUmap0 <- data_UNU %>% 
@@ -1666,87 +1666,72 @@ rast_UNUmap3 <- raster::rasterFromXYZ(xyz = data_UNUmap3,
                                       crs = raster::crs(rast_UNU))
 
 
-temp1a <- data_UNUmap0 %>% 
+
+temp1 <- data_UNUmap0 %>% 
   # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap2, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, 
+                                                      y = rast_UNUmap2, 
+                                                      fun = rast_logpropchange), 
+                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
   group_by(COVID, CELL.ID, URBAN) %>% 
   dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+  ungroup() 
+
+temp1a <- temp1 %>% 
   filter(URBAN == 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
-temp1b <- data_UNUmap0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap2, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
-  group_by(COVID, CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+temp1b <- temp1 %>% 
   filter(URBAN != 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
 
-temp2a <- data_UNUmap0 %>% 
+temp2 <- data_UNUmap0 %>% 
   # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, y = rast_UNUmap3, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, 
+                                                      y = rast_UNUmap3, 
+                                                      fun = rast_logpropchange), 
+                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
   group_by(COVID, CELL.ID, URBAN) %>% 
   dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+  ungroup()
+
+temp2a <- temp2 %>% 
   filter(URBAN == 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
-temp2b <- data_UNUmap0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, y = rast_UNUmap3, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
-  group_by(COVID, CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+temp2b <- temp2 %>% 
   filter(URBAN != 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
 
-temp3a <- data_UNUmap0 %>% 
+temp3 <- data_UNUmap0 %>% 
   # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap3, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
+  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, 
+                                                      y = rast_UNUmap3, 
+                                                      fun = rast_logpropchange), 
+                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
   group_by(COVID, CELL.ID, URBAN) %>% 
   dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+  ungroup()
+
+temp3a <- temp3 %>% 
   filter(URBAN == 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
-temp3b <- data_UNUmap0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, y = rast_UNUmap3, 
-                                                     fun = rast_logpropchange), 
-                                  y = SUBCELL.ID)) %>% 
-  group_by(COVID, CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() %>% 
+temp3b <- temp3 %>% 
   filter(URBAN != 1) %>% 
   select(CELL.LONG, CELL.LAT, CHANGE)
 
 
+
+# Within each 25x25 cell, how have urban birding (no. of lists in urban subcells) and non-urban birding changed?
 
 rast_UNUmapU <- raster::stack(
   raster::rasterFromXYZ(xyz = temp1a,
@@ -1755,7 +1740,7 @@ rast_UNUmapU <- raster::stack(
                         crs = raster::crs(rast_SoIB)),
   raster::rasterFromXYZ(xyz = temp3a,
                         crs = raster::crs(rast_SoIB)))
-names(rast_UNUmapU) <- c("COVID", "After", "BeforeAfter")
+names(rast_UNUmapU) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
 
@@ -1766,7 +1751,89 @@ rast_UNUmapN <- raster::stack(
                         crs = raster::crs(rast_SoIB)),
   raster::rasterFromXYZ(xyz = temp3b,
                         crs = raster::crs(rast_SoIB)))
-names(rast_UNUmapN) <- c("COVID", "After", "BeforeAfter")
+names(rast_UNUmapN) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
+
+
+
+plotfromU <- round(raster::cellStats(rast_UNUmapU, "min")[1], 2)
+plottoU <- round(raster::cellStats(rast_UNUmapU, "max")[1], 2)
+
+plotfromN <- round(raster::cellStats(rast_UNUmapN, "min")[1], 2)
+plottoN <- round(raster::cellStats(rast_UNUmapN, "max")[1], 2)
+
+
+rast_UNUmapU_a <- rast_UNUmapU
+rast_UNUmapU_a[rast_UNUmapU_a >= 0] <- NA
+rast_UNUmapU_b <- rast_UNUmapU
+rast_UNUmapU_b[rast_UNUmapU_b <= 0] <- NA
+
+rast_UNUmapN_a <- rast_UNUmapN
+rast_UNUmapN_a[rast_UNUmapN_a >= 0] <- NA
+rast_UNUmapN_b <- rast_UNUmapN
+rast_UNUmapN_b[rast_UNUmapN_b <= 0] <- NA
+
+
+
+mytheme <- rasterTheme(region = viridis::viridis(100),
+                       pch = 19, cex = 0.7,
+                       box.rectangle = list(col = "white", fill = "black"),
+                       box.umbrella = list(col = 'black', lty = 1),
+                       panel.background = list(col = "#F0F0F0"),
+                       strip.background = list(col = "transparent"),
+                       strip.border = list(col = "transparent"))
+
+levelplot(rast_UNUmapU_a, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfromU, plottoU, 0.03),
+          main = "Negative log prop. change in monthly (six months) urban lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_a
+
+levelplot(rast_UNUmapU_b, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfromU, plottoU, 0.03),
+          main = "Positive log prop. change in monthly (six months) urban lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_b
+
+
+levelplot(rast_UNUmapN_a, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfromN, plottoN, 0.03),
+          main = "Negative log prop. change in monthly (six months) non-urban lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_a
+
+levelplot(rast_UNUmapN_b, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfromN, plottoN, 0.03),
+          main = "Positive log prop. change in monthly (six months) non-urban lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_b
+
+
+
+png(file = "02_explor_figs/12b_s_spread_UNUmapU_a.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_UNUmapU_a)
+dev.off()
+
+png(file = "02_explor_figs/12b_s_spread_UNUmapU_b.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_UNUmapU_b)
+dev.off()
+
+
+png(file = "02_explor_figs/12b_s_spread_UNUmapN_a.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_UNUmapN_a)
+dev.off()
+
+png(file = "02_explor_figs/12b_s_spread_UNUmapN_b.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_UNUmapN_b)
+dev.off()
+
 
 
 
