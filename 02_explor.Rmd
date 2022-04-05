@@ -1848,7 +1848,6 @@ temp1 <- data_UNUpropmap0 %>%
   dplyr::summarise(TOT.LISTS = sum(NO.LISTS)) %>% 
   ungroup()
 
-k <- 0.00001
 
 data_UNUpropmap0 <- data_UNUpropmap0 %>% 
   left_join(temp0) %>% 
@@ -1859,9 +1858,7 @@ data_UNUpropmap0 <- data_UNUpropmap0 %>%
   dplyr::summarise(PROP.UNU = mean(PROP.UNU)) %>% 
   ungroup() %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"],
-         PROP.UNU = case_when(PROP.UNU < 1 ~ PROP.UNU + k,
-                              TRUE ~ PROP.UNU))
+         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"])
 
 
 data_UNUpropmap1 <- data_UNUpropmap0 %>% 
@@ -1899,11 +1896,14 @@ rast_UNUpropmap3 <- raster::rasterFromXYZ(xyz = data_UNUpropmap3,
 
 rast_UNUpropmap <- raster::stack(
   raster::overlay(x = rast_UNUpropmap1, y = rast_UNUpropmap2, 
-                               fun = rast_proppropchange),
+                  k = 0.00001,
+                  fun = rast_logpropchange),
   raster::overlay(x = rast_UNUpropmap2, y = rast_UNUpropmap3, 
-                               fun = rast_proppropchange),
+                  k = 0.00001,
+                  fun = rast_logpropchange),
   raster::overlay(x = rast_UNUpropmap1, y = rast_UNUpropmap3, 
-                               fun = rast_proppropchange))
+                  k = 0.00001,
+                  fun = rast_logpropchange))
 names(rast_UNUpropmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
@@ -1920,27 +1920,27 @@ plotto <- round(raster::cellStats(rast_UNUpropmap, "max")[1], 2)
 levelplot(rast_UNUpropmap_a, 
           par.settings = mytheme, 
           margin = F, 
-          at = seq(plotfrom, plotto, 0.2),
+          at = seq(plotfrom, plotto, 0.01),
           main = "Negative log prop. change in monthly (six months) urban birding proportion per 25kmx25km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_a
 
 levelplot(rast_UNUpropmap_b, 
           par.settings = mytheme, 
           margin = F, 
-          at = seq(plotfrom, plotto, 0.2),
+          at = seq(plotfrom, plotto, 0.01),
           main = "Positive log prop. change in monthly (six months) urban birding proportion per 25kmx25km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_b
 
 
 
-png(file = "02_explor_figs/12a_s_spread_SoIBmap_a.png", 
+png(file = "02_explor_figs/12c_s_spread_UNUpropmap_a.png", 
     width = 17, height = 8, units = "in", res = 300)
-print(s_spread_SoIBmap_a)
+print(s_spread_UNUpropmap_a)
 dev.off()
 
-png(file = "02_explor_figs/12a_s_spread_SoIBmap_b.png", 
+png(file = "02_explor_figs/12c_s_spread_UNUpropmap_b.png", 
     width = 17, height = 8, units = "in", res = 300)
-print(s_spread_SoIBmap_b)
+print(s_spread_UNUpropmap_b)
 dev.off()
 
 
