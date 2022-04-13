@@ -1199,6 +1199,22 @@ data_UNU <- data0 %>%
 save(data_UNU, file = "data/data_UNU.RData")
 
 
+##### Creating smaller data object for spatial patterns ####
+
+# load("data/data_UNU.RData")
+# load("data/rast_UNU.RData")
+# load("data/rast_SoIB.RData")
+
+data_spatlists <- data_UNU %>% 
+  ungroup() %>% 
+  select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
+         SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER, GROUP.ID, YEAR, MONTH, DAY.M, COVID,
+         NO.SP, TIME.D, URBAN, NONURBAN, SUBCELL.ID, CELL.ID) %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) 
+
+save(data_spatlists, file = "data/data_spatlists.RData")
+
 ```
 
 ```{r s_listsUNU, cache=TRUE, message=FALSE}
@@ -1483,18 +1499,16 @@ ggsave("02_explor_figs/12_s_spread_UNU_cells.png",
 
 library(rasterVis)
 
-# load("data/data_UNU.RData")
-# load("data/rast_UNU.RData")
-# load("data/rast_SoIB.RData")
+# load("data/data_spatlists.RData")
+
 
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
-
 
 
 ##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
 # choosing only months with data from all 3 COVID categories
-month_compar <- data_UNU %>% 
+month_compar <- data_spatlists %>% 
   group_by(MONTH) %>% 
   mutate(COVID = as.character(COVID)) %>% 
   mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
@@ -1504,7 +1518,7 @@ month_compar <- data_UNU %>%
   filter(N == 3) # all 3 COVID categories
 
 
-data_SoIBmap0 <- data_UNU %>% 
+data_SoIBmap0 <- data_spatlists %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
@@ -1521,7 +1535,7 @@ data_SoIBmap1 <- data_SoIBmap0 %>%
   select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
-                                   crs = raster::crs(rast_SoIB))
+                                       crs = raster::crs(rast_SoIB))
 
 
 data_SoIBmap2 <- data_SoIBmap0 %>% 
