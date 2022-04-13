@@ -1615,21 +1615,21 @@ levelplot(rast_SoIBmap_a,
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.1),
-          main = "Negative log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+          main = "Negative log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_a
 
 levelplot(rast_SoIBmap_b, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.1),
-          main = "Positive log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+          main = "Positive log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_b
 
 levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.1),
-          main = "Log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+          main = "Log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
 
 
