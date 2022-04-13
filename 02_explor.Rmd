@@ -1529,9 +1529,14 @@ data_SoIBmap0 <- data_spatlists %>%
   ungroup()
 
 
+temp0 <- data_SoIBmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
+
+
 data_SoIBmap1 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID == "BEF") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "BEF", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
@@ -1539,26 +1544,29 @@ rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
 
 
 data_SoIBmap2 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
   group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  dplyr::summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
-                                 TRUE ~ NO.LISTS),
-            COVID = "DUR") %>% 
+  # averages cells with lists from both years, and returns single year value for others (n/1)
+  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup() %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "DUR", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap2 <- raster::rasterFromXYZ(xyz = data_SoIBmap2,
-                                   crs = raster::crs(rast_SoIB))
+                                       crs = raster::crs(rast_SoIB))
 
 
 data_SoIBmap3 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID == "AFT") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "AFT", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap3 <- raster::rasterFromXYZ(xyz = data_SoIBmap3,
-                                   crs = raster::crs(rast_SoIB))
+                                       crs = raster::crs(rast_SoIB))
 
 
 
@@ -1575,31 +1583,33 @@ rast_SoIBmap <- raster::stack(
 names(rast_SoIBmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
-aoi0 <- geodata::gadm("India", level = 0, path = "data")
+# aoi0 <- geodata::gadm("India", level = 0, path = "data")
 aoi <- geodata::gadm("India", level = 1, path = "data")
 in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
 
 
 library(RColorBrewer)
 
+# for graph legends
 plotfrom <- round(raster::cellStats(rast_SoIBmap, "min")[1], 2)
 plotto <- round(raster::cellStats(rast_SoIBmap, "max")[1], 2)
 
+mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
+                                  pch = 19, cex = 0.7,
+                                  box.rectangle = list(col = "white", fill = "black"),
+                                  box.umbrella = list(col = 'black', lty = 1),
+                                  panel.background = list(col = "#F0F0F0"),
+                                  strip.background = list(col = "transparent"),
+                                  strip.border = list(col = "transparent"))
 
+
+# to plot positive and negative separately
 rast_SoIBmap_a <- rast_SoIBmap
 rast_SoIBmap_a[rast_SoIBmap_a >= 0] <- NA
-
 rast_SoIBmap_b <- rast_SoIBmap
 rast_SoIBmap_b[rast_SoIBmap_b <= 0] <- NA
 
 
-mytheme <- rasterTheme(region = viridis::viridis(100),
-                       pch = 19, cex = 0.7,
-                       box.rectangle = list(col = "white", fill = "black"),
-                       box.umbrella = list(col = 'black', lty = 1),
-                       panel.background = list(col = "#F0F0F0"),
-                       strip.background = list(col = "transparent"),
-                       strip.border = list(col = "transparent"))
 
 levelplot(rast_SoIBmap_a, 
           par.settings = mytheme, 
@@ -1615,6 +1625,12 @@ levelplot(rast_SoIBmap_b,
           main = "Positive log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_b
 
+levelplot(rast_SoIBmap, 
+          par.settings = mytheme, 
+          margin = F, 
+          at = seq(plotfrom, plotto, 0.1),
+          main = "Log prop. change in monthly (six months) no. of lists per 25kmx25km cell") +
+  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
 
 
 png(file = "02_explor_figs/12a_s_spread_SoIBmap_a.png", 
@@ -1627,14 +1643,17 @@ png(file = "02_explor_figs/12a_s_spread_SoIBmap_b.png",
 print(s_spread_SoIBmap_b)
 dev.off()
 
-
+png(file = "02_explor_figs/12a_s_spread_SoIBmap.png", 
+    width = 17, height = 8, units = "in", res = 300)
+print(s_spread_SoIBmap)
+dev.off()
 
 
 
 ##### Change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell with COVID ####
 
 
-data_UNUmap0 <- data_UNU %>% 
+data_UNUmap0 <- data_spatlists %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
          SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
@@ -1645,32 +1664,41 @@ data_UNUmap0 <- data_UNU %>%
   ungroup()
 
 
+temp0 <- data_UNUmap0 %>% distinct(CELL.ID, SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT)
+
+
 data_UNUmap1 <- data_UNUmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID == "BEF") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "BEF", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
 
 rast_UNUmap1 <- raster::rasterFromXYZ(xyz = data_UNUmap1,
                                       crs = raster::crs(rast_UNU))
 
 
+
 data_UNUmap2 <- data_UNUmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
   group_by(SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT) %>% 
-  dplyr::summarise(NO.LISTS = case_when(n() > 1 ~ mean(NO.LISTS), 
-                                        TRUE ~ NO.LISTS),
-            COVID = "DUR") %>% 
+  # averages cells with lists from both years, and returns single year value for others (n/1)
+  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup() %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "DUR", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
 
 rast_UNUmap2 <- raster::rasterFromXYZ(xyz = data_UNUmap2,
-                                   crs = raster::crs(rast_UNU))
+                                      crs = raster::crs(rast_UNU))
 
 
 data_UNUmap3 <- data_UNUmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
-                              TRUE ~ 0)) %>% 
+  filter(COVID == "AFT") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "AFT", 
+         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
   select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
 
 rast_UNUmap3 <- raster::rasterFromXYZ(xyz = data_UNUmap3,
@@ -1791,14 +1819,14 @@ levelplot(rast_UNUmapU_a,
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfromU, plottoU, 0.03),
-          main = "Negative log prop. change in monthly (six months) urban lists per 25kmx25km cell") +
+          main = "Negative log prop. change in monthly (six months) urban lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_a
 
 levelplot(rast_UNUmapU_b, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfromU, plottoU, 0.03),
-          main = "Positive log prop. change in monthly (six months) urban lists per 25kmx25km cell") +
+          main = "Positive log prop. change in monthly (six months) urban lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_b
 
 
@@ -1806,14 +1834,14 @@ levelplot(rast_UNUmapN_a,
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfromN, plottoN, 0.03),
-          main = "Negative log prop. change in monthly (six months) non-urban lists per 25kmx25km cell") +
+          main = "Negative log prop. change in monthly (six months) non-urban lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_a
 
 levelplot(rast_UNUmapN_b, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfromN, plottoN, 0.03),
-          main = "Positive log prop. change in monthly (six months) non-urban lists per 25kmx25km cell") +
+          main = "Positive log prop. change in monthly (six months) non-urban lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_b
 
 
@@ -1845,28 +1873,22 @@ dev.off()
 
 # How did the urban-non-urban ratio of number of checklists change across cells with the pandemic?
 
-data_UNUpropmap0 <- data_UNU %>% 
+
+data_UNUpropmap0 <- data_spatlists %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, CELL.ID, MONTH, URBAN) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   ungroup()
 
-temp0 <- data_UNUpropmap0 %>% 
+temp <- data_UNUpropmap0 %>% 
   group_by(COVID, CELL.ID, MONTH) %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = NO.LISTS) %>% 
+  dplyr::summarise(TOT.LISTS = sum(NO.LISTS),
+                   U.LISTS = ifelse(URBAN == 1, NO.LISTS, 0)) %>% 
   ungroup()
-
-temp1 <- data_UNUpropmap0 %>% 
-  group_by(COVID, CELL.ID, MONTH) %>% 
-  dplyr::summarise(TOT.LISTS = sum(NO.LISTS)) %>% 
-  ungroup()
-
 
 data_UNUpropmap0 <- data_UNUpropmap0 %>% 
-  left_join(temp0) %>% 
-  left_join(temp1) %>% 
-  mutate(U.LISTS = ifelse(is.na(U.LISTS), 0, U.LISTS)) %>% 
+  left_join(temp) %>% 
+  # mutate(U.LISTS = replace_na(U.LISTS, 0)) %>% 
   group_by(COVID, CELL.ID, MONTH) %>% 
   dplyr::summarise(PROP.UNU = U.LISTS/TOT.LISTS) %>% 
   dplyr::summarise(PROP.UNU = mean(PROP.UNU)) %>% 
@@ -1875,9 +1897,14 @@ data_UNUpropmap0 <- data_UNUpropmap0 %>%
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"])
 
 
+temp0 <- data_UNUpropmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
+
+
 data_UNUpropmap1 <- data_UNUpropmap0 %>% 
-  mutate(PROP.UNU = case_when(COVID == "BEF" ~ PROP.UNU,
-                              TRUE ~ 0 + k)) %>% 
+  filter(COVID == "BEF") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "BEF", 
+         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
   select(CELL.LONG, CELL.LAT, PROP.UNU) 
 
 rast_UNUpropmap1 <- raster::rasterFromXYZ(xyz = data_UNUpropmap1,
@@ -1885,13 +1912,13 @@ rast_UNUpropmap1 <- raster::rasterFromXYZ(xyz = data_UNUpropmap1,
 
 
 data_UNUpropmap2 <- data_UNUpropmap0 %>% 
-  mutate(PROP.UNU = case_when(COVID %in% c("DUR_20","DUR_21") ~ PROP.UNU,
-                              TRUE ~ 0 + k)) %>% 
+  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
   group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  dplyr::summarise(PROP.UNU = case_when(n() > 1 ~ mean(PROP.UNU), 
-                                 TRUE ~ PROP.UNU),
-            COVID = "DUR") %>% 
+  dplyr::summarise(PROP.UNU = mean(PROP.UNU)) %>% 
   ungroup() %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "DUR", 
+         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
   select(CELL.LONG, CELL.LAT, PROP.UNU) 
 
 rast_UNUpropmap2 <- raster::rasterFromXYZ(xyz = data_UNUpropmap2,
@@ -1899,9 +1926,11 @@ rast_UNUpropmap2 <- raster::rasterFromXYZ(xyz = data_UNUpropmap2,
 
 
 data_UNUpropmap3 <- data_UNUpropmap0 %>% 
-  mutate(PROP.UNU = case_when(COVID == "AFT" ~ PROP.UNU,
-                              TRUE ~ 0 + k)) %>% 
-  select(CELL.LONG, CELL.LAT, PROP.UNU)
+  filter(COVID == "AFT") %>% 
+  right_join(temp0) %>% 
+  mutate(COVID = "AFT", 
+         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
+  select(CELL.LONG, CELL.LAT, PROP.UNU) 
 
 rast_UNUpropmap3 <- raster::rasterFromXYZ(xyz = data_UNUpropmap3,
                                           crs = raster::crs(rast_SoIB))
@@ -1935,16 +1964,20 @@ levelplot(rast_UNUpropmap_a,
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.01),
-          main = "Negative log prop. change in monthly (six months) urban birding proportion per 25kmx25km cell") +
+          main = "Negative log prop. change in monthly (six months) urban birding proportion per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_a
 
 levelplot(rast_UNUpropmap_b, 
           par.settings = mytheme, 
           margin = F, 
           at = seq(plotfrom, plotto, 0.01),
-          main = "Positive log prop. change in monthly (six months) urban birding proportion per 25kmx25km cell") +
+          main = "Positive log prop. change in monthly (six months) urban birding proportion per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_b
 
+
+
+# only considers 24x24 cells that contain urban cells. so, the question these maps ask is:
+# in areas that have urban birding, was there an increase or decrease in urban proportion?
 
 
 png(file = "02_explor_figs/12c_s_spread_UNUpropmap_a.png", 
