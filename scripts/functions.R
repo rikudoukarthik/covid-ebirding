@@ -7,13 +7,17 @@
 
 dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
                           maxvel = 20, minsut = 2){
-
+  
   ### importing from usual modified ebd RData
   load(datapath) 
   
+  
   require(tidyverse)
   require(lubridate)
-
+  require(terra)
+  require(sp)
+  
+  
   ### list of group accounts to be filtered
   groupaccs <- read.csv(groupaccspath, 
                         na.strings = c(""," ",NA), quote = "", header = T, 
@@ -24,13 +28,14 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
                                 TRUE ~ "NG"))
   filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
   
+  
   ### COVID classification
   covidclass <- read_csv(covidclasspath)
-  
+
   
   
   ### new observer data (to calculate no. of new observers metric) #######
-
+  
   new_obsr_data <- data %>% 
     select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
              "LAST.EDITED.DATE", "OBSERVATION.DATE", "OBSERVER.ID")) %>% 
@@ -68,43 +73,67 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
     group_by(GROUP.ID) %>% 
     mutate(NO.SP = n_distinct(COMMON.NAME)) %>%
     ungroup() %>% 
-    mutate(TIME.D = hour(as_datetime(paste(OBSERVATION.DATE,
-                                                  TIME.OBSERVATIONS.STARTED))),
+    mutate(HOUR = hour(as_datetime(paste(OBSERVATION.DATE,
+                                         TIME.OBSERVATIONS.STARTED))),
            MIN = minute(as_datetime(paste(OBSERVATION.DATE,
                                           TIME.OBSERVATIONS.STARTED))),
            SPEED = EFFORT.DISTANCE.KM*60/DURATION.MINUTES, # kmph
            SUT = NO.SP*60/DURATION.MINUTES, # species per hour
            # calculate hour checklist ended
-           END = floor((TIME.D*60 + MIN + DURATION.MINUTES)/60))
+           HOUR.END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60))
   
-  # choose checklists without info on duration with 3 or fewer species
-  temp <- data0 %>%
+  
+  load("data/data0.RData")
+
+  
+  
+  ### exclude records based on various criteria 
+  
+  # choose complete checklists without info on duration with 3 or fewer species
+  temp1 <- data0 %>%
     filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
     filter(NO.SP <= 3, is.na(DURATION.MINUTES)) %>%
     distinct(GROUP.ID)
   
-  # exclude records based on various criteria 
+  # getting list of GROUP.IDs inside IN boundary for pelagic filter
+  temp2 <- data0 %>% 
+    ungroup() %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
+    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
+    terra::intersect(india) %>% 
+    terra::as.data.frame() %>% 
+    select(GROUP.ID) # these are lists inside IN so need to be excluded (!) in filter step
+  
+  
+  # true completeness + other filters
   data0 <- data0 %>%
-    mutate(ALL.SPECIES.REPORTED = 
-             case_when(ALL.SPECIES.REPORTED == 1 & 
-                         (GROUP.ID %in% temp | 
-                            SPEED > maxvel |
-                            (SUT < minsut & NO.SP <= 3) | 
-                            PROTOCOL.TYPE == "Incidental" | 
-                            (!is.na(TIME.D) & ((TIME.D <= 4 & END <= 4) | 
-                                             (TIME.D >= 20 & END <= 28)
-                                           )
-                             )
-                          ) ~ 0, 
-                       ALL.SPECIES.REPORTED == 0 ~ 0,
-                       TRUE ~ 1)) %>% 
-    select(-SPEED, -SUT, -MIN, -END) %>% 
-    filter(ALL.SPECIES.REPORTED == 1)
+    mutate(ALL.SPECIES.REPORTED = case_when(ALL.SPECIES.REPORTED == 1 & 
+                                              (GROUP.ID %in% temp1 | 
+                                                 SPEED > maxvel |
+                                                 (SUT < minsut & NO.SP <= 3) | 
+                                                 PROTOCOL.TYPE == "Incidental") ~ 0, 
+                                            ALL.SPECIES.REPORTED == 0 ~ 0,
+                                            TRUE ~ 1),
+           OTHER.FILTERS = case_when(ALL.SPECIES.REPORTED == 1 & 
+                                       (
+                                         # nocturnal filter
+                                         (!is.na(HOUR) & ((HOUR <= 4 & HOUR.END <= 4) | 
+                                                             (HOUR >= 20 & HOUR.END <= 28)) ) |
+                                           # pelagic filter
+                                           !(GROUP.ID %in% temp2) |
+                                           # distance filter
+                                           (EFFORT.DISTANCE.KM > 50)
+                                       ) ~ 0, 
+                                     ALL.SPECIES.REPORTED == 0 ~ 0,
+                                     TRUE ~ 1)) %>% 
+    select(-SPEED, -SUT, -MIN, -HOUR.END) %>% 
+    filter(ALL.SPECIES.REPORTED == 1 & OTHER.FILTERS == 1)
   
   assign("data0", data0, .GlobalEnv)
-         
+  
   save(data0, file = "data/data0.RData")
+  
 }
 
 
@@ -149,7 +178,7 @@ rast_logpropchange <- function(x, y, k = 1)  {
   # # when no. of lists has been log transformed
   # # log(n2) - log(n1) = log(n2/n1)
   # return(y-x)
-
+  
   # when value has not been transformed to prevent NA
   x <- x + k
   y <- y + k

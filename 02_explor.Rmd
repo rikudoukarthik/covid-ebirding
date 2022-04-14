@@ -16,6 +16,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+
 library(tidyverse)
 library(lubridate)
 library(patchwork)
@@ -24,9 +25,16 @@ library(boot)
 theme_set(theme_bw())
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
+# covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
-# covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
+
+# boundary of India to remove data from outside (pelagic)
+india <- rgdal::readOGR(dsn = "data/in_2011", layer = "India_2011")
+sp::proj4string(india) <- "+proj=longlat +datum=WGS84"
+india <- terra::vect(india)
+
+
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
 
@@ -40,7 +48,7 @@ covidclasspath <- "data/covid_classification.csv"
 
 source("scripts/functions.R")
 # filtering the data for current use
-dataqual_filt(datapath, groupaccspath, covidclasspath, 
+dataqual_filt(datapath, groupaccspath, covidclasspath,
               maxvel = 20, minsut = 2)
 
 # load("data/data0.RData")
@@ -1064,8 +1072,6 @@ prod <- "MCD12Q1" # short name of product of interest
 start <- "2019-12-31" # time period of mapping
 end <- "2019-12-31" # time period of mapping
 
-# shapefile of India as area of interest
-aoi <- geodata::gadm("India", level = 1, path = "data")
 
 # creating folder to store MODIS data that will be downloaded
 MODISpath <- "data/in_LULC_MODIS/"
@@ -1076,14 +1082,13 @@ dir.create(MODISpath, showWarnings=FALSE)
 # cred <- data.frame(UN = "xxx",
 #                    PW = "yyy")
 # saveRDS(cred, "userpass.rds")
-
 userpass <- readRDS("userpass.rds")
 
 
 ## downloading MODIS tiled data (16 tiles for our defined area of interest, India)
 # resulting object is a list of file names
 modis <- luna::getModis(prod, start, end,
-                        aoi = aoi, download = T, path = MODISpath,
+                        aoi = india, download = T, path = MODISpath,
                         username = userpass$UN, password = userpass$PW)
 
 # choose the band (SDS) that you want using sds[] option and write GTiff files.
@@ -1107,20 +1112,20 @@ rast_full <- rast_list %>%
 
 
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
-projto <- raster::crs(aoi)
+projto <- raster::crs(india)
 # next step takes a few minutes
 # "near" because LC values are categories despite being numerical
 rast_proj <- terra::project(rast_full, projto, method = "near")
 
 
 ## cropping and masking the raster to our area of interest
-rast_aoi <- terra::crop(rast_proj, aoi)
-rast_aoi <- terra::mask(rast_aoi, aoi)
+rast_aoi <- terra::crop(rast_proj, india)
+rast_aoi <- terra::mask(rast_aoi, india)
 
 
 raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
-rm(prod, start, end, aoi, modispath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
+rm(prod, start, end, modispath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
 
 
 
@@ -1129,7 +1134,6 @@ rm(prod, start, end, aoi, modispath, userpass, modis, sds, modis2, rast_list, ra
 
 ## read in cropped and masked .tif
 rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
-# raster::plot(rast)
 
 
 ## reclassifying the raster as urban vs. non-urban 
@@ -1184,10 +1188,17 @@ leaflet() %>%
 
 
 ##### Adding UNU classification to eBird data ####
-
+  
 # adding extracted land cover values at eBird data points with grid cell information at both scales
 # Pakistan-administered Kashmir lists produce NA for URBAN
 data_UNU <- data0 %>% 
+  ungroup() %>% 
+  ### Creating smaller data object for spatial patterns 
+  select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
+         SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER, GROUP.ID, YEAR, MONTH, DAY.M, COVID,
+         NO.SP, HOUR, URBAN, NONURBAN, SUBCELL.ID, CELL.ID) %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+  slice(1) %>% 
   mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
          NONURBAN = if_else(URBAN == 1, 0, 1),
          # 2km*2km
@@ -1198,49 +1209,21 @@ data_UNU <- data0 %>%
 
 save(data_UNU, file = "data/data_UNU.RData")
 
-
-##### Creating smaller data object for spatial patterns ####
-
-# load("data/data_UNU.RData")
-# load("data/rast_UNU.RData")
-# load("data/rast_SoIB.RData")
-
-data_spatlists <- data_UNU %>% 
-  ungroup() %>% 
-  select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
-         SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER, GROUP.ID, YEAR, MONTH, DAY.M, COVID,
-         NO.SP, TIME.D, URBAN, NONURBAN, SUBCELL.ID, CELL.ID) %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) 
-
-save(data_spatlists, file = "data/data_spatlists.RData")
-
 ```
 
 ```{r s_listsUNU, cache=TRUE, message=FALSE}
 
 ##### Checking for pandemic-induced change in ratio of checklists submitted in urban and non-urban areas
 
-require(raster) # masks dplyr functions, so have used raster::function()
-require(terra)
-require(gdalUtils)
-require(geodata)
-# install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
-require(luna)
-
 # load("data/data_UNU.RData")
 
 
 temp1 <- data_UNU %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data_UNU %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
   filter(URBAN == 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.ULISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -1499,8 +1482,7 @@ ggsave("02_explor_figs/12_s_spread_UNU_cells.png",
 
 library(rasterVis)
 
-# load("data/data_spatlists.RData")
-
+# load("data/data_UNU.RData")
 
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
 
@@ -1508,7 +1490,7 @@ library(rasterVis)
 ##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
 # choosing only months with data from all 3 COVID categories
-month_compar <- data_spatlists %>% 
+month_compar <- data_UNU %>% 
   group_by(MONTH) %>% 
   mutate(COVID = as.character(COVID)) %>% 
   mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
@@ -1518,7 +1500,7 @@ month_compar <- data_spatlists %>%
   filter(N == 3) # all 3 COVID categories
 
 
-data_SoIBmap0 <- data_spatlists %>% 
+data_SoIBmap0 <- data_UNU %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
@@ -1653,7 +1635,7 @@ dev.off()
 ##### Change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell with COVID ####
 
 
-data_UNUmap0 <- data_spatlists %>% 
+data_UNUmap0 <- data_UNU %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
          SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
@@ -1874,7 +1856,7 @@ dev.off()
 # How did the urban-non-urban ratio of number of checklists change across cells with the pandemic?
 
 
-data_UNUpropmap0 <- data_spatlists %>% 
+data_UNUpropmap0 <- data_UNU %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, CELL.ID, MONTH, URBAN) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
@@ -2034,10 +2016,10 @@ temp2 <- data0 %>%
 temp3 <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
-  group_by(COVID, MONTH, STATE, TIME.D) %>% 
+  group_by(COVID, MONTH, STATE, HOUR) %>% 
   summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() %>% 
-  complete(COVID, MONTH, STATE, TIME.D, fill = list(TIME.LISTS = 0))
+  complete(COVID, MONTH, STATE, HOUR, fill = list(TIME.LISTS = 0))
 
 # Daman and Diu issue
 
@@ -2135,7 +2117,7 @@ t_tod_sw <- temp1 %>%
   left_join(temp3) %>% 
   filter(MONTH %in% 9:12) %>% 
   mutate(TIME.LISTS = ifelse(is.na(TIME.LISTS), 0, TIME.LISTS)) %>% 
-  group_by(COVID, YEAR, STATE, TIME.D) %>% 
+  group_by(COVID, YEAR, STATE, HOUR) %>% 
   summarise(NO.LISTS = sum(NO.LISTS),
             TIME.LISTS = sum(TIME.LISTS),
             PROP.LISTS = TIME.LISTS/NO.LISTS,
@@ -2144,7 +2126,7 @@ t_tod_sw <- temp1 %>%
             PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
 
 t_tod_nw <- t_tod_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, TIME.D) %>% 
+  group_by(COVID, YEAR, HOUR) %>% 
   summarise(PROP.LISTS = mean(PROP.LISTS),
             PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
             PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
@@ -2152,7 +2134,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
 
 
 (ggplot(t_tod_nw, 
-       aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+       aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -2160,7 +2142,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
     labs(title = "Temporal spread (ToD) of checklists at national level (Sep to Dec)",
          x = "Time (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
-         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -2168,7 +2150,7 @@ t_tod_nw <- t_tod_sw %>% ungroup() %>%
     labs(title = "Kerala",
          x = "Time (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
-         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -2176,7 +2158,7 @@ ggplot(filter(t_tod_sw, STATE == "Karnataka"),
     labs(title = "Karnataka",
          x = "Time (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
-         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -2184,7 +2166,7 @@ ggplot(filter(t_tod_sw, STATE == "Karnataka"),
     labs(title = "Gujarat",
          x = "Time (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
-         aes(as.factor(TIME.D), PROP.LISTS, colour = COVID)) + 
+         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
