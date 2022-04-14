@@ -1,0 +1,19 @@
+---
+title: "The impact of the pandemic on birding and birds in India"
+# date: "22/12/2021"
+# author: "Karthik Thrikkadeeri"
+editor_options: 
+  chunk_output_type: console
+output: 
+  word_document: 
+    reference_docx: "rmd_word_template.docx"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+### Abstract
+
+The data available on the citizen science platform eBird enables analyses and annual comparisons of bird abundance that inform national conservation policy, but its reliability is contingent on birdwatcher as well as bird behaviour remaining relatively unchanged between years. During the devastating COVID-19 pandemic, human activities were curtailed and lifestyles modified, probably impacting where, when, and how birdwatchers observed birds. We explored how the pandemic, and associated restrictions, have affected birdwatcher behaviour in India so that any changes in bird abundance during the pandemic years can be meaningfully interpreted. We specifically compared the quantity and quality of data uploaded during the pandemic (2020--21) with the years that immediately preceded (2019--20) and succeeded (2021--22) it. We found that the pandemic did not lower data quantity, and instead coincided with a general rise in the number and effort of birdwatchers using the platform. We, however, found differences in data quality. Although the average person continued to spend similar amounts of time observing birds, the activity was now associated with decreased group interaction and overall mobility (less travel and higher site fidelity). The total area covered by birdwatchers did not change but was slightly biased against non-urban landscapes. Seasonal and state-level idiosyncrasies were prevalent in all the patterns, reflecting differences in government response and handling of the pandemic, severity of the disease, and perhaps general attitudes of the public. 
