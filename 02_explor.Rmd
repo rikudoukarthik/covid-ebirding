@@ -34,6 +34,10 @@ india <- rgdal::readOGR(dsn = "data/in_2011", layer = "India_2011")
 sp::proj4string(india) <- "+proj=longlat +datum=WGS84"
 india <- terra::vect(india)
 
+# state boundaries
+states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") %>% 
+  terra::vect()
+
 
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
@@ -1565,12 +1569,11 @@ rast_SoIBmap <- raster::stack(
 names(rast_SoIBmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
 
-# aoi0 <- geodata::gadm("India", level = 0, path = "data")
-aoi <- geodata::gadm("India", level = 1, path = "data")
-in_bound <- as(aoi, "Spatial") # converting for sp::sp.polygons()
-
 
 library(RColorBrewer)
+
+
+in_bound <- rbind(india, states) %>% as("Spatial") # converting for sp::sp.polygons()
 
 # for graph legends
 plotfrom <- round(raster::cellStats(rast_SoIBmap, "min")[1], 2)
@@ -1977,7 +1980,7 @@ dev.off()
 
 
 rm(list = setdiff(ls(), 
-                  c("covid_palette", "covid_palette3",
+                  c("covid_palette", "covid_palette3", "india", "states",
                     # "data_UNU", "rast_UNU", 
                     "boot_se", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
 
