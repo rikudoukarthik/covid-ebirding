@@ -1588,29 +1588,6 @@ mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
                                   strip.background = list(col = "transparent"),
                                   strip.border = list(col = "transparent"))
 
-
-# to plot positive and negative separately
-rast_SoIBmap_a <- rast_SoIBmap
-rast_SoIBmap_a[rast_SoIBmap_a >= 0] <- NA
-rast_SoIBmap_b <- rast_SoIBmap
-rast_SoIBmap_b[rast_SoIBmap_b <= 0] <- NA
-
-
-
-levelplot(rast_SoIBmap_a, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfrom, plotto, 0.1),
-          main = "Negative log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_a
-
-levelplot(rast_SoIBmap_b, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfrom, plotto, 0.1),
-          main = "Positive log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_b
-
 levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
           margin = F, 
@@ -1618,16 +1595,6 @@ levelplot(rast_SoIBmap,
           main = "Log prop. change in monthly (six months) no. of lists per 24kmx24km cell") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
 
-
-png(file = "02_explor_figs/12a_s_spread_SoIBmap_a.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_SoIBmap_a)
-dev.off()
-
-png(file = "02_explor_figs/12a_s_spread_SoIBmap_b.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_SoIBmap_b)
-dev.off()
 
 png(file = "02_explor_figs/12a_s_spread_SoIBmap.png", 
     width = 17, height = 8, units = "in", res = 300)
@@ -1979,49 +1946,55 @@ dev.off()
 
 ##### Final analysis: net change across grids with SEs ####
 
+
+rast_SoIBmap_prop <- raster::stack(
+  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap2, 
+                  k = 1, # constant to prevent NAs
+                  fun = rast_propchange),
+  raster::overlay(x = rast_SoIBmap2, y = rast_SoIBmap3, 
+                  k = 1, 
+                  fun = rast_propchange),
+  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
+                  k = 1, 
+                  fun = rast_propchange))
+names(rast_SoIBmap_prop) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
+
+
 temp1 <- temp0 %>% 
-  mutate(BeforeDuring = raster::extract(rast_SoIBmap$BeforeDuring, 
+  mutate(BeforeDuring = raster::extract(rast_SoIBmap_prop$BeforeDuring, 
                                         cbind(CELL.LONG, CELL.LAT)),
-         DuringAfter = raster::extract(rast_SoIBmap$DuringAfter, 
+         DuringAfter = raster::extract(rast_SoIBmap_prop$DuringAfter, 
                                         cbind(CELL.LONG, CELL.LAT))) %>% 
   pivot_longer(cols = c(BeforeDuring, DuringAfter),
                names_to = "PERIOD", 
-               values_to = "LOG.PROP")  # log. prop. change in monthly no.lists per 24x24
+               values_to = "PROP.CHANGE")  # log. prop. change in monthly no.lists per 24x24
   
 data_SoIBmap <- temp1 %>% 
   group_by(PERIOD) %>% 
-  summarise(LOG.PROP.SE = boot_se(LOG.PROP),
-            LOG.PROP.SD = sd(LOG.PROP),
-            LOG.PROP = mean(LOG.PROP),
-            LOG.PROP.CI.L = LOG.PROP - 1.96*LOG.PROP.SE,
-            LOG.PROP.CI.U = LOG.PROP + 1.96*LOG.PROP.SE)
- 
+  summarise(PROP.SE = boot_se(PROP.CHANGE),
+            PROP.CHANGE.SD = sd(PROP.CHANGE),
+            PROP.CHANGE = mean(PROP.CHANGE),
+            PROP.CHANGE.CI.L = PROP.CHANGE - 1.96*PROP.SE,
+            PROP.CHANGE.CI.U = PROP.CHANGE + 1.96*PROP.SE)
+
 changepalette <- c(covid_palette[2], covid_palette[4])
 changepalette2 <- c(covid_palette[2], covid_palette[4])
 
 
-((ggplot(temp1, aes(x = PERIOD, y = LOG.PROP, colour = PERIOD)) + 
-    geom_bin_2d(colour = NA, size = 0.005) +
-    scale_fill_viridis_c() +
-    scale_colour_manual(values = changepalette) +
-    labs(title = "Log prop. change in monthly no. of lists per 24kmx24km grid cell",
-         subtitle = "All 24kmx24km cells with birding activity",
-         x = "Period", y = "Log proportional change")) |
-(ggplot(data_SoIBmap, aes(x = PERIOD, y = LOG.PROP, colour = PERIOD)) + 
-    geom_point(data = temp1, alpha = 0.1, position = position_jitter()) +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LOG.PROP.CI.L, ymax = LOG.PROP.CI.U), 
-                  size = 1.25, width = 0.1, position = position_dodge(0.5)) +
-    scale_colour_manual(values = changepalette) +
-    scale_y_continuous(limits = c(-0.1, 0.12)) +
-    labs(title = "Net log prop. change in monthly no. of lists at national level",
-         subtitle = "Averaged across all 24kmx24km cells with birding activity",
-         x = "Period", y = "Log proportional change"))) +
-plot_layout(guides = "collect") -> s_spread_netchange
+
+ggplot(data_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE, colour = PERIOD)) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = PROP.CHANGE.CI.L, ymax = PROP.CHANGE.CI.U), 
+                size = 1.25, width = 0.1, position = position_dodge(0.5)) +
+  scale_colour_manual(values = changepalette) +
+  scale_y_continuous(limits = c(1, 2.5)) +
+  labs(title = "Net prop. change in monthly no. of lists at national level",
+       subtitle = "Averaged across all 24kmx24km cells with birding activity",
+       x = "Period", y = "Proportional change") -> s_spread_netchange
 
 ggsave("02_explor_figs/12d_s_spread_netchange.png", 
        plot = s_spread_netchange,
-       dpi = 300, width = 13, height = 9, units = "in")
+       dpi = 300, width = 7, height = 10, units = "in")
 
   
 ##### Removing workspace objects ####

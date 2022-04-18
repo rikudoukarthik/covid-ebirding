@@ -187,3 +187,18 @@ rast_logpropchange <- function(x, y, k = 1)  {
   return(log10(y/x))
   
 }
+
+### raster calc: proportional change in number of lists -----------------
+
+rast_propchange <- function(x, y, k = 1)  {
+  
+  # x is first, y is second, so change from x to y
+  
+  # adding 1 to all rows to prevent NA (from zeroes)
+  x <- x + k
+  y <- y + k
+  
+  # proportion of urban birding in the cell changed by y/x [0,+n] times.
+  return(y/x)
+  
+}
