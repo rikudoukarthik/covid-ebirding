@@ -1200,15 +1200,15 @@ data_UNU <- data0 %>%
   ### Creating smaller data object for spatial patterns 
   select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
          SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER, GROUP.ID, YEAR, MONTH, DAY.M, COVID,
-         NO.SP, HOUR, URBAN, NONURBAN, SUBCELL.ID, CELL.ID) %>% 
+         NO.SP, HOUR) %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
   mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
          NONURBAN = if_else(URBAN == 1, 0, 1),
          # 2km*2km
-         SUBCELL.ID = cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
+         SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
          # 24km*24km
-         CELL.ID = cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
+         CELL.ID = raster::cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
   filter(!is.na(URBAN))
 
 save(data_UNU, file = "data/data_UNU.RData")
@@ -1520,6 +1520,7 @@ temp0 <- data_SoIBmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
 
 data_SoIBmap1 <- data_SoIBmap0 %>% 
   filter(COVID == "BEF") %>% 
+  # to include all grid cells and not just those with birding in BEF
   right_join(temp0) %>% 
   mutate(COVID = "BEF", 
          NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
@@ -1980,7 +1981,7 @@ dev.off()
 
 
 rm(list = setdiff(ls(), 
-                  c("covid_palette", "covid_palette3", "india", "states",
+                  c("covid_palette", "covid_palette3", "india", "states", "data0",
                     # "data_UNU", "rast_UNU", 
                     "boot_se", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
 
