@@ -137,7 +137,7 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
 }
 
 
-### bootstrapping standard error -----------------
+### bootstrapping confidence -----------------
 
 # Useful resources: 
 # https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/variability-and-uncertainty-standard-deviations-standard-errors-confidence-intervals.html#bootstrap 
@@ -154,81 +154,12 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
 # when we need to propagate from state to nation level, this assumption is necessary.
 # thus, for all the initial metrics, this is okay.
 
-boot_se = function(x, fn = mean, B = 1000) {
-  
-  require(tidyverse)
-  require(rlang)
-  
-  a <- 1:B %>%
-    # For each iteration, generate a sample of x with replacement
-    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
-    # Obtain the fn estimate for each bootstrap sample
-    map_dbl(fn)
-  
-  colnm <- paste0(unlist(str_split(deparse(substitute(x)), "\\$"))[2],
-                  ".",
-                  str_to_upper(deparse(substitute(fn))))
-  
-  return(data %>%
-           dplyr::summarise(SE = sd(a),
-                            !!colnm := fn(a)))
-}
-
-### bootstrapping confidence intervals -----------------
-
+###
 # when there is no issue of propagating SEs, always better to bootstrap CIs directly,
 # without making the Gaussian assumption. this allows asymmetric CIs which are more likely
 # with counts, proportions, etc.
 
-boot_ci = function(data, x, fn = mean, B = 1000) {
-  
-  require(tidyverse)
-  require(rlang)
-  
-  a <- 1:B %>%
-    # For each iteration, generate a sample of x with replacement
-    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
-    # Obtain the fn estimate for each bootstrap sample
-    map_dbl(fn) 
-  
-  colnm <- paste0(unlist(str_split(deparse(substitute(x)), "\\$"))[2],
-                  ".",
-                  str_to_upper(deparse(substitute(fn))))
-
-  return(data %>%
-           dplyr::summarise(CI.L = stats::quantile(a, 0.025), # Obtain the CIs
-                            CI.U = stats::quantile(a, 0.975),
-                            !!colnm := fn(a)))
-}
-
-boot_ci2 = function(data, x, group, fn = mean, B = 1000) {
-  
-  require(tidyverse)
-  require(rlang)
-  
-  y <- unlist(c((
-    (data %>% group_by(group) %>% 
-       summarise(cur_data() %>% select((!!x))))[, deparse(substitute(x))])), use.names = F)
-
-  a <- 1:B %>%
-    # For each iteration, generate a sample of x with replacement
-    map(~ y[sample(1:length(y), replace = TRUE)]) %>%
-    # Obtain the fn estimate for each bootstrap sample
-    map_dbl(fn)
-
-  colnm <- paste0(str_to_upper(deparse(substitute(fn))),
-                  ".",
-                  str_to_upper(deparse(substitute(x))))
-
-  return(data %>%
-           dplyr::summarise(CI.L = stats::quantile(a, 0.025), # Obtain the CIs
-                            CI.U = stats::quantile(a, 0.975),
-                            !!colnm := fn(a)))
-}
-
-
-
-boot_ci3 = function(x, fn = mean, B = 1000) {
+boot_conf = function(x, fn = mean, B = 1000) {
   
   1:B %>%
     # For each iteration, generate a sample of x with replacement
@@ -239,6 +170,8 @@ boot_ci3 = function(x, fn = mean, B = 1000) {
 }
 
 
+# metrics that use this function
+# fidelity, time, dist, duration, length, spatial (net change), new
 
 
 

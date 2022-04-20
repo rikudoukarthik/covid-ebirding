@@ -358,8 +358,7 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 #
 # here, doing 25km x 25km (SoIB and also more lenient and appropriate)
 
-set.seed(213)
-
+set.seed(213) # for bootstrap
 fidel_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -376,25 +375,27 @@ fidel_sw <- data0 %>%
   ungroup() %>% 
   mutate(NO.SITES = ifelse(is.na(NO.SITES), 0, NO.SITES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.SE = boot_se(NO.SITES),
-            NO.SITES = mean(NO.SITES),
-            NO.CI.L = NO.SITES - 1.96*NO.SE,
-            NO.CI.U = NO.SITES + 1.96*NO.SE)
+  summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(SE = sd(NO.SITES),
+                   NO.SITES = mean(NO.SITES),
+                   CI.L = NO.SITES - 1.96*SE,
+                   CI.U = NO.SITES + 1.96*SE)
 
 fidel_nw <- fidel_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(NO.SITES = mean(NO.SITES),
-            NO.SE = sqrt(sum((NO.SE)^2))/n(),
-            NO.CI.L = NO.SITES - 1.96*NO.SE,
-            NO.CI.U = NO.SITES + 1.96*NO.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = NO.SITES - 1.96*SE,
+            CI.U = NO.SITES + 1.96*SE)
 
   
 (ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "No. of sites (unique 25 km x 25 km cells) visited by observers at national level",
@@ -404,7 +405,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -414,7 +415,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -424,7 +425,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -434,7 +435,7 @@ fidel_nw <- fidel_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NO.CI.L, ymax = NO.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -458,7 +459,6 @@ rm(list = c("fidel_nw","fidel_sw","fidelity"))
 ```{r time, cache=TRUE, message=FALSE}
 
 set.seed(423) 
-
 time_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
@@ -467,24 +467,26 @@ time_sw <- data0 %>%
   ungroup() %>% 
   mutate(B.TIME = ifelse(is.na(B.TIME), 0, B.TIME)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(B.TIME.SE = boot_se(B.TIME),
-            B.TIME = mean(B.TIME),
-            B.TIME.CI.L = B.TIME - 1.96*B.TIME.SE,
-            B.TIME.CI.U = B.TIME + 1.96*B.TIME.SE)
+  summarise(B.TIME = boot_conf(x = B.TIME)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(SE = sd(B.TIME),
+                   B.TIME = mean(B.TIME),
+                   CI.L = B.TIME - 1.96*SE,
+                   CI.U = B.TIME + 1.96*SE)
 
 time_nw <- time_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(B.TIME = mean(B.TIME),
-            B.TIME.SE = sqrt(sum((B.TIME.SE)^2))/n(),
-            B.TIME.CI.L = B.TIME - 1.96*B.TIME.SE,
-            B.TIME.CI.U = B.TIME + 1.96*B.TIME.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = B.TIME - 1.96*SE,
+            CI.U = B.TIME + 1.96*SE)
 
 
 (ggplot(time_nw, aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Monthly birding times of observers at national level",
@@ -493,7 +495,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
@@ -502,7 +504,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
@@ -511,7 +513,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
@@ -520,7 +522,7 @@ time_nw <- time_sw %>%
          aes(MONTH, B.TIME, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = B.TIME.CI.L, ymax = B.TIME.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
@@ -755,30 +757,33 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 ```{r distance, cache=TRUE, message=FALSE}
 
 set.seed(192) 
-
 dist_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% ungroup() %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(DIST = mean(EFFORT.DISTANCE.KM),
-            DIST.SE = boot_se(EFFORT.DISTANCE.KM),
-            DIST.CI.L = DIST - 1.96*DIST.SE,
-            DIST.CI.U = DIST + 1.96*DIST.SE)
+  dplyr::summarise(DIST = mean(EFFORT.DISTANCE.KM)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(DIST = boot_conf(x = DIST)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(SE = sd(DIST),
+                   DIST = mean(DIST),
+                   CI.L = DIST - 1.96*SE,
+                   CI.U = DIST + 1.96*SE)
 
 dist_nw <- dist_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(DIST = mean(DIST),
-            DIST.SE = sqrt(sum((DIST.SE)^2))/n(),
-            DIST.CI.L = DIST - 1.96*DIST.SE,
-            DIST.CI.U = DIST + 1.96*DIST.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = DIST - 1.96*SE,
+            CI.U = DIST + 1.96*SE)
 
 
 (ggplot(dist_nw, aes(MONTH, DIST, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Average distance travelled per travelling checklist at national level",
@@ -788,7 +793,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -798,7 +803,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -808,7 +813,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -818,7 +823,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DIST.CI.L, ymax = DIST.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -855,25 +860,29 @@ dur_sw <- data0 %>%
   filter(!is.na(DURATION.MINUTES)) %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(DURATION = mean(DURATION.MINUTES),
-            DURATION.SE = boot_se(DURATION.MINUTES),
-            DURATION.CI.L = DURATION - 1.96*DURATION.SE,
-            DURATION.CI.U = DURATION + 1.96*DURATION.SE)
+  dplyr::summarise(DURATION = mean(DURATION.MINUTES)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(DURATION = boot_conf(x = DURATION)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(SE = sd(DURATION),
+                   DURATION = mean(DURATION),
+                   CI.L = DURATION - 1.96*SE,
+                   CI.U = DURATION + 1.96*SE)
 
 dur_nw <- dur_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(DURATION = mean(DURATION),
-            DURATION.SE = sqrt(sum((DURATION.SE)^2))/n(),
-            DURATION.CI.L = DURATION - 1.96*DURATION.SE,
-            DURATION.CI.U = DURATION + 1.96*DURATION.SE) 
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = DURATION - 1.96*SE,
+            CI.U = DURATION + 1.96*SE)
 
 
 (ggplot(dur_nw, aes(MONTH, DURATION, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Average checklist duration at national level",
@@ -883,7 +892,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -893,7 +902,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -903,7 +912,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -913,7 +922,7 @@ dur_nw <- dur_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = DURATION.CI.L, ymax = DURATION.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -946,7 +955,6 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
 set.seed(98)
-
 length_sw <- data0 %>% 
   mutate(CATEGORY = case_when(CATEGORY == "domestic" & 
                                  COMMON.NAME == "Rock Pigeon" ~ "species",
@@ -954,27 +962,27 @@ length_sw <- data0 %>%
   filter(CATEGORY %in% c("issf","species")) %>% 
   group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
   summarise(LENGTH = n_distinct(COMMON.NAME)) %>% 
-  ungroup() %>% 
+  summarise(LENGTH = boot_conf(x = LENGTH)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(LENGTH.SE = boot_se(LENGTH),
-            LENGTH = mean(LENGTH),
-            LENGTH.CI.L = LENGTH - 1.96*LENGTH.SE,
-            LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
+  dplyr::summarise(SE = sd(LENGTH),
+                   LENGTH = mean(LENGTH),
+                   CI.L = LENGTH - 1.96*SE,
+                   CI.U = LENGTH + 1.96*SE)
 
 length_nw <- length_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(LENGTH = mean(LENGTH),
-            LENGTH.SE = sqrt(sum((LENGTH.SE)^2))/n(),
-            LENGTH.CI.L = LENGTH - 1.96*LENGTH.SE,
-            LENGTH.CI.U = LENGTH + 1.96*LENGTH.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = LENGTH - 1.96*SE,
+            CI.U = LENGTH + 1.96*SE)
 
 
 (ggplot(length_nw, aes(MONTH, LENGTH, colour = COVID)) + 
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Average checklist length at national level",
@@ -984,7 +992,7 @@ length_nw <- length_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -994,7 +1002,7 @@ length_nw <- length_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -1004,7 +1012,7 @@ length_nw <- length_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -1014,7 +1022,7 @@ length_nw <- length_sw %>%
     scale_y_log10() + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = LENGTH.CI.L, ymax = LENGTH.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -1969,14 +1977,15 @@ temp1 <- temp0 %>%
                names_to = "PERIOD", 
                values_to = "PROP.CHANGE")  # log. prop. change in monthly no.lists per 24x24
   
+set.seed(23) # for bootstrap
 boot_SoIBmap <- temp1 %>% 
   group_by(PERIOD) %>% 
   # this gives B number of means/medians of bootstrapped samples
-  summarise(BOOT = boot_ci3(x = PROP.CHANGE)) %>% 
+  summarise(PROP.CHANGE = boot_conf(x = PROP.CHANGE)) %>% 
   group_by(PERIOD) %>% 
-  dplyr::summarise(CI.L = stats::quantile(BOOT, 0.025), # Obtain the CIs
-                   CI.U = stats::quantile(BOOT, 0.975),
-                   PROP.CHANGE = mean(BOOT))
+  dplyr::summarise(CI.L = stats::quantile(PROP.CHANGE, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.CHANGE, 0.975),
+                   PROP.CHANGE = mean(PROP.CHANGE))
 
 
 changepalette <- c(covid_palette[2], covid_palette[4])
@@ -2002,7 +2011,7 @@ ggsave("02_explor_figs/12d_s_spread_netchange.png",
 rm(list = setdiff(ls(), 
                   c("covid_palette", "covid_palette3", "india", "states", "data0",
                     # "data_UNU", "rast_UNU", 
-                    "boot_se", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
+                    "boot_conf", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
 
 
 ```
@@ -2340,20 +2349,24 @@ new_obsr_sw <- temp1 %>%
 
 set.seed(765)
 
-new_obsr_nw <- new_obsr_sw %>% 
+new_obsr_nw <- temp1 %>% 
+  left_join(temp2) %>% 
+  mutate(NEW = ifelse(is.na(NEW), 0, NEW)) %>% 
   ungroup() %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  summarise(NEW.SE = boot_se(NEW),
-            NEW = mean(NEW),
-            NEW.CI.L = NEW - 1.96*NEW.SE,
-            NEW.CI.U = NEW + 1.96*NEW.SE)
+  summarise(NEW = boot_conf(x = NEW)) %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
+  dplyr::summarise(SE = sd(NEW),
+                   NEW = mean(NEW),
+                   CI.L = NEW - 1.96*SE,
+                   CI.U = NEW + 1.96*SE)
 
 
 (ggplot(new_obsr_nw, aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = NEW.CI.L, ymax = NEW.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Monthly number of new eBirders at national level",
