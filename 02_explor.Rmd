@@ -46,16 +46,16 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 ```{r data_filt, cache=TRUE}
 
-datapath <- "data/ebd_IN_relFeb-2022.RData"
+datapath <- "data/ebd_IN_relMar-2022.RData"
 groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
 covidclasspath <- "data/covid_classification.csv"
 
 source("scripts/functions.R")
-# filtering the data for current use
+# filtering the data for current use (8)
 dataqual_filt(datapath, groupaccspath, covidclasspath,
               maxvel = 20, minsut = 2)
 
-# load("data/data0.RData")
+# load("data/data0_slice.RData")
 
 ```
 
@@ -129,7 +129,7 @@ Post-presentation: regarding averaging national level patterns by state for some
 
 ### Group birding 
 
-Doesn't include duplicate lists as we are interested in Boolean group/solo, and otherwise proportion will be inflated just by having more birders in the group birding session.
+Doesn't include duplicate lists as we are interested in Boolean (group/solo), and otherwise proportion will be inflated just by having more birders in the group birding session.
 
 ```{r no_lists, cache=TRUE, message=FALSE}
 
@@ -853,7 +853,6 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 ```{r duration, cache=TRUE, message=FALSE}
 
 set.seed(834)
-
 dur_sw <- data0 %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
   slice(1) %>% 
@@ -955,11 +954,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
 set.seed(98)
-length_sw <- data0 %>% 
-  mutate(CATEGORY = case_when(CATEGORY == "domestic" & 
-                                 COMMON.NAME == "Rock Pigeon" ~ "species",
-                               TRUE ~ CATEGORY)) %>% 
-  filter(CATEGORY %in% c("issf","species")) %>% 
+length_sw <- !!!!!!!!! %>% 
   group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
   summarise(LENGTH = n_distinct(COMMON.NAME)) %>% 
   summarise(LENGTH = boot_conf(x = LENGTH)) %>% 
@@ -1041,8 +1036,6 @@ rm(length_nw, length_sw, length)
 * At the national level, list length decreased only in April--May. Over all years, the average checklist becomes bigger in the winter (due to winter migrants adding to the local species pool).  
 * In Kerala, list length increased in the winter months of December--January during the pandemic, but otherwise mirrored national patterns.  
 * Other states mirrored national patterns with more or less degree of variablity.  
-
-### Habitats surveyed  
 
 ### Spatial spread and coverage 
 
@@ -1981,6 +1974,7 @@ set.seed(23) # for bootstrap
 boot_SoIBmap <- temp1 %>% 
   group_by(PERIOD) %>% 
   # this gives B number of means/medians of bootstrapped samples
+  # median resulting in just 1s so mean is fine
   summarise(PROP.CHANGE = boot_conf(x = PROP.CHANGE)) %>% 
   group_by(PERIOD) %>% 
   dplyr::summarise(CI.L = stats::quantile(PROP.CHANGE, 0.025), # Obtain the CIs

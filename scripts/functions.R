@@ -63,6 +63,15 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
   
   ### main data filtering ######
   
+  # to calculate list length aka number of species
+  temp0 <- data %>% 
+    mutate(CATEGORY = case_when(CATEGORY == "domestic" & 
+                                  COMMON.NAME == "Rock Pigeon" ~ "species",
+                                TRUE ~ CATEGORY)) %>% 
+    filter(CATEGORY %in% c("issf","species")) %>% 
+    group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+    summarise(NO.SP = n_distinct(COMMON.NAME))
+  
   data0 <- data %>% 
     filter(YEAR >= 2019) %>% # retaining only data from 2019 onward
     anti_join(filtGA) %>% # removing data from group accounts
@@ -70,22 +79,17 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
     left_join(covidclass) %>% 
     mutate(COVID = factor(COVID,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
-    group_by(GROUP.ID) %>% 
-    mutate(NO.SP = n_distinct(COMMON.NAME)) %>%
-    ungroup() %>% 
-    mutate(HOUR = hour(as_datetime(paste(OBSERVATION.DATE,
-                                         TIME.OBSERVATIONS.STARTED))),
-           MIN = minute(as_datetime(paste(OBSERVATION.DATE,
-                                          TIME.OBSERVATIONS.STARTED))),
+    # NO.SP column
+    left_join(temp0) %>% 
+    mutate(DATETIME = as_datetime(paste(OBSERVATION.DATE,
+                                        TIME.OBSERVATIONS.STARTED)),
+           HOUR = hour(DATETIME),
+           MIN = minute(DATETIME),
            SPEED = EFFORT.DISTANCE.KM*60/DURATION.MINUTES, # kmph
            SUT = NO.SP*60/DURATION.MINUTES, # species per hour
            # calculate hour checklist ended
            HOUR.END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60))
-  
-  
-  load("data/data0.RData")
 
-  
   
   ### exclude records based on various criteria 
   
@@ -103,36 +107,51 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
     terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
     terra::intersect(india) %>% 
     terra::as.data.frame() %>% 
-    select(GROUP.ID) # these are lists inside IN so need to be excluded (!) in filter step
+    select(GROUP.ID) 
+  # these are lists inside IN so need to be excluded (!) in filter step
   
   
   # true completeness + other filters
   data0 <- data0 %>%
-    mutate(ALL.SPECIES.REPORTED = case_when(ALL.SPECIES.REPORTED == 1 & 
+    mutate(TRUE.COMPLETE = case_when(ALL.SPECIES.REPORTED == 1 & 
                                               (GROUP.ID %in% temp1 | 
                                                  SPEED > maxvel |
                                                  (SUT < minsut & NO.SP <= 3) | 
                                                  PROTOCOL.TYPE == "Incidental") ~ 0, 
                                             ALL.SPECIES.REPORTED == 0 ~ 0,
                                             TRUE ~ 1),
-           OTHER.FILTERS = case_when(ALL.SPECIES.REPORTED == 1 & 
-                                       (
-                                         # nocturnal filter
-                                         (!is.na(HOUR) & ((HOUR <= 4 & HOUR.END <= 4) | 
-                                                             (HOUR >= 20 & HOUR.END <= 28)) ) |
-                                           # pelagic filter
-                                           !(GROUP.ID %in% temp2) |
-                                           # distance filter
-                                           (EFFORT.DISTANCE.KM > 50)
-                                       ) ~ 0, 
-                                     ALL.SPECIES.REPORTED == 0 ~ 0,
-                                     TRUE ~ 1)) %>% 
-    select(-SPEED, -SUT, -MIN, -HOUR.END) %>% 
-    filter(ALL.SPECIES.REPORTED == 1 & OTHER.FILTERS == 1)
-  
-  assign("data0", data0, .GlobalEnv)
+           # nocturnal filter
+           NOCT.FILTER = case_when(!is.na(HOUR) & 
+                                     ((HOUR <= 4 & HOUR.END <= 4) |
+                                        (HOUR >= 20 & HOUR.END <= 28)) ~ 0, 
+                                   TRUE ~ 1)) %>% 
+    filter((TRUE.COMPLETE == 1) & (NOCT.FILTER == 1) &
+             # pelagic filter
+             !(GROUP.ID %in% temp2) &
+             # distance filter
+             (EFFORT.DISTANCE.KM <= 50)) %>% 
+    select(-SPEED, -SUT, -MIN, -HOUR.END, -DATETIME, -NOCT.FILTER) 
   
   save(data0, file = "data/data0.RData")
+
+  
+  
+  # saving sliced data which is what is required for analyses
+  
+  data0_slice_S <- data0 %>% 
+    group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+    slice(1)
+  
+  data0_slice_G <- data0 %>% 
+    group_by(GROUP.ID) %>% 
+    slice(1)
+  
+  
+  assign("data0_slice_S", data0_slice_S, .GlobalEnv)
+  assign("data0_slice_G", data0_slice_G, .GlobalEnv)
+  
+  save(data0_slice_S, data0_slice_G, file = "data/data0_slice.RData")
+  
   
 }
 
