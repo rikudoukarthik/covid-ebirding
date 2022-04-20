@@ -51,7 +51,7 @@ groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
 covidclasspath <- "data/covid_classification.csv"
 
 source("scripts/functions.R")
-# filtering the data for current use (8)
+# filtering the data for current use (10 mins)
 dataqual_filt(datapath, groupaccspath, covidclasspath,
               maxvel = 20, minsut = 2)
 

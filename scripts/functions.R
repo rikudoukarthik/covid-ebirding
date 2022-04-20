@@ -108,29 +108,26 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
     terra::intersect(india) %>% 
     terra::as.data.frame() %>% 
     select(GROUP.ID) 
-  # these are lists inside IN so need to be excluded (!) in filter step
-  
+
   
   # true completeness + other filters
   data0 <- data0 %>%
-    mutate(TRUE.COMPLETE = case_when(ALL.SPECIES.REPORTED == 1 & 
-                                              (GROUP.ID %in% temp1 | 
-                                                 SPEED > maxvel |
-                                                 (SUT < minsut & NO.SP <= 3) | 
-                                                 PROTOCOL.TYPE == "Incidental") ~ 0, 
-                                            ALL.SPECIES.REPORTED == 0 ~ 0,
-                                            TRUE ~ 1),
-           # nocturnal filter
-           NOCT.FILTER = case_when(!is.na(HOUR) & 
-                                     ((HOUR <= 4 & HOUR.END <= 4) |
-                                        (HOUR >= 20 & HOUR.END <= 28)) ~ 0, 
-                                   TRUE ~ 1)) %>% 
+    mutate(
+      TRUE.COMPLETE = case_when(
+        (ALL.SPECIES.REPORTED == 0) ~ 0,
+        ((ALL.SPECIES.REPORTED == 1) & (GROUP.ID %in% temp1 | PROTOCOL.TYPE == "Incidental")) ~ 0,
+        # speed, species per unit time and distance filter
+        ((ALL.SPECIES.REPORTED == 1) & (PROTOCOL.TYPE == "Traveling") &
+           ((SPEED > maxvel) | (SUT < minsut & NO.SP <= 3) | (EFFORT.DISTANCE.KM > 50))) ~ 0,
+        TRUE ~ 1),
+      # nocturnal filter
+      NOCT.FILTER = case_when(
+        ((!is.na(HOUR)) & ((HOUR <= 4 & HOUR.END <= 4) | (HOUR >= 20 & HOUR.END <= 28))) ~ 0, 
+        TRUE ~ 1)) %>% 
     filter((TRUE.COMPLETE == 1) & (NOCT.FILTER == 1) &
              # pelagic filter
-             !(GROUP.ID %in% temp2) &
-             # distance filter
-             (EFFORT.DISTANCE.KM <= 50)) %>% 
-    select(-SPEED, -SUT, -MIN, -HOUR.END, -DATETIME, -NOCT.FILTER) 
+             !(GROUP.ID %in% temp2)) %>% 
+    select(-SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER) 
   
   save(data0, file = "data/data0.RData")
 
