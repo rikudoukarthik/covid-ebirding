@@ -349,18 +349,14 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 set.seed(213) # for bootstrap
 fidel_sw <- data0_slice_S %>% 
   ungroup() %>% 
-  # grouping in terms of 5kmx5km and 25kmx25km cells (not 1degx1deg)
-  mutate(LAT.5K = LATITUDE*111/5, 
-         LON.5K = LONGITUDE*111/5,
-         LAT.25K = LATITUDE*111/25, 
+  # grouping in terms of 25kmx25km cells (not 1degx1deg)
+  mutate(LAT.25K = LATITUDE*111/25, 
          LON.25K = LONGITUDE*111/25) %>% 
   # pasting lat-lon as string to find truly unique sites
-  mutate(COORD.5K = paste0(ceiling(LON.5K), ",", ceiling(LAT.5K)),
-         COORD.25K = paste0(ceiling(LON.25K), ",", ceiling(LAT.25K))) %>% 
+  mutate(COORD.25K = paste0(ceiling(LON.25K), ",", ceiling(LAT.25K))) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
-  ungroup() %>% 
-  mutate(NO.SITES = ifelse(is.na(NO.SITES), 0, NO.SITES)) %>% 
+  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -446,13 +442,10 @@ rm(list = c("fidel_nw","fidel_sw","fidelity"))
 ```{r time, cache=TRUE, message=FALSE}
 
 set.seed(423) 
-time_sw <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+time_sw <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
-  ungroup() %>% 
-  mutate(B.TIME = ifelse(is.na(B.TIME), 0, B.TIME)) %>% 
+  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(B.TIME = boot_conf(x = B.TIME)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -462,7 +455,6 @@ time_sw <- data0 %>%
                    CI.U = B.TIME + 1.96*SE)
 
 time_nw <- time_sw %>% 
-  ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(B.TIME = mean(B.TIME),
             SE = sqrt(sum((SE)^2))/n(),
@@ -534,49 +526,41 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-temp1 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+temp2 <- data0_slice_S %>% 
   filter(LOCALITY.TYPE == "H") %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.SLISTS = 0))
-
+  ungroup()
 
 hot_sw <- temp1 %>% 
   left_join(temp2) %>% 
+  mutate(NO.HLISTS = replace_na(NO.HLISTS, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(NO.HLISTS = ifelse(is.na(NO.HLISTS), 0, NO.HLISTS),
-         PROP.HLISTS = NO.HLISTS/NO.LISTS,
-         PROP.SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
-         PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
-         PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE) 
+  mutate(PROP.HLISTS = NO.HLISTS/NO.LISTS,
+         SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
+         CI.L = PROP.HLISTS - 1.96*SE,
+         CI.U = PROP.HLISTS + 1.96*SE) 
 
 rm(list = c("temp1","temp2"))
 
-hot_nw <- hot_sw %>% ungroup() %>% 
+hot_nw <- hot_sw %>%
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(PROP.HLISTS = mean(PROP.HLISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.HLISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.HLISTS + 1.96*PROP.SE)
-
-# Daman and Diu lists not appearing from 2020--2021
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.HLISTS - 1.96*SE,
+            CI.U = PROP.HLISTS + 1.96*SE) 
 
 
 (ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Change in monthly hotspot birding with pandemic at national level",
@@ -585,7 +569,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
@@ -594,7 +578,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
@@ -603,7 +587,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
@@ -612,7 +596,7 @@ hot_nw <- hot_sw %>% ungroup() %>%
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
@@ -639,57 +623,50 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
-temp1 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, MONTH, STATE) %>% 
-  filter(PROTOCOL.TYPE == "Traveling") %>% 
+temp2 <- data0_slice_S %>% 
+  filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.TLISTS = 0))
-
+  ungroup()
 
 prot_sw <- temp1 %>% 
   left_join(temp2) %>% 
+  mutate(NO.TLISTS = replace_na(NO.TLISTS, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  mutate(NO.TLISTS = ifelse(is.na(NO.TLISTS), 0, NO.TLISTS),
-         PROP.TLISTS = NO.TLISTS/NO.LISTS,
-         PROP.SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
-         PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
-         PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE) 
+  mutate(PROP.TLISTS = NO.TLISTS/NO.LISTS,
+         SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
+         CI.L = PROP.TLISTS - 1.96*SE,
+         CI.U = PROP.TLISTS + 1.96*SE) 
 
 rm(list = c("temp1","temp2"))
 
-prot_nw <- prot_sw %>% ungroup() %>% 
+prot_nw <- prot_sw %>%
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(PROP.TLISTS = mean(PROP.TLISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.TLISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.TLISTS + 1.96*PROP.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.TLISTS - 1.96*SE,
+            CI.U = PROP.TLISTS + 1.96*SE) 
 
-# Daman and Diu lists not appearing from 2020--2021
 
 (ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Change in monthly travelling birding with pandemic at national level",
+    labs(title = "Change in monthly travelling (>= 100m) birding with pandemic at national level",
          x = "Month", y = "Proportion of travelling lists")) /
 ((ggplot(filter(prot_sw, STATE == "Kerala"), 
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -698,7 +675,7 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -707,20 +684,20 @@ prot_nw <- prot_sw %>% ungroup() %>%
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
          x = "Month", y = "Proportion of travelling lists")) |
 (ggplot(filter(prot_sw, STATE == "Maharashtra"), 
-         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "Proportion of travelling lists"))) +
+        aes(MONTH, PROP.TLISTS, colour = COVID)) + 
+   scale_x_continuous(breaks = 1:12) + 
+   geom_point(size = 3, position = position_dodge(0.5)) +
+   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+   scale_colour_manual(values = covid_palette) +
+   labs(title = "Maharashtra",
+        x = "Month", y = "Proportion of travelling lists"))) +
 plot_layout(guides = "collect") -> protocol
 
 protocol 
