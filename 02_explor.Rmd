@@ -1971,11 +1971,7 @@ temp1 <- temp0 %>%
   
 data_SoIBmap <- temp1 %>% 
   group_by(PERIOD) %>% 
-  summarise(PROP.SE = boot_se(PROP.CHANGE),
-            PROP.CHANGE.SD = sd(PROP.CHANGE),
-            PROP.CHANGE = mean(PROP.CHANGE),
-            PROP.CHANGE.CI.L = PROP.CHANGE - 1.96*PROP.SE,
-            PROP.CHANGE.CI.U = PROP.CHANGE + 1.96*PROP.SE)
+  boot_ci2(PROP.CHANGE)
 
 changepalette <- c(covid_palette[2], covid_palette[4])
 changepalette2 <- c(covid_palette[2], covid_palette[4])

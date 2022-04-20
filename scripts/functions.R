@@ -201,6 +201,29 @@ boot_ci = function(data, x, fn = mean, B = 1000) {
                             !!colnm := fn(a)))
 }
 
+boot_ci2 = function(data, x, fn = mean, B = 1000) {
+  
+  require(tidyverse)
+  require(rlang)
+  
+  y <- unlist(c((data[, deparse(substitute(x))])), use.names = F)
+
+  a <- 1:B %>%
+    # For each iteration, generate a sample of x with replacement
+    map(~ y[sample(1:length(y), replace = TRUE)]) %>%
+    # Obtain the fn estimate for each bootstrap sample
+    map_dbl(fn)
+
+  colnm <- paste0(str_to_upper(deparse(substitute(fn))),
+                  ".",
+                  str_to_upper(deparse(substitute(x))))
+
+  return(data %>%
+           dplyr::summarise(CI.L = stats::quantile(a, 0.025), # Obtain the CIs
+                            CI.U = stats::quantile(a, 0.975),
+                            !!colnm := fn(a)))
+}
+
 
 ### raster aggregation -----------------
 
