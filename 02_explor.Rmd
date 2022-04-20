@@ -1198,7 +1198,7 @@ leaflet() %>%
 data_UNU <- data0 %>% 
   ungroup() %>% 
   ### Creating smaller data object for spatial patterns 
-  select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
+  dplyr::select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE, TIME.OBSERVATIONS.STARTED,
          SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER, GROUP.ID, YEAR, MONTH, DAY.M, COVID,
          NO.SP, HOUR) %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1524,7 +1524,7 @@ data_SoIBmap1 <- data_SoIBmap0 %>%
   right_join(temp0) %>% 
   mutate(COVID = "BEF", 
          NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  select(CELL.LONG, CELL.LAT, NO.LISTS)
+  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
                                        crs = raster::crs(rast_SoIB))
@@ -1539,7 +1539,7 @@ data_SoIBmap2 <- data_SoIBmap0 %>%
   right_join(temp0) %>% 
   mutate(COVID = "DUR", 
          NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  select(CELL.LONG, CELL.LAT, NO.LISTS)
+  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap2 <- raster::rasterFromXYZ(xyz = data_SoIBmap2,
                                        crs = raster::crs(rast_SoIB))
@@ -1550,7 +1550,7 @@ data_SoIBmap3 <- data_SoIBmap0 %>%
   right_join(temp0) %>% 
   mutate(COVID = "AFT", 
          NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  select(CELL.LONG, CELL.LAT, NO.LISTS)
+  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
 
 rast_SoIBmap3 <- raster::rasterFromXYZ(xyz = data_SoIBmap3,
                                        crs = raster::crs(rast_SoIB))
@@ -1969,20 +1969,24 @@ temp1 <- temp0 %>%
                names_to = "PERIOD", 
                values_to = "PROP.CHANGE")  # log. prop. change in monthly no.lists per 24x24
   
-data_SoIBmap <- temp1 %>% 
+boot_SoIBmap <- temp1 %>% 
   group_by(PERIOD) %>% 
-  boot_ci2(PROP.CHANGE)
+  # this gives B number of means/medians of bootstrapped samples
+  summarise(BOOT = boot_ci3(x = PROP.CHANGE)) %>% 
+  group_by(PERIOD) %>% 
+  dplyr::summarise(CI.L = stats::quantile(BOOT, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(BOOT, 0.975),
+                   PROP.CHANGE = mean(BOOT))
+
 
 changepalette <- c(covid_palette[2], covid_palette[4])
 changepalette2 <- c(covid_palette[2], covid_palette[4])
 
 
-
-ggplot(data_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE)) + 
+ggplot(boot_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE)) + 
   geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = PROP.CHANGE.CI.L, ymax = PROP.CHANGE.CI.U), 
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.07, position = position_dodge(0.5)) +
-  scale_y_continuous(limits = c(1, 2.5)) +
   labs(title = "Net prop. change in monthly no. of lists at national level",
        subtitle = "Averaged across all 24kmx24km cells with birding activity",
        x = "Period", y = "Proportional change") -> s_spread_netchange

@@ -201,12 +201,14 @@ boot_ci = function(data, x, fn = mean, B = 1000) {
                             !!colnm := fn(a)))
 }
 
-boot_ci2 = function(data, x, fn = mean, B = 1000) {
+boot_ci2 = function(data, x, group, fn = mean, B = 1000) {
   
   require(tidyverse)
   require(rlang)
   
-  y <- unlist(c((data[, deparse(substitute(x))])), use.names = F)
+  y <- unlist(c((
+    (data %>% group_by(group) %>% 
+       summarise(cur_data() %>% select((!!x))))[, deparse(substitute(x))])), use.names = F)
 
   a <- 1:B %>%
     # For each iteration, generate a sample of x with replacement
@@ -223,6 +225,21 @@ boot_ci2 = function(data, x, fn = mean, B = 1000) {
                             CI.U = stats::quantile(a, 0.975),
                             !!colnm := fn(a)))
 }
+
+
+
+boot_ci3 = function(x, fn = mean, B = 1000) {
+  
+  1:B %>%
+    # For each iteration, generate a sample of x with replacement
+    map(~ x[sample(1:length(x), replace = TRUE)]) %>%
+    # Obtain the fn estimate for each bootstrap sample
+    map_dbl(fn)
+  
+}
+
+
+
 
 
 ### raster aggregation -----------------
