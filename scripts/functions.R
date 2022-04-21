@@ -81,7 +81,8 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
     # NO.SP column
     left_join(temp0) %>% 
-    mutate(DATETIME = as_datetime(paste(OBSERVATION.DATE,
+    mutate(NO.SP = replace_na(NO.SP, 0),
+           DATETIME = as_datetime(paste(OBSERVATION.DATE,
                                         TIME.OBSERVATIONS.STARTED)),
            HOUR = hour(DATETIME),
            MIN = minute(DATETIME),
@@ -93,11 +94,13 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
   
   ### exclude records based on various criteria 
   
-  # choose complete checklists without info on duration with 3 or fewer species
+  # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
   temp1 <- data0 %>%
-    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
+    filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
-    filter(NO.SP <= 3, is.na(DURATION.MINUTES)) %>%
+    filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
+             (DURATION.MINUTES < 3) | 
+             (SUT < minsut & NO.SP <= 3)) %>%
     distinct(GROUP.ID)
   
   # getting list of GROUP.IDs inside IN boundary for pelagic filter
@@ -109,24 +112,27 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
     terra::as.data.frame() %>% 
     select(GROUP.ID) 
 
+  # speed and distance filter for travelling lists
+  temp3 <- data0 %>%
+    filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Traveling") %>%
+    group_by(GROUP.ID) %>% slice(1) %>%
+    filter((SPEED > maxvel) | (EFFORT.DISTANCE.KM > 50)) %>%
+    distinct(GROUP.ID)
   
   # true completeness + other filters
   data0 <- data0 %>%
-    mutate(
-      TRUE.COMPLETE = case_when(
-        (ALL.SPECIES.REPORTED == 0) ~ 0,
-        ((ALL.SPECIES.REPORTED == 1) & (GROUP.ID %in% temp1 | PROTOCOL.TYPE == "Incidental")) ~ 0,
-        # speed, species per unit time and distance filter
-        ((ALL.SPECIES.REPORTED == 1) & (PROTOCOL.TYPE == "Traveling") &
-           ((SPEED > maxvel) | (SUT < minsut & NO.SP <= 3) | (EFFORT.DISTANCE.KM > 50))) ~ 0,
-        TRUE ~ 1),
-      # nocturnal filter
-      NOCT.FILTER = case_when(
-        ((!is.na(HOUR)) & ((HOUR <= 4 & HOUR.END <= 4) | (HOUR >= 20 & HOUR.END <= 28))) ~ 0, 
-        TRUE ~ 1)) %>% 
-    filter((TRUE.COMPLETE == 1) & (NOCT.FILTER == 1) &
+    # nocturnal filter
+    mutate(NOCT.FILTER = case_when((!is.na(HOUR) & ((HOUR <= 4 & HOUR.END <= 4) | 
+                                                      (HOUR >= 20 & HOUR.END <= 28))) ~ 0, 
+                                   TRUE ~ 1)) %>% 
+    filter((ALL.SPECIES.REPORTED == 1) & 
+             (NOCT.FILTER == 1) &
+             # true completeness
+             !(GROUP.ID %in% temp1$GROUP.ID |
+                GROUP.ID %in% temp3$GROUP.ID |
+                (ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Incidental")) &
              # pelagic filter
-             !(GROUP.ID %in% temp2)) %>% 
+             (GROUP.ID %in% temp2$GROUP.ID)) %>% 
     select(-SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER) 
   
   save(data0, file = "data/data0.RData")

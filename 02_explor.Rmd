@@ -721,14 +721,10 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 ```{r distance, cache=TRUE, message=FALSE}
 
 set.seed(192) 
-dist_sw <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+dist_sw <- data0_slice_S %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(DIST = mean(EFFORT.DISTANCE.KM)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(DIST = boot_conf(x = DIST)) %>% 
+  dplyr::summarise(DIST = boot_conf(x = EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(DIST),
                    DIST = mean(DIST),
@@ -817,15 +813,10 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 ```{r duration, cache=TRUE, message=FALSE}
 
 set.seed(834)
-dur_sw <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% 
+dur_sw <- data0_slice_S %>% 
   filter(!is.na(DURATION.MINUTES)) %>% 
-  ungroup() %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(DURATION = mean(DURATION.MINUTES)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(DURATION = boot_conf(x = DURATION)) %>% 
+  dplyr::summarise(DURATION = boot_conf(x = DURATION.MINUTES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(DURATION),
                    DURATION = mean(DURATION),
@@ -918,10 +909,9 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
 set.seed(98)
-length_sw <- !!!!!!!!! %>% 
-  group_by(COVID, YEAR, MONTH, STATE, SAMPLING.EVENT.IDENTIFIER) %>% 
-  summarise(LENGTH = n_distinct(COMMON.NAME)) %>% 
-  summarise(LENGTH = boot_conf(x = LENGTH)) %>% 
+length_sw <- data0_slice_S %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(LENGTH),
                    LENGTH = mean(LENGTH),
