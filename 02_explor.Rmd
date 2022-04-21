@@ -2171,41 +2171,34 @@ temp1 <- data0_slice_S %>%
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+temp2 <- data0_slice_S %>% 
   filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, MONTH, STATE) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, fill = list(NO.MLISTS = 0))
-
+  ungroup()
 
 media_sw <- temp1 %>% 
   left_join(temp2) %>% 
-  mutate(NO.MLISTS = ifelse(is.na(NO.MLISTS), 0, NO.MLISTS),
+  mutate(NO.MLISTS = replace_na(NO.MLISTS, 0),
          PROP.MLISTS = NO.MLISTS/NO.LISTS,
-         PROP.SE = sqrt((PROP.MLISTS)*(1 - PROP.MLISTS)/NO.LISTS),
-         PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
-         PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE) 
+         SE = sqrt((PROP.MLISTS)*(1 - PROP.MLISTS)/NO.LISTS),
+         CI.L = PROP.MLISTS - 1.96*SE,
+         CI.U = PROP.MLISTS + 1.96*SE) 
 
 rm(list = c("temp1","temp2"))
 
-media_nw <- media_sw %>% ungroup() %>% 
+media_nw <- media_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(PROP.MLISTS = mean(PROP.MLISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.MLISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.MLISTS + 1.96*PROP.SE)
-
-
-# Daman and Diu lists not appearing from 2020--2021
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.MLISTS - 1.96*SE,
+            CI.U = PROP.MLISTS + 1.96*SE) 
 
 
 (ggplot(media_nw, aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Change in proportion of media lists at national level",
@@ -2214,7 +2207,7 @@ media_nw <- media_sw %>% ungroup() %>%
          aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
@@ -2223,7 +2216,7 @@ media_nw <- media_sw %>% ungroup() %>%
          aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
@@ -2232,7 +2225,7 @@ media_nw <- media_sw %>% ungroup() %>%
          aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
@@ -2241,7 +2234,7 @@ media_nw <- media_sw %>% ungroup() %>%
          aes(MONTH, PROP.MLISTS, colour = COVID)) + 
     scale_x_continuous(breaks = 1:12) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
@@ -2271,24 +2264,21 @@ temp1 <- new_obsr_data %>%
          
 # not new to the state, but new overall, just grouped by state of first eBirding
 temp2 <- new_obsr_data %>% 
-  filter(COVID != "NA") %>% 
-  group_by(COVID, LE.MONTH, STATE) %>% 
+  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
   summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
-  ungroup() %>% 
-  complete(COVID, LE.MONTH, STATE, fill = list(NEW = 0))
+  ungroup()
 
 new_obsr_sw <- temp1 %>% 
   left_join(temp2) %>% 
-  mutate(NEW = ifelse(is.na(NEW), 0, NEW))
+  mutate(NEW = replace_na(NEW, 0))
 
 set.seed(765)
 
 new_obsr_nw <- temp1 %>% 
   left_join(temp2) %>% 
-  mutate(NEW = ifelse(is.na(NEW), 0, NEW)) %>% 
-  ungroup() %>% 
+  mutate(NEW = replace_na(NEW, 0)) %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  summarise(NEW = boot_conf(x = NEW)) %>% 
+  dplyr::summarise(NEW = boot_conf(x = NEW)) %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
   dplyr::summarise(SE = sd(NEW),
                    NEW = mean(NEW),
@@ -2343,9 +2333,6 @@ new # plot
 
 ggsave("02_explor_figs/16_new.png", plot = new,
        width = 9, height = 9, units = "in")
-
-
-# Gujarat and ArP showing zero eBirders in certain cases. Probably due to random subsampling.
 
 
 rm(list = c("new_obsr_nw","new_obsr_sw","new"))
