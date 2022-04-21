@@ -55,6 +55,18 @@ source("scripts/functions.R")
 dataqual_filt(datapath, groupaccspath, covidclasspath,
               maxvel = 20, minsut = 2)
 
+
+# choosing only months with data from all 3 COVID categories
+month_compar <- data0_slice_S %>% 
+  group_by(MONTH) %>% 
+  mutate(COVID = as.character(COVID)) %>% 
+  mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
+                                  TRUE ~ COVID),
+                        levels = c("BEF","DUR","AFT"))) %>% 
+  dplyr::summarise(N = n_distinct(COVID)) %>% 
+  filter(N == 3) %>%  # all 3 COVID categories
+  dplyr::select(MONTH)
+
 # load("data/data0_slice.RData")
 
 ```
@@ -1448,17 +1460,6 @@ library(rasterVis)
 
 ##### Change in birding effort (no. of lists) per grid cell with COVID ####
 
-# choosing only months with data from all 3 COVID categories
-month_compar <- data_UNU %>% 
-  group_by(MONTH) %>% 
-  mutate(COVID = as.character(COVID)) %>% 
-  mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
-                                  TRUE ~ COVID),
-                        levels = c("BEF","DUR","AFT"))) %>% 
-  dplyr::summarise(N = n_distinct(COVID)) %>% 
-  filter(N == 3) # all 3 COVID categories
-
-
 data_SoIBmap0 <- data_UNU %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
@@ -1972,7 +1973,8 @@ ggsave("02_explor_figs/12d_s_spread_netchange.png",
 
 
 rm(list = setdiff(ls(), 
-                  c("covid_palette", "covid_palette3", "india", "states", "data0",
+                  c("covid_palette", "covid_palette3", "india", "states",
+                    "data0_sliceG", "data0_sliceS", "month_compar",
                     # "data_UNU", "rast_UNU", 
                     "boot_conf", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
 
@@ -1989,108 +1991,79 @@ rm(list = setdiff(ls(),
 
 Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
 
-```{r t_spread_1, cache=TRUE, message=FALSE}
-
-temp1 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup()
-
-temp2 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  mutate(DAY.W = wday(OBSERVATION.DATE, 
-                      week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, MONTH, STATE, DAY.W) %>% 
-  summarise(DAY.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, DAY.W, fill = list(DAY.LISTS = 0))
-
-temp3 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
-  group_by(COVID, MONTH, STATE, HOUR) %>% 
-  summarise(TIME.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() %>% 
-  complete(COVID, MONTH, STATE, HOUR, fill = list(TIME.LISTS = 0))
-
-# Daman and Diu issue
-
-```
-
 #### Day-of-week
 
-```{r t_spread_2, cache=TRUE, message=FALSE}
+```{r t_spread_1, cache=TRUE, message=FALSE}
 
-# month is not important in this metric, so first only taking 9:12 which have "AFT" also, then dropping month identity and averaging across the months
+t_dow_sw <- data0_slice_S %>% 
+  filter(MONTH %in% month_compar$MONTH) %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      week_start = getOption("lubridate.week.start", 1))) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
+  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(COVID, STATE, DAY.W, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = min(NO.LISTS),
+                   DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = DAY.LISTS/NO.LISTS,
+                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
+  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PROP.LISTS - 1.96*SE,
+                   CI.U = PROP.LISTS + 1.96*SE)
 
-t_dow_sw <- temp1 %>% 
-  left_join(temp2) %>% 
-  filter(MONTH %in% 9:12) %>% 
-  mutate(DAY.LISTS = ifelse(is.na(DAY.LISTS), 0, DAY.LISTS)) %>% 
-  group_by(COVID, YEAR, STATE, DAY.W) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            DAY.LISTS = sum(DAY.LISTS),
-            PROP.LISTS = DAY.LISTS/NO.LISTS,
-            PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
-            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
-
-t_dow_nw <- t_dow_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, DAY.W) %>% 
+t_dow_nw <- t_dow_sw %>% 
+  group_by(COVID, DAY.W) %>% 
   summarise(PROP.LISTS = mean(PROP.LISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.LISTS - 1.96*SE,
+            CI.U = PROP.LISTS + 1.96*SE)
 
 (ggplot(t_dow_nw, 
        aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
-    labs(title = "Temporal spread (DoW) of checklists at national level (Sep to Dec)",
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Temporal spread (DoW) of checklists at national level (Sep to Mar)",
          x = "Day", y = "Proportion of lists")) /
 ((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
          aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
          x = "Day", y = "Proportion of lists")) |
 ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
          aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
          x = "Day", y = "Proportion of lists")) /
 ((ggplot(filter(t_dow_sw, STATE == "Gujarat"), 
          aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
          x = "Day", y = "Proportion of lists")) |
 ggplot(filter(t_dow_sw, STATE == "Maharashtra"), 
          aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Day", y = "Proportion of lists")) +
-plot_layout(guides = "collect") -> t_spread2
+plot_layout(guides = "collect") -> t_spread_dow
 
-t_spread2
+t_spread_dow
 
-ggsave("02_explor_figs/13_t_spread2.png", 
-       plot = t_spread2,
+ggsave("02_explor_figs/13_t_spread_dow.png", 
+       plot = t_spread_dow,
        width = 11, height = 9, units = "in")
 
 
@@ -2104,76 +2077,76 @@ ggsave("02_explor_figs/13_t_spread2.png",
 
 #### Time-of-day
 
-```{r t_spread_3, cache=TRUE, message=FALSE}
+```{r t_spread_2, cache=TRUE, message=FALSE}
 
-# month is not important in this metric, so first only taking 9:12 which have "AFT" also, then dropping month identity and averaging across the months
+t_tod_sw <- data0_slice_S %>% 
+  filter(MONTH %in% month_compar$MONTH) %>% 
+  group_by(COVID, MONTH, STATE) %>% 
+  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(COVID, STATE, HOUR, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = min(NO.LISTS),
+                   TIME.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = TIME.LISTS/NO.LISTS,
+                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
+  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PROP.LISTS - 1.96*SE,
+                   CI.U = PROP.LISTS + 1.96*SE)
 
-t_tod_sw <- temp1 %>% 
-  left_join(temp3) %>% 
-  filter(MONTH %in% 9:12) %>% 
-  mutate(TIME.LISTS = ifelse(is.na(TIME.LISTS), 0, TIME.LISTS)) %>% 
-  group_by(COVID, YEAR, STATE, HOUR) %>% 
-  summarise(NO.LISTS = sum(NO.LISTS),
-            TIME.LISTS = sum(TIME.LISTS),
-            PROP.LISTS = TIME.LISTS/NO.LISTS,
-            PROP.SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS),
-            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
-
-t_tod_nw <- t_tod_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, HOUR) %>% 
+t_tod_nw <- t_tod_sw %>%
+  group_by(COVID, HOUR) %>% 
   summarise(PROP.LISTS = mean(PROP.LISTS),
-            PROP.SE = sqrt(sum((PROP.SE)^2))/n(),
-            PROP.CI.L = PROP.LISTS - 1.96*PROP.SE,
-            PROP.CI.U = PROP.LISTS + 1.96*PROP.SE)
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.LISTS - 1.96*SE,
+            CI.U = PROP.LISTS + 1.96*SE)
 
 
 (ggplot(t_tod_nw, 
        aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
-    labs(title = "Temporal spread (ToD) of checklists at national level (Sep to Dec)",
+    scale_colour_manual(values = covid_palette) +
+    labs(title = "Temporal spread (ToD) of checklists at national level (Sep to Mar)",
          x = "Time (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
          x = "Time (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
          x = "Time (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
          x = "Time (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = PROP.CI.L, ymax = PROP.CI.U), 
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette3) +
+    scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Time (hours)", y = "Proportion of lists")) +
-plot_layout(guides = "collect") -> t_spread3
+plot_layout(guides = "collect") -> t_spread_tod
 
-t_spread3
+t_spread_tod
 
-ggsave("02_explor_figs/14_t_spread3.png", 
-       plot = t_spread3,
+ggsave("02_explor_figs/14_t_spread_tod.png", 
+       plot = t_spread_tod,
        width = 11, height = 9, units = "in")
 
 
@@ -2193,9 +2166,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 ```{r media, cache=TRUE, message=FALSE}
 
-temp1 <- data0 %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-  slice(1) %>% ungroup() %>% 
+temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
