@@ -194,8 +194,8 @@ nl_nw <- nl_sw %>% ungroup() %>%
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding with pandemic at national level",
-       x = "Month", y = "")) /
+  labs(title = "National level",
+       x = "Month", y = "Group birding proportion")) /
 ((ggplot(filter(nl_sw, STATE == "Kerala"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -204,7 +204,7 @@ nl_nw <- nl_sw %>% ungroup() %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
-       x = "Month", y = "Proportion of group birding lists")) |
+       x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_sw, STATE == "Karnataka"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -213,7 +213,7 @@ nl_nw <- nl_sw %>% ungroup() %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
-       x = "Month", y = ""))) /
+       x = "Month", y = "Group birding proportion"))) /
 ((ggplot(filter(nl_sw, STATE == "Gujarat"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -222,7 +222,7 @@ nl_nw <- nl_sw %>% ungroup() %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
-       x = "Month", y = "")) |
+       x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_sw, STATE == "Maharashtra"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -231,13 +231,15 @@ nl_nw <- nl_sw %>% ungroup() %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
-       x = "Month", y = ""))) +
-plot_layout(guides = "collect") -> no_lists
+       x = "Month", y = "Group birding proportion"))) +
+plot_layout(guides = "collect") +
+  plot_annotation(title = "Change in proportion of group birding with the pandemic",
+                  subtitle = "Y-axis shows proportion of checklists that are group birding events") -> no_lists
 
 no_lists # plot
 
 ggsave("02_explor_figs/01_no_lists.png", plot = no_lists,
-       width = 8, height = 9, units = "in")
+       width = 9, height = 9, units = "in")
 
 rm(list = c("nl_sw","nl_nw","no_lists"))
 
@@ -295,8 +297,8 @@ nl_po_nw <- nl_po_sw %>%
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly group birding per observer with pandemic at national level",
-       x = "Month", y = "")) /
+  labs(title = "National level",
+       x = "Month", y = "Group birding proportion")) /
 ((ggplot(filter(nl_po_sw, STATE == "Kerala"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -305,7 +307,7 @@ nl_po_nw <- nl_po_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
-       x = "Month", y = "Proportion of group birding lists per observer")) |
+       x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -314,7 +316,7 @@ nl_po_nw <- nl_po_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
-       x = "Month", y = ""))) /
+       x = "Month", y = "Group birding proportion"))) /
 ((ggplot(filter(nl_po_sw, STATE == "Gujarat"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -323,7 +325,7 @@ nl_po_nw <- nl_po_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
-       x = "Month", y = "")) |
+       x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -332,13 +334,15 @@ nl_po_nw <- nl_po_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
-       x = "Month", y = ""))) +
-plot_layout(guides = "collect") -> no_lists_po
+       x = "Month", y = "Group birding proportion"))) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in proportion of group birding per observer with the pandemic",
+                subtitle = "Y-axis shows proportion of observers' checklists that are group birding events") -> no_lists_po
 
 no_lists_po # plot
 
 ggsave("02_explor_figs/02_no_lists_po.png", plot = no_lists_po,
-       width = 8, height = 9, units = "in")
+       width = 9, height = 9, units = "in")
 
 rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
@@ -395,7 +399,7 @@ fidel_nw <- fidel_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "No. of sites (unique 25 km x 25 km cells) visited by observers at national level",
+    labs(title = "National level",
          x = "Month", y = "No. of sites")) /
 ((ggplot(filter(fidel_sw, STATE == "Kerala"), 
          aes(MONTH, NO.SITES, colour = COVID)) + 
@@ -437,7 +441,9 @@ fidel_nw <- fidel_sw %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "No. of sites"))) +
-plot_layout(guides = "collect") -> fidelity
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in observer site fidelity with the pandemic",
+subtitle = "Y-axis shows average number of unique sites (25kmx25km cells) visited by observers") -> fidelity
 
 fidelity # plot
 
@@ -482,7 +488,7 @@ time_nw <- time_sw %>%
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Monthly birding times of observers at national level",
+  labs(title = "National level",
        x = "Month", y = "Time (mins)")) /
 ((ggplot(filter(time_sw, STATE == "Kerala"), 
          aes(MONTH, B.TIME, colour = COVID)) + 
@@ -520,7 +526,9 @@ time_nw <- time_sw %>%
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
        x = "Month", y = "Time (mins)"))) +
-plot_layout(guides = "collect") -> time
+plot_layout(guides = "collect") + 
+plot_annotation(title = "Change in birding time per observer with the pandemic",
+                subtitle = "Y-axis shows total birding times of observers") -> time
 
 time # plot
 
@@ -577,8 +585,8 @@ hot_nw <- hot_sw %>%
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Change in monthly hotspot birding with pandemic at national level",
-       x = "Month", y = "")) /
+  labs(title = "National level",
+       x = "Month", y = "Hotspot birding proportion")) /
 ((ggplot(filter(hot_sw, STATE == "Kerala"),
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -587,7 +595,7 @@ hot_nw <- hot_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Kerala",
-       x = "Month", y = "Proportion of hotspot lists")) |
+       x = "Month", y = "Hotspot birding proportion")) |
 (ggplot(filter(hot_sw, STATE == "Karnataka"),
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -596,7 +604,7 @@ hot_nw <- hot_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Karnataka",
-       x = "Month", y = ""))) /
+       x = "Month", y = "Hotspot birding proportion"))) /
 ((ggplot(filter(hot_sw, STATE == "Gujarat"),
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -605,7 +613,7 @@ hot_nw <- hot_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Gujarat",
-       x = "Month", y = "")) |
+       x = "Month", y = "Hotspot birding proportion")) |
 (ggplot(filter(hot_sw, STATE == "Maharashtra"),
          aes(MONTH, PROP.HLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12) + 
@@ -614,8 +622,10 @@ hot_nw <- hot_sw %>%
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette) +
   labs(title = "Maharashtra",
-       x = "Month", y = ""))) +
-plot_layout(guides = "collect") -> hotspot
+       x = "Month", y = "Hotspot birding proportion"))) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in proportion of hotspot birding with the pandemic",
+                subtitle = "Y-axis shows proportion of checklists that are from hotspots")-> hotspot
 
 hotspot # plot
 
@@ -674,7 +684,7 @@ prot_nw <- prot_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Change in monthly travelling (>= 100m) birding with pandemic at national level",
+    labs(title = "National level",
          x = "Month", y = "Proportion of travelling lists")) /
 ((ggplot(filter(prot_sw, STATE == "Kerala"), 
          aes(MONTH, PROP.TLISTS, colour = COVID)) + 
@@ -712,7 +722,9 @@ prot_nw <- prot_sw %>%
    scale_colour_manual(values = covid_palette) +
    labs(title = "Maharashtra",
         x = "Month", y = "Proportion of travelling lists"))) +
-plot_layout(guides = "collect") -> protocol
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in birding mobility with the pandemic",
+                subtitle = "Y-axis shows proportion of checklists using the travelling protocol (>= 100m)") -> protocol
 
 protocol 
 
@@ -760,7 +772,7 @@ dist_nw <- dist_sw %>% ungroup() %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Average distance travelled per travelling checklist at national level",
+    labs(title = "National level",
          x = "Month", y = "Distance travelled (km)")) /
 ((ggplot(filter(dist_sw, STATE == "Kerala"), 
          aes(MONTH, DIST, colour = COVID)) + 
@@ -802,7 +814,9 @@ dist_nw <- dist_sw %>% ungroup() %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "Distance travelled (km)"))) +
-plot_layout(guides = "collect") -> distance
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in birding mobility with the pandemic",
+                subtitle = "Y-axis shows average distance travelled in checklists using the travelling protocol") -> distance
 
 distance
 
@@ -853,7 +867,7 @@ dur_nw <- dur_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Average checklist duration at national level",
+    labs(title = "National level",
          x = "Month", y = "Duration (mins)")) /
 ((ggplot(filter(dur_sw, STATE == "Kerala"), 
          aes(MONTH, DURATION, colour = COVID)) + 
@@ -895,7 +909,9 @@ dur_nw <- dur_sw %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "Duration (mins)"))) +
-plot_layout(guides = "collect") -> duration
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in checklist duration with the pandemic",
+                subtitle = "Y-axis shows average duration of checklists") -> duration
 
 duration
 
@@ -948,8 +964,8 @@ length_nw <- length_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Average checklist length at national level",
-         x = "Month", y = "List length (no. of species)")) /
+    labs(title = "National level",
+         x = "Month", y = "List length")) /
 ((ggplot(filter(length_sw, STATE == "Kerala"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
     scale_y_log10() + 
@@ -959,7 +975,7 @@ length_nw <- length_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
-         x = "Month", y = "List length (no. of species)")) |
+         x = "Month", y = "List length")) |
 (ggplot(filter(length_sw, STATE == "Karnataka"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
     scale_y_log10() + 
@@ -969,7 +985,7 @@ length_nw <- length_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
-         x = "Month", y = "List length (no. of species)"))) /
+         x = "Month", y = "List length"))) /
 ((ggplot(filter(length_sw, STATE == "Gujarat"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
     scale_y_log10() + 
@@ -979,7 +995,7 @@ length_nw <- length_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
-         x = "Month", y = "List length (no. of species)")) |
+         x = "Month", y = "List length")) |
 (ggplot(filter(length_sw, STATE == "Maharashtra"), 
          aes(MONTH, LENGTH, colour = COVID)) + 
     scale_y_log10() + 
@@ -989,8 +1005,10 @@ length_nw <- length_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
-         x = "Month", y = "List length (no. of species)"))) +
-plot_layout(guides = "collect") -> length
+         x = "Month", y = "List length"))) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in checklist length with the pandemic",
+                subtitle = "Y-axis shows average number of species recorded in checklists (list length)") -> length
 
 length
 
@@ -1273,7 +1291,7 @@ ggsave("02_explor_figs/10a_s_UNU_lists.png",
        width = 9, height = 9, units = "in")
 
 
-rm(UNU_lists_sw, UNU_lists_nw)
+rm(temp, UNU_lists_sw, UNU_lists_nw, s_UNU_lists)
 
 
 ##### Proportion of covered cells urban (vs. non-urban)  ####
@@ -1357,6 +1375,9 @@ ggsave("02_explor_figs/10b_s_UNU_cells.png",
        plot = s_UNU_cells,
        width = 9, height = 9, units = "in")
 
+
+rm(temp, UNU_cells_sw, UNU_cells_nw, s_UNU_cells)
+
 ```
 
 ```{r s_cover, cache=TRUE, message=FALSE}
@@ -1434,7 +1455,10 @@ s_cover
 
 ggsave("02_explor_figs/11a_s_cover.png", 
        plot = s_cover,
-       width = 9, height = 13, units = "in")
+       width = 9, height = 9, units = "in")
+
+
+rm(cover_sw, cover_nw, s_cover)
 
 
 ##### Proportion of total urban cells covered ####
@@ -1568,11 +1592,13 @@ s_cover_NU
 
 ggsave("02_explor_figs/11b_s_cover_U.png", 
        plot = s_cover_U,
-       width = 9, height = 13, units = "in")
+       width = 9, height = 9, units = "in")
 
 ggsave("02_explor_figs/11b_s_cover_NU.png", 
        plot = s_cover_NU,
-       width = 9, height = 13, units = "in")
+       width = 9, height = 9, units = "in")
+
+rm(temp1, temp2, cover_U_sw, cover_U_nw, cover_NU_sw, cover_NU_nw, s_cover_U, s_cover_NU)
 
 
 ```
@@ -2088,9 +2114,12 @@ ggplot(boot_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE)) +
   geom_point(size = 4, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.07, position = position_dodge(0.5)) +
-  labs(title = "Net prop. change in monthly no. of lists at national level",
-       subtitle = "Averaged across all 24kmx24km cells with birding activity",
+  scale_y_continuous(limits = c(1.1, 2.5), breaks = seq(1, 3, 0.2))+
+  labs(title = "Net proportional change in birding effort (no. of lists)",
+       subtitle = "Change per 24kmx24km cell averaged across all cells with birding activity",
        x = "Period", y = "Proportional change") -> s_spread_netchange
+
+s_spread_netchange
 
 ggsave("02_explor_figs/12d_s_spread_netchange.png", 
        plot = s_spread_netchange,
@@ -2102,7 +2131,7 @@ ggsave("02_explor_figs/12d_s_spread_netchange.png",
 
 rm(list = setdiff(ls(), 
                   c("covid_palette", "covid_palette3", "india", "states",
-                    "data0_sliceG", "data0_sliceS", "month_compar",
+                    "data0_slice_G", "data0_slice_S", "month_compar",
                     # "data_UNU", "rast_UNU", 
                     "boot_conf", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
 
@@ -2127,6 +2156,8 @@ detach("package:luna", unload=T)
 
 Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
 
+Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
+
 #### Day-of-week
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
@@ -2135,13 +2166,14 @@ t_dow_sw <- data0_slice_S %>%
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, MONTH, STATE) %>% 
+  group_by(COVID, STATE, YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, STATE, DAY.W, MONTH) %>% 
+  group_by(COVID, DAY.W, STATE, YEAR, MONTH) %>% 
   dplyr::summarise(NO.LISTS = min(NO.LISTS),
                    DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
                    PROP.LISTS = DAY.LISTS/NO.LISTS,
                    SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
+  group_by(COVID, DAY.W, STATE) %>% 
   dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
                    SE = sqrt(sum((SE)^2))/n(),
                    CI.L = PROP.LISTS - 1.96*SE,
@@ -2160,7 +2192,7 @@ t_dow_nw <- t_dow_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Temporal spread (DoW) of checklists at national level (Sep to Mar)",
+    labs(title = "National level",
          x = "Day", y = "Proportion of lists")) /
 ((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
          aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
@@ -2194,14 +2226,18 @@ ggplot(filter(t_dow_sw, STATE == "Maharashtra"),
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Day", y = "Proportion of lists")) +
-plot_layout(guides = "collect") -> t_spread_dow
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
+                subtitle = "Y-axis shows average proportion of checklists from respective days of the week on X-axis") -> t_spread_dow
 
 t_spread_dow
 
 ggsave("02_explor_figs/13_t_spread_dow.png", 
        plot = t_spread_dow,
-       width = 11, height = 9, units = "in")
+       width = 9, height = 9, units = "in")
 
+
+rm(t_dow_sw, t_dow_nw, t_spread_dow)
 
 ```
 
@@ -2217,13 +2253,14 @@ ggsave("02_explor_figs/13_t_spread_dow.png",
 
 t_tod_sw <- data0_slice_S %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, MONTH, STATE) %>% 
+  group_by(COVID, STATE, YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, STATE, HOUR, MONTH) %>% 
+  group_by(COVID, STATE, HOUR, YEAR, MONTH) %>% 
   dplyr::summarise(NO.LISTS = min(NO.LISTS),
                    TIME.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
                    PROP.LISTS = TIME.LISTS/NO.LISTS,
                    SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
+  group_by(COVID, STATE, HOUR) %>% 
   dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
                    SE = sqrt(sum((SE)^2))/n(),
                    CI.L = PROP.LISTS - 1.96*SE,
@@ -2243,8 +2280,8 @@ t_tod_nw <- t_tod_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Temporal spread (ToD) of checklists at national level (Sep to Mar)",
-         x = "Time (hours)", y = "Proportion of lists")) /
+    labs(title = "National level",
+         x = "Time of day (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -2252,7 +2289,7 @@ t_tod_nw <- t_tod_sw %>%
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
-         x = "Time (hours)", y = "Proportion of lists")) |
+         x = "Time of day (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -2260,7 +2297,7 @@ ggplot(filter(t_tod_sw, STATE == "Karnataka"),
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
-         x = "Time (hours)", y = "Proportion of lists")) /
+         x = "Time of day (hours)", y = "Proportion of lists")) /
 ((ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -2268,7 +2305,7 @@ ggplot(filter(t_tod_sw, STATE == "Karnataka"),
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
-         x = "Time (hours)", y = "Proportion of lists")) |
+         x = "Time of day (hours)", y = "Proportion of lists")) |
 ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
          aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -2276,18 +2313,19 @@ ggplot(filter(t_tod_sw, STATE == "Maharashtra"),
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
-         x = "Time (hours)", y = "Proportion of lists")) +
-plot_layout(guides = "collect") -> t_spread_tod
+         x = "Time of day (hours)", y = "Proportion of lists")) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
+                subtitle = "Y-axis shows average proportion of checklists from respective times of the day on X-axis") -> t_spread_tod
 
 t_spread_tod
 
 ggsave("02_explor_figs/14_t_spread_tod.png", 
        plot = t_spread_tod,
-       width = 11, height = 9, units = "in")
+       width = 13, height = 9, units = "in")
 
 
-rm(temp1, temp2, temp3, t_dow_nw, t_dow_sw, t_tod_nw, t_tod_sw,
-   t_spread2, t_spread3)
+rm(t_tod_nw, t_tod_sw, t_spread_tod)
 
 ```
 
@@ -2337,7 +2375,7 @@ media_nw <- media_sw %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Change in proportion of media lists at national level",
+    labs(title = "National level",
          x = "Month", y = "Proportion of media lists")) /
 ((ggplot(filter(media_sw, STATE == "Kerala"), 
          aes(MONTH, PROP.MLISTS, colour = COVID)) + 
@@ -2375,7 +2413,9 @@ media_nw <- media_sw %>%
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
          x = "Month", y = "Proportion of media lists"))) +
-plot_layout(guides= "collect") -> media
+plot_layout(guides= "collect") +
+plot_annotation(title = "Change in proportion of media lists with the pandemic",
+                subtitle = "Y-axis shows proportion of checklists that contain uploaded media") -> media
 
 media
 
@@ -2394,25 +2434,14 @@ rm(list = c("media_nw","media_sw","media"))
 
 load("data/new_obsr_data.RData")
 
-# for left joining YEAR with COVID
-temp1 <- new_obsr_data %>% 
-  distinct(COVID, LE.YEAR, LE.MONTH)
-         
 # not new to the state, but new overall, just grouped by state of first eBirding
-temp2 <- new_obsr_data %>% 
+new_obsr_sw <- new_obsr_data %>% 
   group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
   summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
   ungroup()
 
-new_obsr_sw <- temp1 %>% 
-  left_join(temp2) %>% 
-  mutate(NEW = replace_na(NEW, 0))
-
 set.seed(765)
-
-new_obsr_nw <- temp1 %>% 
-  left_join(temp2) %>% 
-  mutate(NEW = replace_na(NEW, 0)) %>% 
+new_obsr_nw <- new_obsr_sw %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
   dplyr::summarise(NEW = boot_conf(x = NEW)) %>% 
   group_by(COVID, LE.YEAR, LE.MONTH) %>% 
@@ -2429,8 +2458,8 @@ new_obsr_nw <- temp1 %>%
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.25, width = 0.4, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
-    labs(title = "Monthly number of new eBirders at national level",
-         x = "Month", y = "")) /
+    labs(title = "National level",
+         x = "Month", y = "New eBirders")) /
 ((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -2438,7 +2467,7 @@ new_obsr_nw <- temp1 %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Kerala",
-         x = "Month", y = "Number of new eBirders")) |
+         x = "Month", y = "New eBirders")) |
 (ggplot(filter(new_obsr_sw, STATE == "Karnataka"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -2446,7 +2475,7 @@ new_obsr_nw <- temp1 %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Karnataka",
-         x = "Month", y = ""))) /
+         x = "Month", y = "New eBirders"))) /
 ((ggplot(filter(new_obsr_sw, STATE == "Gujarat"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -2454,7 +2483,7 @@ new_obsr_nw <- temp1 %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Gujarat",
-         x = "Month", y = "")) |
+         x = "Month", y = "New eBirders")) |
 (ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
          aes(LE.MONTH, NEW, colour = COVID)) + 
     scale_y_log10() +
@@ -2462,8 +2491,10 @@ new_obsr_nw <- temp1 %>%
     geom_point(size = 3, position = position_dodge(0.5)) +
     scale_colour_manual(values = covid_palette) +
     labs(title = "Maharashtra",
-         x = "Month", y = ""))) +
-plot_layout(guides = "collect") -> new
+         x = "Month", y = "New eBirders"))) +
+plot_layout(guides = "collect") +
+plot_annotation(title = "Change in eBirder growth with the pandemic",
+                subtitle = "Y-axis shows average number of new eBirders") -> new
 
 new # plot
 
