@@ -154,13 +154,13 @@ Doesn't include duplicate lists as we are interested in Boolean (group/solo), an
 
 temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>%
   ungroup() 
 
 temp2 <- data0_slice_G %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.SLISTS = n_distinct(GROUP.ID)) %>%
+  dplyr::summarise(NO.SLISTS = n_distinct(GROUP.ID)) %>%
   ungroup()
 
 # unequal values for lower and upper: bracketing the CI(?)
@@ -258,13 +258,13 @@ rm(list = c("nl_sw","nl_nw","no_lists"))
 
 temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_S %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 # this is for each observer, but we are interested in plotting mean value of all observers combined
@@ -276,7 +276,7 @@ nl_po_sw <- temp1 %>%
   mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
          SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(PROP.SLISTS = mean(PROP.SLISTS),
+  dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
             CI.U = PROP.SLISTS + 1.96*SE)
@@ -285,7 +285,7 @@ rm(list = c("temp1","temp2"))
 
 nl_po_nw <- nl_po_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.SLISTS = mean(PROP.SLISTS),
+  dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
             CI.U = PROP.SLISTS + 1.96*SE)
@@ -366,17 +366,16 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
 set.seed(213) # for bootstrap
 fidel_sw <- data0_slice_S %>% 
-  ungroup() %>% 
   # grouping in terms of 25kmx25km cells (not 1degx1deg)
   mutate(LAT.25K = LATITUDE*111/25, 
          LON.25K = LONGITUDE*111/25) %>% 
   # pasting lat-lon as string to find truly unique sites
   mutate(COORD.25K = paste0(ceiling(LON.25K), ",", ceiling(LAT.25K))) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
   mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
+  dplyr::summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(NO.SITES),
                    NO.SITES = mean(NO.SITES),
@@ -386,7 +385,7 @@ fidel_sw <- data0_slice_S %>%
 fidel_nw <- fidel_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(NO.SITES = mean(NO.SITES),
+  dplyr::summarise(NO.SITES = mean(NO.SITES),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = NO.SITES - 1.96*SE,
             CI.U = NO.SITES + 1.96*SE)
@@ -464,10 +463,10 @@ rm(list = c("fidel_nw","fidel_sw","fidelity"))
 set.seed(423) 
 time_sw <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
   mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(B.TIME = boot_conf(x = B.TIME)) %>% 
+  dplyr::summarise(B.TIME = boot_conf(x = B.TIME)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(B.TIME),
                    B.TIME = mean(B.TIME),
@@ -476,7 +475,7 @@ time_sw <- data0_slice_S %>%
 
 time_nw <- time_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(B.TIME = mean(B.TIME),
+  dplyr::summarise(B.TIME = mean(B.TIME),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = B.TIME - 1.96*SE,
             CI.U = B.TIME + 1.96*SE)
@@ -550,13 +549,13 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_S %>% 
   filter(LOCALITY.TYPE == "H") %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 hot_sw <- temp1 %>% 
@@ -573,7 +572,7 @@ rm(list = c("temp1","temp2"))
 hot_nw <- hot_sw %>%
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.HLISTS = mean(PROP.HLISTS),
+  dplyr::summarise(PROP.HLISTS = mean(PROP.HLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.HLISTS - 1.96*SE,
             CI.U = PROP.HLISTS + 1.96*SE) 
@@ -649,13 +648,13 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_S %>% 
   filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 prot_sw <- temp1 %>% 
@@ -672,7 +671,7 @@ rm(list = c("temp1","temp2"))
 prot_nw <- prot_sw %>%
   filter(NO.LISTS != 0) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.TLISTS = mean(PROP.TLISTS),
+  dplyr::summarise(PROP.TLISTS = mean(PROP.TLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.TLISTS - 1.96*SE,
             CI.U = PROP.TLISTS + 1.96*SE) 
@@ -759,7 +758,7 @@ dist_sw <- data0_slice_S %>%
 
 dist_nw <- dist_sw %>% ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(DIST = mean(DIST),
+  dplyr::summarise(DIST = mean(DIST),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = DIST - 1.96*SE,
             CI.U = DIST + 1.96*SE)
@@ -854,7 +853,7 @@ dur_sw <- data0_slice_S %>%
 dur_nw <- dur_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(DURATION = mean(DURATION),
+  dplyr::summarise(DURATION = mean(DURATION),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = DURATION - 1.96*SE,
             CI.U = DURATION + 1.96*SE)
@@ -941,7 +940,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 set.seed(98)
 length_sw <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
+  dplyr::summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(LENGTH),
                    LENGTH = mean(LENGTH),
@@ -951,7 +950,7 @@ length_sw <- data0_slice_S %>%
 length_nw <- length_sw %>% 
   ungroup() %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(LENGTH = mean(LENGTH),
+  dplyr::summarise(LENGTH = mean(LENGTH),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = LENGTH - 1.96*SE,
             CI.U = LENGTH + 1.96*SE)
@@ -2181,7 +2180,7 @@ t_dow_sw <- data0_slice_S %>%
 
 t_dow_nw <- t_dow_sw %>% 
   group_by(COVID, DAY.W) %>% 
-  summarise(PROP.LISTS = mean(PROP.LISTS),
+  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.LISTS - 1.96*SE,
             CI.U = PROP.LISTS + 1.96*SE)
@@ -2268,7 +2267,7 @@ t_tod_sw <- data0_slice_S %>%
 
 t_tod_nw <- t_tod_sw %>%
   group_by(COVID, HOUR) %>% 
-  summarise(PROP.LISTS = mean(PROP.LISTS),
+  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.LISTS - 1.96*SE,
             CI.U = PROP.LISTS + 1.96*SE)
@@ -2342,13 +2341,13 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 
 temp1 <- data0_slice_S %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_S %>% 
   filter(HAS.MEDIA == 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  dplyr::summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 media_sw <- temp1 %>% 
@@ -2363,7 +2362,7 @@ rm(list = c("temp1","temp2"))
 
 media_nw <- media_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(PROP.MLISTS = mean(PROP.MLISTS),
+  dplyr::summarise(PROP.MLISTS = mean(PROP.MLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.MLISTS - 1.96*SE,
             CI.U = PROP.MLISTS + 1.96*SE) 
@@ -2437,7 +2436,7 @@ load("data/new_obsr_data.RData")
 # not new to the state, but new overall, just grouped by state of first eBirding
 new_obsr_sw <- new_obsr_data %>% 
   group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
-  summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
+  dplyr::summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
   ungroup()
 
 set.seed(765)

@@ -143,11 +143,13 @@ dataqual_filt <- function(datapath, groupaccspath, covidclasspath,
   
   data0_slice_S <- data0 %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-    slice(1)
+    slice(1) %>% 
+    ungroup()
   
   data0_slice_G <- data0 %>% 
     group_by(GROUP.ID) %>% 
-    slice(1)
+    slice(1) %>%
+    ungroup()
   
   
   assign("data0_slice_S", data0_slice_S, .GlobalEnv)
