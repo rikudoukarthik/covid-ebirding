@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+<title>The impact of the COVID-19 pandemic on bird monitoring in India</title>
+
+<script src="02_poster_BMS_files/header-attrs-2.13/header-attrs.js"></script>
+
+<script src="02_poster_BMS_files/kePrint-0.0.1/kePrint.js"></script>
+<link href="02_poster_BMS_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+
+
+
+
+<!--
+Font-awesome icons ie github or twitter
+-->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/brands.css" integrity="sha384-n9+6/aSqa9lBidZMRCQHTHKJscPq6NW4pCQBiMmHdUCvPN8ZOg2zJJTkC7WIezWv" crossorigin="anonymous">
+
+<!--
+Google fonts api stuff
+-->
+<link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet'>
+<link href='https://fonts.googleapis.com/css?family=Rasa' rel='stylesheet'>
+
+<!--
+Here are the required style attributes for css to make this poster work :)
+-->
+<style>
+@page {
+size: 39in 52in;
+margin: 0;
+padding: 0;
+}
+body {
+margin: 0px;
+padding: 0px;
+width: 39in;
+height: 52in;
+text-align: justify;
+font-size: 40px;
+line-height: 1.05;
+}
+/* RMarkdown Class Styles */
+/* center align leaflet map,
+from https://stackoverflow.com/questions/52112119/center-leaflet-in-a-rmarkdown-document */
+.html-widget {
+margin: auto;
+position: sticky;
+margin-top: 2cm;
+margin-bottom: 2cm;
+}
+.leaflet.html-widget.html-widget-static-bound.leaflet-container.leaflet-touch.leaflet-fade-anim.leaflet-grab.leaflet-touch-drag.leaflet-touch-zoom {
+position: sticky;
+width: 100%;
+}
+pre.sourceCode.r, pre.sourceCode.python {
+background-color: #ffffff20;
+border: solid #1D8A9A 1mm;
+border-radius: 0.5em;
+padding: 4mm;
+margin: auto;
+margin-top: 1em;
+margin-bottom: 1em;
+/* align-items: center; */
+}
+div.sourceCode {
+background-color: transparent;
+width: 85%;
+margin-left: auto;
+margin-right: auto;
+}
+code.sourceCode.r, code.sourceCode.python {
+background-color: transparent;
+font-size: 20pt;
+border-radius: 2mm;
+}
+code {
+font-size: 25pt;
+font-family: monospace;
+background-color: #1D8A9A24;
+color: #1D8A9A;
+padding: 1.2mm;
+line-height: 1;
+border-radius: 2mm;
+}
+caption {
+margin-bottom: 10px;
+font-size: 27pt;
+font-style: italic;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #1D8A9A20;
+}
+.table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td{
+  border-spacing: 0;
+  font-size: 40%;
+  border-style: none;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-right: 1em;
+  padding-left: 1em;
+  line-height: 1em;
+}
+table {
+  margin: auto;
+}
+th {
+  padding-left: 5mm;
+  padding-right: 5mm;
+}
+.caption {
+font-size: 27pt;
+font-style: italic;
+padding-top: 0;
+}
+.references {
+font-size: 27px;
+line-height: 90%;
+}
+/* Create three unequal columns that floats next to each other */
+.column {
+float: left;
+padding: 0px;
+}
+.outer {
+width: 39in;
+height: calc(52in *  0.6325 );
+-webkit-column-count: 3; /* Chrome, Safari, Opera */
+-moz-column-count: 3; /* Firefox */
+column-count: 3;
+-webkit-column-fill: auto;
+-moz-column-fill: auto;
+column-fill: auto;
+column-gap: 0;
+padding-left: 0cm;
+padding-right: 0cm;
+/* -webkit-column-rule-width: 50%;
+-moz-column-rule-width: 50%;
+column-rule-width: 50%; */
+-webkit-column-rule-style: none;
+-moz-column-rule-style: none;
+column-rule-style: none;
+-webkit-column-rule-color: black;
+-moz-column-rule-color: black;
+column-rule-color: black;
+background-color: #FFFFFF;
+font-family: Rasa;
+margin-top: calc(52in *  0.25 );
+padding-top: 1em;
+padding-bottom: 1em;
+}
+span.citation {
+  color: #1D8A9A;
+  font-weight: bold;
+}
+a {
+text-decoration: none;
+color: #1D8A9A;
+}
+#title {
+font-size: 70pt;
+text-align: left;
+margin: 0;
+line-height: 98%;
+border-bottom: 0;
+font-weight: normal;
+background: 0;
+}
+#author {
+color:#13A48C;
+margin: 0;
+line-height: 85%;
+font-size: 55px;
+}
+#affiliation {
+padding-top: 0.1em;
+color: #00000080;
+font-style: italic;
+font-size: 35px;
+margin: 0;
+}
+sup {
+color: #EF6461;
+}
+.affiliation sup {
+font-size: 20px;
+}
+.author {
+text-align: left;
+}
+.author sup {
+font-size: 30px;
+}
+.author_extra {
+color: #1D8A9A;
+margin: 0;
+line-height: 85%;
+font-size: 40px;
+text-align: left;
+}
+.outer h1, h2, h3, h4, h5, h6 {
+text-align: center;
+margin: 0;
+font-weight: bold;
+}
+.section h1 {
+  text-align:center;
+  padding-bottom:5px;
+  background:
+    linear-gradient(
+      to left,
+      #FFFFFF 1%,
+      #FFFFFF 20%,
+      #13A48C75 33%,
+      #13A48C 50%,
+      #13A48C75 66%,
+      #FFFFFF 80%,
+      #FFFFFF 99%
+    )
+    left
+    bottom
+    #FFFFFF
+    no-repeat;
+  background-size:100% 5px ;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+.outer h2 {
+text-align: center;
+}
+.outer p, .level2 {
+color: #000000;
+}
+.outer ol {
+padding-left: 8%;
+padding-right: 8%;
+text-align: left;
+}
+.main {
+width: 39in;
+height: calc(52in * 0.25);
+position: absolute;
+background-color: #13A48C;
+color: #E3F6F399;
+font-family: Quicksand;
+background-image: linear-gradient(#13A48C 50%,#1D8A9A);
+}
+.main strong {
+color: #E3F6F3;
+}
+.main strong > sup {
+color: #E3F6F3;
+}
+.main sup {
+color: #E3F6F399;
+}
+#main-img-left {
+width: 10%;
+left: 0.5in;
+bottom: 0.2in;
+position: absolute;
+}
+#main-img-center {
+width: 10%;
+left: calc(39in * 0.45);
+bottom: 0.5in;
+position: absolute;
+}
+#main-img-right {
+width: 10%;
+right: 0.5in;
+bottom: 0.2in;
+position: absolute;
+}
+.main p {
+font-size: 190px;
+font-family: Quicksand;
+text-align: center;
+margin: 0;
+position: absolute;
+top: 50%;
+-ms-transform: translateY(-50%);
+transform: translateY(-50%);
+margin-left: 1em;
+}
+.fab {
+color: #00000080;
+font-size: 25px;
+}
+.twitter, i {
+color: #00000080;
+font-size: 35px;
+text-decoration: none;
+}
+a.email {
+text-decoration: none;
+color: #00000080;
+font-size: 35px;
+}
+.envelope {
+color: #00000080;
+font-size: 5px;
+text-decoration: none;
+}
+.globe {
+color: #00000080;
+font-size: 5px;
+text-decoration: none;
+}
+.globetext {
+color: #00000080;
+font-size: 35px;
+text-decoration: none;
+}
+.poster_wrap {
+width: 39in;
+height: 52in;
+padding: 0cm;
+}
+.main_bottom {
+width: 39in;
+height: calc(52in * 0.1);
+margin-top: calc(52in * 0.9);
+position: absolute;
+background-color: #13A48C;
+background-image: linear-gradient(#1D8A9A 10%, #13A48C);
+}
+.section {
+  padding-left: 10mm;
+  padding-right: 10mm;
+}
+span > #tab:mytable {
+  font-weight: bold;
+}
+.orcid img {
+  width: 3%;
+}
+.emphasis {
+  background-color: #008080;
+  color: #ffffff;
+  border: solid #0b2045 3mm;
+  margin: 1em;
+  padding-left: 0;
+  padding-right: 0;
+}
+.emphasis h1 {
+  font-weight: bold;
+  background: none;
+  background-color: #0b2045;
+  padding-bottom: 5mm;
+  padding-top: 1mm;
+  margin-top: -1mm;
+  margin-right: -1mm;
+  margin-left: -1mm;
+}
+.emphasis blockquote {
+  border: 0;
+}
+.emphasis ol {
+  padding: 0;
+  padding-left: 8%;
+  font-size: 100%;
+  font-weight: bold;
+}
+.emphasis p {
+  color: #ffffff;
+}
+</style>
+</head>
+<body>
+
+
+<div class="poster_wrap">
+
+<div class="column outer">
+<div class="section">
+<h1 id="title"><strong>The impact of the COVID-19 pandemic on bird monitoring in India</strong></h1><br>
+<h3 id="author" class="author">
+
+Karthik Thrikkadeeri<sup> 1, <a class="orcid" href="https://orcid.org/0000-0003-2863-5879"><img src="https://raw.githubusercontent.com/brentthorne/posterdown/master/images/orcid.jpg"></a></sup><br>
+<a class="twitter" href="https://mobile.twitter.com/rikudoukarthik"><i class="fab fa-twitter"></i>&nbsp;&nbsp;@rikudoukarthik</a><br>
+
+<a class='envelope'><i class="fas fa-envelope"></i></a> <a href="mailto:karthik.t@ncf-india.org" class="email">karthik.t@ncf-india.org</a> <br>
+ </h3>
+
+<h5 id="author_extra", class="author_extra">
+ Ashwin Viswanathan<sup>1</sup>
+</h5>
+
+
+<p id="affiliation" class="affiliation">
+<sup>1</sup> Nature Conservation Foundation, Bengaluru
+</p>
+</div>
+
+<style type="text/css">
+
+#main-img-left {
+width: 25%;
+bottom: 0.7in;
+}
+#main-img-center {
+width: 25%;
+bottom: 1.0in;
+}
+#main-img-right {
+width: 25%;
+bottom: 1.0in;
+}
+.main p {
+margin-left: 0;
+}
+
+</style>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Citizen science data in eBird <span class="citation">(Sullivan et al. 2014)</span> enables large-scale analyses and comparisons of bird abundance <span class="citation">(Kelling et al. 2019)</span>, helping guide conservation policy <span class="citation">(SoIB 2020)</span>. The reliability of such trends analyses is contingent on birdwatcher and bird behaviour remaining relatively unchanged between years. COVID-19 and the associated restrictions likely affected where, when and how birdwatchers observed birds during the pandemic years <span class="citation">(e.g., Randler et al. 2020; Vardi, Berger-Tal, and Roll 2021; Hochachka et al. 2021)</span>. We explored whether this has introduced prominent biases in the data. If so, we wanted to understand these changes so as to enable meaningful interpretation of any patterns in bird abundance seen during the pandemic years.</p>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<p>We compared data quantity and quality between three distinct periods: before (2019–2020), during (2020–21) and after (2021–22) the pandemic. We analysed data quantity based on number of lists and birding time per observer. Data quality was assessed using various metrics: observer site fidelity, birding distance, list length and duration, as well as proportions of group, hotspot and travelling birding instances. Additionally, we analysed temporal distribution of observations as well as spatial spread and coverage, including differences between urban and non-urban areas.</p>
+</div>
+<div id="results" class="section level1">
+<h1>Results</h1>
+<ul>
+<li><strong>Data quantity</strong> in terms of number and effort of birders <strong>increased</strong> rather than decreased with the pandemic, and also continued to rise afterward. This hints at the general growth in eBirding in India.<br />
+</li>
+<li>Although total birding time remained similar for observers, checklists in general became <strong>shorter</strong> both spatially (distance covered) and temporally (list duration).</li>
+</ul>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure1"></span>
+<img src="02_poster_BMS_files/figure-html/figure1-1.png" alt="Comparisons of data quality metrics relating to birder behaviour, before, during and after the pandemic. X-axis represents seasonality through month-of-the-year. Site fidelity is defined as the number of unique 25kmx25km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals." width="1152" />
+<p class="caption">
+Figure 1: Comparisons of data quality metrics relating to birder behaviour, before, during and after the pandemic. X-axis represents seasonality through month-of-the-year. Site fidelity is defined as the number of unique 25kmx25km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals.
+</p>
+</div>
+<ul>
+<li>Some expected changes in data quality were present: <strong>group interactions and overall mobility decreased</strong>, coinciding with higher observer site fidelity, less travel and a reluctance in visiting birding hotspots (Figure <a href="#fig:figure1">1</a>; Table <a href="#tab:table1">1</a>).</li>
+</ul>
+<table>
+<caption>
+<span id="tab:table1">Table 1: </span>List of data quality metrics and how they changed duringy the pandemic. The <em>Period</em> column indicates the duration for which the change persisted: <em>Y</em> for a year, or <em>M</em> for the crucial months around March to May.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Metrics
+</th>
+<th style="text-align:center;">
+Change
+</th>
+<th style="text-align:center;">
+Period
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Group birding
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+Y
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hotspot birding
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+Y
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Travelling birding
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+M
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Birding distance
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+M
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+List duration
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+M
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+List length
+</td>
+<td style="text-align:center;width: 25%; ">
+-ve
+</td>
+<td style="text-align:center;width: 25%; ">
+M
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Observer site fidelity
+</td>
+<td style="text-align:center;width: 25%; ">
++ve
+</td>
+<td style="text-align:center;width: 25%; ">
+M
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Observer birding time
+</td>
+<td style="text-align:center;width: 25%; ">
+NA
+</td>
+<td style="text-align:center;width: 25%; ">
+NA
+</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Despite this, <strong>total spatial coverage did not change</strong> (Figure <a href="#fig:figure3">3</a>); observations were, however, slightly biased towards urban landscapes. There was also a <strong>“release” effect</strong>, with observations spreading out from urban areas after the pandemic.</li>
+</ul>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure2"></span>
+<img src="02_poster_BMS_files/figure-html/figure2-1.png" alt="Patterns in urban birding proportion and spatial coverage and spread with the pandemic." width="1152" />
+<p class="caption">
+Figure 2: Patterns in urban birding proportion and spatial coverage and spread with the pandemic.
+</p>
+</div>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure3"></span>
+<img src="02_poster_BMS_figs/s_spread_SoIBmap.png" alt="Patterns in urban birding proportion and spatial coverage and spread with the pandemic." width="100%" />
+<p class="caption">
+Figure 3: Patterns in urban birding proportion and spatial coverage and spread with the pandemic.
+</p>
+</div>
+<ul>
+<li>Temporal distribution changed slightly in some states (Figure <a href="#fig:figure4">4</a>), with more observations during the pandemic on certain weekdays and at late afternoon hours.</li>
+</ul>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure4"></span>
+<img src="02_poster_BMS_files/figure-html/figure4-1.png" alt="Change in temporal patterns." width="1152" />
+<p class="caption">
+Figure 4: Change in temporal patterns.
+</p>
+</div>
+<ul>
+<li>The slight changes in data quality were restricted to the months of <strong>March–May</strong>—which saw the nationwide lockdown in 2020 and the devastating second wave in 2021—returning to “normal” levels in the other months.<br />
+</li>
+<li><strong>State-level idiosyncrasies</strong> perhaps reflect differences in government response, severity of the disease, and possibly general attitudes of the public.</li>
+</ul>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<ul>
+<li>The minor and expected changes in data quality, while present, did not result in any prominent bias that would negatively impact interpretability of patterns in eBird data from the pandemic years.<br />
+</li>
+<li>Thus, eBird data from India can continue to be used in large-scale analyses of bird ecology. At the smaller-scale, diligence against artefactual abundance trends is advised.<br />
+</li>
+<li>The pandemic is an opportunity to study the relationship between birds and anthropogenic factors. For example, an interesting question to answer would be whether or not bird detectability increased during the pandemic due to lower disturbance.</li>
+</ul>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-hochachka2021" class="csl-entry">
+Hochachka, Wesley M., Hany Alonso, Carlos Gutiérrez-Expósito, Eliot Miller, and Alison Johnston. 2021. <span>“Regional Variation in the Impacts of the <span>COVID</span>-19 Pandemic on the Quantity and Quality of Data Collected by the Project <span class="nocase">eBird</span>.”</span> <em>Biological Conservation</em> 254 (February): 108974. <a href="https://doi.org/10.1016/j.biocon.2021.108974">https://doi.org/10.1016/j.biocon.2021.108974</a>.
+</div>
+<div id="ref-kelling2019" class="csl-entry">
+Kelling, Steve, Alison Johnston, Aletta Bonn, Daniel Fink, Viviana Ruiz-Gutierrez, Rick Bonney, Miguel Fernandez, et al. 2019. <span>“Using <span>Semistructured</span> <span>Surveys</span> to <span>Improve</span> <span>Citizen</span> <span>Science</span> <span>Data</span> for <span>Monitoring</span> <span>Biodiversity</span>.”</span> <em>BioScience</em> 69 (3): 170–79. <a href="https://doi.org/10.1093/biosci/biz010">https://doi.org/10.1093/biosci/biz010</a>.
+</div>
+<div id="ref-randler2020" class="csl-entry">
+Randler, Christoph, Piotr Tryjanowski, Jukka Jokimäki, Marja-Liisa Kaisanlahti-Jokimäki, and Naomi Staller. 2020. <span>“<span>SARS</span>-<span>CoV2</span> (<span>COVID</span>-19) <span>Pandemic</span> <span>Lockdown</span> <span>Influences</span> <span>Nature</span>-<span>Based</span> <span>Recreational</span> <span>Activity</span>: <span>The</span> <span>Case</span> of <span>Birders</span>.”</span> <em>International Journal of Environmental Research and Public Health</em> 17 (19): 7310. <a href="https://doi.org/10.3390/ijerph17197310">https://doi.org/10.3390/ijerph17197310</a>.
+</div>
+<div id="ref-soib2020" class="csl-entry">
+SoIB. 2020. <span>“State of <span>India</span>’s <span>Birds</span>, 2020: <span>Range</span>, Trends and Conservation Status.”</span> The SoIB Partnership. <a href="https://www.stateofindiasbirds.in/">https://www.stateofindiasbirds.in/</a>.
+</div>
+<div id="ref-sullivan2014" class="csl-entry">
+Sullivan, Brian L., Jocelyn L. Aycrigg, Jessie H. Barry, Rick E. Bonney, Nicholas Bruns, Caren B. Cooper, Theo Damoulas, et al. 2014. <span>“The <span class="nocase">eBird</span> Enterprise: <span>An</span> Integrated Approach to Development and Application of Citizen Science.”</span> <em>Biological Conservation</em> 169 (January): 31–40. <a href="https://doi.org/10.1016/j.biocon.2013.11.003">https://doi.org/10.1016/j.biocon.2013.11.003</a>.
+</div>
+<div id="ref-vardi2021" class="csl-entry">
+Vardi, Reut, Oded Berger-Tal, and Uri Roll. 2021. <span>“<span class="nocase">iNaturalist</span> Insights Illuminate <span>COVID</span>-19 Effects on Large Mammals in Urban Centers.”</span> <em>Biological Conservation</em> 254 (February): 108953. <a href="https://doi.org/10.1016/j.biocon.2021.108953">https://doi.org/10.1016/j.biocon.2021.108953</a>.
+</div>
+</div>
+</div>
+
+</div>
+<div class="main">
+<p>COVID-19 in India <strong>has not</strong> caused large-scale biases in eBird data, despite slight changes in birdwatcher behaviour</p>
+</div>
+<div class="main_bottom">
+<img id="main-img-left" src=pics/ncflogo.png>
+<img id="main-img-center" src=>
+<img id="main-img-right" src=pics/bcilogo.png>
+</div>
+</div>
+
+
+
+</body>
+</html>

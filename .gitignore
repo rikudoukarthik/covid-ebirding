@@ -21,6 +21,13 @@ data/in_LULC/
 data/in_LULC_USGS/
 # to stop tracking the MODIS TIFs that get downloaded with each full run
 data/in_LULC_MODIS/
+# posters
+example_betterland_template_files/
+
+example_betterland_template.Rmd
+example_betterland_template.html
+example_betterport_template.Rmd
+example_html_template.Rmd
 
 # RMD caches
 *_cache/

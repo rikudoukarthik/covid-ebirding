@@ -29,11 +29,10 @@ covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
 
-# boundary of India to remove data from outside (pelagic)
+# boundary of India 
 india <- rgdal::readOGR(dsn = "data/in_2011", layer = "India_2011")
 sp::proj4string(india) <- "+proj=longlat +datum=WGS84"
 india <- terra::vect(india)
-
 # state boundaries
 states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") %>% 
   terra::vect()
@@ -1227,7 +1226,7 @@ UNU_lists_sw <- data_UNU %>%
                    CI.L = PROP.U - 1.96*SE,
                    CI.U = PROP.U + 1.96*SE)
 
-UNU_lists_nw <- cells_UNU_sw %>% 
+UNU_lists_nw <- UNU_lists_sw %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   dplyr::summarise(PROP.U = mean(PROP.U),
                    SE = sqrt(sum((SE)^2))/n(),
@@ -1381,7 +1380,7 @@ rm(temp, UNU_cells_sw, UNU_cells_nw, s_UNU_cells)
 
 ```{r s_cover, cache=TRUE, message=FALSE}
 
-##### Proportion of total grid cells & total urban vs. non-urban cells covered ####
+##### Proportion of total grid cells covered ####
 
 cover_sw <- data_UNU %>% 
   group_by(STATE) %>% 
@@ -1460,7 +1459,7 @@ ggsave("02_explor_figs/11a_s_cover.png",
 rm(cover_sw, cover_nw, s_cover)
 
 
-##### Proportion of total urban cells covered ####
+##### Proportion of total urban cells & non-urban cells covered ####
 
 temp1 <- data_UNU %>% 
   group_by(STATE, URBAN) %>% 
@@ -1710,7 +1709,6 @@ png(file = "02_explor_figs/12a_s_spread_SoIBmap.png",
     width = 17, height = 8, units = "in", res = 300)
 print(s_spread_SoIBmap)
 dev.off()
-
 
 
 ##### Change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell  ####
