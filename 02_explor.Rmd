@@ -1185,7 +1185,7 @@ leaflet() %>%
 
 # adding extracted land cover values at eBird data points with grid cell information at both scales
 # Pakistan-administered Kashmir lists produce NA for URBAN
-data_UNU <- data0_slice_S %>% 
+data_UNU <- data0_slice_G %>% 
   ### Creating smaller data object for spatial patterns 
   dplyr::select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE,
                 TIME.OBSERVATIONS.STARTED, SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER,
