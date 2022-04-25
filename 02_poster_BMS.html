@@ -12,8 +12,6 @@
 
 <script src="02_poster_BMS_files/header-attrs-2.13/header-attrs.js"></script>
 
-<script src="02_poster_BMS_files/kePrint-0.0.1/kePrint.js"></script>
-<link href="02_poster_BMS_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 
 
@@ -36,17 +34,17 @@ Here are the required style attributes for css to make this poster work :)
 -->
 <style>
 @page {
-size: 39in 52in;
+size: 45in 60in;
 margin: 0;
 padding: 0;
 }
 body {
 margin: 0px;
 padding: 0px;
-width: 39in;
-height: 52in;
+width: 45in;
+height: 60in;
 text-align: justify;
-font-size: 40px;
+font-size: 45px;
 line-height: 1.05;
 }
 /* RMarkdown Class Styles */
@@ -94,7 +92,7 @@ border-radius: 2mm;
 }
 caption {
 margin-bottom: 10px;
-font-size: 27pt;
+font-size: 30pt;
 font-style: italic;
 }
 
@@ -119,7 +117,7 @@ th {
   padding-right: 5mm;
 }
 .caption {
-font-size: 27pt;
+font-size: 30pt;
 font-style: italic;
 padding-top: 0;
 }
@@ -133,8 +131,8 @@ float: left;
 padding: 0px;
 }
 .outer {
-width: 39in;
-height: calc(52in *  0.6325 );
+width: 45in;
+height: calc(60in *  0.6325 );
 -webkit-column-count: 3; /* Chrome, Safari, Opera */
 -moz-column-count: 3; /* Firefox */
 column-count: 3;
@@ -155,7 +153,7 @@ column-rule-style: none;
 column-rule-color: black;
 background-color: #FFFFFF;
 font-family: Rasa;
-margin-top: calc(52in *  0.25 );
+margin-top: calc(60in *  0.25 );
 padding-top: 1em;
 padding-bottom: 1em;
 }
@@ -168,7 +166,7 @@ text-decoration: none;
 color: #1D8A9A;
 }
 #title {
-font-size: 70pt;
+font-size: 80pt;
 text-align: left;
 margin: 0;
 line-height: 98%;
@@ -180,13 +178,13 @@ background: 0;
 color:#13A48C;
 margin: 0;
 line-height: 85%;
-font-size: 55px;
+font-size: 65px;
 }
 #affiliation {
 padding-top: 0.1em;
 color: #00000080;
 font-style: italic;
-font-size: 35px;
+font-size: 45px;
 margin: 0;
 }
 sup {
@@ -205,7 +203,7 @@ font-size: 30px;
 color: #1D8A9A;
 margin: 0;
 line-height: 85%;
-font-size: 40px;
+font-size: 50px;
 text-align: left;
 }
 .outer h1, h2, h3, h4, h5, h6 {
@@ -247,8 +245,8 @@ padding-right: 8%;
 text-align: left;
 }
 .main {
-width: 39in;
-height: calc(52in * 0.25);
+width: 45in;
+height: calc(60in * 0.25);
 position: absolute;
 background-color: #13A48C;
 color: #E3F6F399;
@@ -272,7 +270,7 @@ position: absolute;
 }
 #main-img-center {
 width: 10%;
-left: calc(39in * 0.45);
+left: calc(45in * 0.45);
 bottom: 0.5in;
 position: absolute;
 }
@@ -283,7 +281,7 @@ bottom: 0.2in;
 position: absolute;
 }
 .main p {
-font-size: 190px;
+font-size: 200px;
 font-family: Quicksand;
 text-align: center;
 margin: 0;
@@ -323,14 +321,14 @@ font-size: 35px;
 text-decoration: none;
 }
 .poster_wrap {
-width: 39in;
-height: 52in;
+width: 45in;
+height: 60in;
 padding: 0cm;
 }
 .main_bottom {
-width: 39in;
-height: calc(52in * 0.1);
-margin-top: calc(52in * 0.9);
+width: 45in;
+height: calc(60in * 0.1);
+margin-top: calc(60in * 0.9);
 position: absolute;
 background-color: #13A48C;
 background-image: linear-gradient(#1D8A9A 10%, #13A48C);
@@ -424,7 +422,7 @@ margin-left: 0;
 </style>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>Citizen science data in eBird <span class="citation">(Sullivan et al. 2014)</span> enables large-scale analyses and comparisons of bird abundance <span class="citation">(Kelling et al. 2019)</span>, helping guide conservation policy <span class="citation">(SoIB 2020)</span>. The reliability of such trends analyses is contingent on birdwatcher and bird behaviour remaining relatively unchanged between years. COVID-19 and the associated restrictions likely affected where, when and how birdwatchers observed birds during the pandemic years <span class="citation">(e.g., Randler et al. 2020; Vardi, Berger-Tal, and Roll 2021; Hochachka et al. 2021)</span>. We explored whether this has introduced prominent biases in the data. If so, we wanted to understand these changes so as to enable meaningful interpretation of any patterns in bird abundance seen during the pandemic years.</p>
+<p>Citizen science data in eBird <span class="citation">(Sullivan et al. 2014)</span> enables large-scale analyses and comparisons of bird abundance, helping guide conservation policy <span class="citation">(SoIB 2020)</span>. The reliability of such trends analyses is contingent on birdwatcher and bird behaviour remaining relatively unchanged between years. COVID-19 and the associated restrictions likely affected where, when and how birdwatchers observed birds during the pandemic years <span class="citation">(e.g., Hochachka et al. 2021)</span>. We explored whether this was true and if so how it has affected the data, so as to enable meaningful interpretation of any patterns in bird abundance seen during the pandemic years.</p>
 </div>
 <div id="methods" class="section level1">
 <h1>Methods</h1>
@@ -433,22 +431,31 @@ margin-left: 0;
 <div id="results" class="section level1">
 <h1>Results</h1>
 <ul>
-<li><strong>Data quantity</strong> in terms of number and effort of birders <strong>increased</strong> rather than decreased with the pandemic, and also continued to rise afterward. This hints at the general growth in eBirding in India.<br />
+<li>Birdwatchers across India did not reduce their birding effort with the pandemic (Figure <a href="#fig:figure1">1</a>A), nor did spatial coverage decrease (Figure <a href="#fig:figure1">1</a>B).<br />
 </li>
-<li>Although total birding time remained similar for observers, checklists in general became <strong>shorter</strong> both spatially (distance covered) and temporally (list duration).</li>
+<li>Birdwatching was highly <strong>concentrated in urban areas</strong> during the period of national lockdown and a few months following it in 2020 (Figure <a href="#fig:figure1">1</a>C).</li>
 </ul>
 <div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure1"></span>
-<img src="02_poster_BMS_files/figure-html/figure1-1.png" alt="Comparisons of data quality metrics relating to birder behaviour, before, during and after the pandemic. X-axis represents seasonality through month-of-the-year. Site fidelity is defined as the number of unique 25kmx25km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals." width="1152" />
+<img src="02_poster_BMS_files/figure-html/figure1-1.png" alt="Intensity and coverage of bird observations did not decrease with the pandemic. Points represent mean values, and error bars show 95% confidence intervals." width="1344" />
 <p class="caption">
-Figure 1: Comparisons of data quality metrics relating to birder behaviour, before, during and after the pandemic. X-axis represents seasonality through month-of-the-year. Site fidelity is defined as the number of unique 25kmx25km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals.
+Figure 1: Intensity and coverage of bird observations did not decrease with the pandemic. Points represent mean values, and error bars show 95% confidence intervals.
 </p>
 </div>
 <ul>
-<li>Some expected changes in data quality were present: <strong>group interactions and overall mobility decreased</strong>, coinciding with higher observer site fidelity, less travel and a reluctance in visiting birding hotspots (Figure <a href="#fig:figure1">1</a>; Table <a href="#tab:table1">1</a>).</li>
+<li>The peak lockdown period was also associated with <strong>changes in birder behaviour</strong>: people avoided public/interactive birding and instead stuck to local areas (higher site fidelity; see Figure <a href="#fig:figure2">2</a>).</li>
+</ul>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure2"></span>
+<img src="02_poster_BMS_files/figure-html/figure2-1.png" alt="Site fidelity is defined as the number of unique 24kmx24km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals." width="960" />
+<p class="caption">
+Figure 2: Site fidelity is defined as the number of unique 24kmx24km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals.
+</p>
+</div>
+<ul>
+<li>While site fidelity returned to pre-COVID levels immediately after the lockdown period, people <strong>avoided birding in groups and in hotspots for the whole year</strong>. In fact, group birding was avoided even in 2021 (Table <a href="#tab:table1">1</a>).</li>
 </ul>
 <table>
 <caption>
-<span id="tab:table1">Table 1: </span>List of data quality metrics and how they changed duringy the pandemic. The <em>Period</em> column indicates the duration for which the change persisted: <em>Y</em> for a year, or <em>M</em> for the crucial months around March to May.
+<span id="tab:table1">Table 1: </span>List of data quality metrics and how they changed during the pandemic. The <em>Period</em> column indicates the duration for which the change persisted: throughout the two pandemic years, just 2020, or the crucial lockdown/peak months around March–May.
 </caption>
 <thead>
 <tr>
@@ -468,130 +475,117 @@ Period
 <td style="text-align:left;">
 Group birding
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-Y
+<td style="text-align:center;">
+Throughout
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Hotspot birding
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-Y
+<td style="text-align:center;">
+2020
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Travelling birding
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-M
+<td style="text-align:center;">
+2020
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Birding distance
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-M
+<td style="text-align:center;">
+Peaks
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 List duration
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-M
+<td style="text-align:center;">
+Peaks
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 List length
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 -ve
 </td>
-<td style="text-align:center;width: 25%; ">
-M
+<td style="text-align:center;">
+Peaks
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Observer site fidelity
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 +ve
 </td>
-<td style="text-align:center;width: 25%; ">
-M
+<td style="text-align:center;">
+Peaks
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Observer birding time
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 NA
 </td>
-<td style="text-align:center;width: 25%; ">
+<td style="text-align:center;">
 NA
 </td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li>Despite this, <strong>total spatial coverage did not change</strong> (Figure <a href="#fig:figure3">3</a>); observations were, however, slightly biased towards urban landscapes. There was also a <strong>“release” effect</strong>, with observations spreading out from urban areas after the pandemic.</li>
-</ul>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure2"></span>
-<img src="02_poster_BMS_files/figure-html/figure2-1.png" alt="Patterns in urban birding proportion and spatial coverage and spread with the pandemic." width="1152" />
-<p class="caption">
-Figure 2: Patterns in urban birding proportion and spatial coverage and spread with the pandemic.
-</p>
-</div>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure3"></span>
-<img src="02_poster_BMS_figs/s_spread_SoIBmap.png" alt="Patterns in urban birding proportion and spatial coverage and spread with the pandemic." width="100%" />
-<p class="caption">
-Figure 3: Patterns in urban birding proportion and spatial coverage and spread with the pandemic.
-</p>
-</div>
-<ul>
-<li>Temporal distribution changed slightly in some states (Figure <a href="#fig:figure4">4</a>), with more observations during the pandemic on certain weekdays and at late afternoon hours.</li>
-</ul>
-<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure4"></span>
-<img src="02_poster_BMS_files/figure-html/figure4-1.png" alt="Change in temporal patterns." width="1152" />
-<p class="caption">
-Figure 4: Change in temporal patterns.
-</p>
-</div>
-<ul>
-<li>The slight changes in data quality were restricted to the months of <strong>March–May</strong>—which saw the nationwide lockdown in 2020 and the devastating second wave in 2021—returning to “normal” levels in the other months.<br />
+<li>In some states, especially ones with metropolitan cities, birding on <strong>weekdays and at late afternoon hours</strong> increased during the pandemic (Figure <a href="#fig:figure3">3</a>).<br />
 </li>
-<li><strong>State-level idiosyncrasies</strong> perhaps reflect differences in government response, severity of the disease, and possibly general attitudes of the public.</li>
+<li>Many <strong>states showed different, often contradictory patterns</strong>, reflecting differences in government response, severity of the disease, and perhaps general attitudes of the public.</li>
 </ul>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure3"></span>
+<img src="02_poster_BMS_files/figure-html/figure3-1.png" alt="The pandemic in some states resulted in reduced weekend bias in birding activity, and a small spike during evening rush hours. Points represent mean values, and error bars show 95% confidence intervals." width="1152" />
+<p class="caption">
+Figure 3: The pandemic in some states resulted in reduced weekend bias in birding activity, and a small spike during evening rush hours. Points represent mean values, and error bars show 95% confidence intervals.
+</p>
+</div>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:figure4"></span>
+<img src="02_poster_BMS_figs/s_spread_SoIBmap.png" alt="Log proportional change in number of checklists across 24kmx24km grid cells in transition periods of the pandemic. Aside from a few small patches with decreased effort during the pandemic, there are no major spatial clusters of very high increase or decrease in birding effort." width="100%" />
+<p class="caption">
+Figure 4: Log proportional change in number of checklists across 24kmx24km grid cells in transition periods of the pandemic. Aside from a few small patches with decreased effort during the pandemic, there are no major spatial clusters of very high increase or decrease in birding effort.
+</p>
+</div>
 </div>
 <div id="conclusions" class="section level1">
 <h1>Conclusions</h1>
 <ul>
-<li>The minor and expected changes in data quality, while present, did not result in any prominent bias that would negatively impact interpretability of patterns in eBird data from the pandemic years.<br />
+<li>There was no negative impact on data quantity and its spatial and temporal coverage at the national level.<br />
 </li>
-<li>Thus, eBird data from India can continue to be used in large-scale analyses of bird ecology. At the smaller-scale, diligence against artefactual abundance trends is advised.<br />
-</li>
-<li>The pandemic is an opportunity to study the relationship between birds and anthropogenic factors. For example, an interesting question to answer would be whether or not bird detectability increased during the pandemic due to lower disturbance.</li>
+<li>A few months, mostly around the periods of lockdown, witnessed changes in birder behaviour. These periods should be handled with diligence against artefactual abundance trends.</li>
+<li>Overall, eBird data from India can continue to be used in large-scale analyses of bird ecology, e.g., exploring whether or not bird detectability increased during the pandemic due to lower anthropogenic disturbance.</li>
 </ul>
 </div>
 <div id="references" class="section level1 unnumbered">
@@ -600,27 +594,18 @@ Figure 4: Change in temporal patterns.
 <div id="ref-hochachka2021" class="csl-entry">
 Hochachka, Wesley M., Hany Alonso, Carlos Gutiérrez-Expósito, Eliot Miller, and Alison Johnston. 2021. <span>“Regional Variation in the Impacts of the <span>COVID</span>-19 Pandemic on the Quantity and Quality of Data Collected by the Project <span class="nocase">eBird</span>.”</span> <em>Biological Conservation</em> 254 (February): 108974. <a href="https://doi.org/10.1016/j.biocon.2021.108974">https://doi.org/10.1016/j.biocon.2021.108974</a>.
 </div>
-<div id="ref-kelling2019" class="csl-entry">
-Kelling, Steve, Alison Johnston, Aletta Bonn, Daniel Fink, Viviana Ruiz-Gutierrez, Rick Bonney, Miguel Fernandez, et al. 2019. <span>“Using <span>Semistructured</span> <span>Surveys</span> to <span>Improve</span> <span>Citizen</span> <span>Science</span> <span>Data</span> for <span>Monitoring</span> <span>Biodiversity</span>.”</span> <em>BioScience</em> 69 (3): 170–79. <a href="https://doi.org/10.1093/biosci/biz010">https://doi.org/10.1093/biosci/biz010</a>.
-</div>
-<div id="ref-randler2020" class="csl-entry">
-Randler, Christoph, Piotr Tryjanowski, Jukka Jokimäki, Marja-Liisa Kaisanlahti-Jokimäki, and Naomi Staller. 2020. <span>“<span>SARS</span>-<span>CoV2</span> (<span>COVID</span>-19) <span>Pandemic</span> <span>Lockdown</span> <span>Influences</span> <span>Nature</span>-<span>Based</span> <span>Recreational</span> <span>Activity</span>: <span>The</span> <span>Case</span> of <span>Birders</span>.”</span> <em>International Journal of Environmental Research and Public Health</em> 17 (19): 7310. <a href="https://doi.org/10.3390/ijerph17197310">https://doi.org/10.3390/ijerph17197310</a>.
-</div>
 <div id="ref-soib2020" class="csl-entry">
 SoIB. 2020. <span>“State of <span>India</span>’s <span>Birds</span>, 2020: <span>Range</span>, Trends and Conservation Status.”</span> The SoIB Partnership. <a href="https://www.stateofindiasbirds.in/">https://www.stateofindiasbirds.in/</a>.
 </div>
 <div id="ref-sullivan2014" class="csl-entry">
 Sullivan, Brian L., Jocelyn L. Aycrigg, Jessie H. Barry, Rick E. Bonney, Nicholas Bruns, Caren B. Cooper, Theo Damoulas, et al. 2014. <span>“The <span class="nocase">eBird</span> Enterprise: <span>An</span> Integrated Approach to Development and Application of Citizen Science.”</span> <em>Biological Conservation</em> 169 (January): 31–40. <a href="https://doi.org/10.1016/j.biocon.2013.11.003">https://doi.org/10.1016/j.biocon.2013.11.003</a>.
 </div>
-<div id="ref-vardi2021" class="csl-entry">
-Vardi, Reut, Oded Berger-Tal, and Uri Roll. 2021. <span>“<span class="nocase">iNaturalist</span> Insights Illuminate <span>COVID</span>-19 Effects on Large Mammals in Urban Centers.”</span> <em>Biological Conservation</em> 254 (February): 108953. <a href="https://doi.org/10.1016/j.biocon.2021.108953">https://doi.org/10.1016/j.biocon.2021.108953</a>.
-</div>
 </div>
 </div>
 
 </div>
 <div class="main">
-<p>COVID-19 in India <strong>has not</strong> caused large-scale biases in eBird data, despite slight changes in birdwatcher behaviour</p>
+<p>COVID-19 in India <strong>has not</strong> reduced the intensity and coverage of birding at the national level</p>
 </div>
 <div class="main_bottom">
 <img id="main-img-left" src=pics/ncflogo.png>

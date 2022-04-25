@@ -66,14 +66,14 @@ nl_po_nw <- nl_po_sw %>%
 
 rm(list = c("temp1","temp2","nl_po_sw"))
 
-### hotspot birding per observer ####
+### hotspot birding ####
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_slice_G %>% 
   filter(LOCALITY.TYPE == "H") %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -100,12 +100,12 @@ rm(list = c("temp1","temp2","hot_sw"))
 
 ### protocol ####
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -161,40 +161,16 @@ fidel_nw <- fidel_sw %>%
 rm(fidel_sw)
 
 
-### Urban birding proportion (lists) ####
-
-temp <- data_UNU %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>%
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  ungroup()
-
-UNU_lists_sw <- data_UNU %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  left_join(temp) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
-                   PROP.U = U.LISTS/TOT.LISTS,
-                   SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS),
-                   CI.L = PROP.U - 1.96*SE,
-                   CI.U = PROP.U + 1.96*SE)
-
-UNU_lists_nw <- UNU_lists_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.U = mean(PROP.U),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.U - 1.96*SE,
-                   CI.U = PROP.U + 1.96*SE)
-
-rm(temp, UNU_lists_sw)
-
 ### Spatial cover ####
 
-cover_sw <- data_UNU %>% 
-  group_by(STATE) %>% 
+cover <- data_UNU %>% 
+  ungroup() %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
+                   N.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(N.LISTS >= 10) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    NO.CELLS = n_distinct(CELL.ID),
                    PROP.CELLS = NO.CELLS/TOT.CELLS,
@@ -202,89 +178,59 @@ cover_sw <- data_UNU %>%
                    CI.L = PROP.CELLS - 1.96*SE,
                    CI.U = PROP.CELLS + 1.96*SE)
 
-cover_nw <- cover_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.CELLS = mean(PROP.CELLS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.CELLS - 1.96*SE,
-                   CI.U = PROP.CELLS + 1.96*SE)
 
-rm(cover_sw)
+### Spatial net change in effort ####
 
-### Spatial spread net change ####
-
-data_SoIBmap0 <- data_UNU %>% 
+temp <- data_UNU %>% 
+  ungroup() %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
-  group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
+  group_by(COVID, CELL.ID, MONTH) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
 
-temp0 <- data_SoIBmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
+temp0 <- temp %>% distinct(CELL.ID)
 
-data_SoIBmap1 <- data_SoIBmap0 %>% 
+temp1 <- temp %>% 
   filter(COVID == "BEF") %>% 
   # to include all grid cells and not just those with birding in BEF
   right_join(temp0) %>% 
-  mutate(COVID = "BEF", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(BEF = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, BEF)
 
-rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
-                                       crs = raster::crs(rast_SoIB))
-
-data_SoIBmap2 <- data_SoIBmap0 %>% 
+temp2 <- temp %>% 
   filter(COVID %in% c("DUR_20","DUR_21")) %>% 
-  group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
+  group_by(CELL.ID) %>% 
   # averages cells with lists from both years, and returns single year value for others (n/1)
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup() %>% 
   right_join(temp0) %>% 
-  mutate(COVID = "DUR", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(DUR = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, DUR)
 
-rast_SoIBmap2 <- raster::rasterFromXYZ(xyz = data_SoIBmap2,
-                                       crs = raster::crs(rast_SoIB))
-
-data_SoIBmap3 <- data_SoIBmap0 %>% 
+temp3 <- temp %>% 
   filter(COVID == "AFT") %>% 
+  # to include all grid cells and not just those with birding in BEF
   right_join(temp0) %>% 
-  mutate(COVID = "AFT", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(AFT = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, AFT)
 
-rast_SoIBmap3 <- raster::rasterFromXYZ(xyz = data_SoIBmap3,
-                                       crs = raster::crs(rast_SoIB))
-
-rast_SoIBmap_prop <- raster::stack(
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap2, 
-                  k = 1, # constant to prevent NAs
-                  fun = rast_propchange),
-  raster::overlay(x = rast_SoIBmap2, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_propchange),
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_propchange))
-names(rast_SoIBmap_prop) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
-
-
-temp <- data_SoIBmap0 %>% 
-  distinct(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  mutate(BeforeDuring = raster::extract(rast_SoIBmap_prop$BeforeDuring, 
-                                        cbind(CELL.LONG, CELL.LAT)),
-         DuringAfter = raster::extract(rast_SoIBmap_prop$DuringAfter, 
-                                       cbind(CELL.LONG, CELL.LAT))) %>% 
-  pivot_longer(cols = c(BeforeDuring, DuringAfter),
-               names_to = "PERIOD", 
-               values_to = "PROP.CHANGE")  # log. prop. change in monthly no.lists per 24x24
 
 set.seed(23) # for bootstrap
-boot_SoIBmap <- temp %>% 
+net_effort <- temp0 %>% 
+  left_join(temp1) %>% 
+  left_join(temp2) %>% 
+  left_join(temp3) %>% 
+  group_by(CELL.ID) %>% 
+  dplyr::summarise(BeforeDuring = rast_propchange(BEF, DUR, k = 1),
+                   DuringAfter = rast_propchange(DUR, AFT, k = 1)) %>% 
+  pivot_longer(cols = c(BeforeDuring, DuringAfter),
+               names_to = "PERIOD", 
+               values_to = "PROP.CHANGE") %>%  # log. prop. change in monthly no.lists per 24x24
   group_by(PERIOD) %>% 
   # this gives B number of means/medians of bootstrapped samples
   # median resulting in just 1s so mean is fine
@@ -295,8 +241,34 @@ boot_SoIBmap <- temp %>%
                    PROP.CHANGE = mean(PROP.CHANGE))
 
 
-rm(data_SoIBmap0, data_SoIBmap1, data_SoIBmap2, data_SoIBmap3, temp0, temp, rast_SoIBmap_prop)
+rm(temp1, temp2, temp3, temp0, temp)
 
+### Spatial proportion of urban birding ####
+
+temp <- data_UNU %>% 
+  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
+  filter(URBAN == 1) %>% 
+  dplyr::summarise(U.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  ungroup()
+
+urban_lists <- data_UNU %>% 
+  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
+  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  left_join(temp) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
+  dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
+                   PROP.U = U.LISTS/TOT.LISTS,
+                   SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  dplyr::summarise(PROP.U = mean(PROP.U),
+                   SE = sqrt(sum((SE)^2))/n()) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(PROP.U = mean(PROP.U),
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PROP.U - 1.96*SE,
+                   CI.U = PROP.U + 1.96*SE)
+
+rm(temp)
 
 ### Spatial spread by period (map) ####
 
@@ -337,7 +309,7 @@ dev.off()
 
 ### Temporal patterns ####
 
-t_dow_sw <- data0_slice_S %>% 
+t_dow_sw <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
@@ -362,7 +334,7 @@ t_dow_nw <- t_dow_sw %>%
                    CI.U = PROP.LISTS + 1.96*SE)
 
 
-t_tod_sw <- data0_slice_S %>% 
+t_tod_sw <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, STATE, YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -388,6 +360,6 @@ rm(t_dow_nw, t_tod_nw)
 
 ### saving RData ####
 
-save(month_compar, india, states, nl_po_nw, hot_nw, prot_nw, fidel_nw, UNU_lists_nw, cover_nw,
-     boot_SoIBmap, t_dow_sw, t_tod_sw, file = "data/02_poster_BMS.RData")
+save(month_compar, nl_po_nw, hot_nw, prot_nw, fidel_nw, urban_lists, cover,
+     net_effort, t_dow_sw, t_tod_sw, file = "data/02_poster_BMS.RData")
 

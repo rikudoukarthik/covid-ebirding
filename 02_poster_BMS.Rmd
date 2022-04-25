@@ -13,28 +13,28 @@ author:
 affiliation:
   - num: 1
     address: Nature Conservation Foundation, Bengaluru
-title_textsize: "70pt"
-author_textsize: "55px"
-authorextra_textsize: "40px"
-affiliation_textsize: "35px"
+title_textsize: "80pt"
+author_textsize: "65px"
+authorextra_textsize: "50px"
+affiliation_textsize: "45px"
 affiliation_textcol: '#00000080'
-caption_textsize: "27pt"
+caption_textsize: "30pt"
 column_numbers: 3
 column_padding: "10mm"
-poster_height: "52in"
-poster_width: "39in"
+poster_height: "60in"
+poster_width: "45in"
 font_family: "Rasa"
 primary_colour: "#13A48C"
 secondary_colour: "#1D8A9A"
 accent_colour: "#EF6461"
 body_bgcol: "#FFFFFF"
-body_textsize: "40px"
+body_textsize: "45px"
 body_textcol: "#000000"
 reference_textsize: "27px"
 main_findings: 
-  - "COVID-19 in India **has not** caused large-scale biases in eBird data, despite slight changes in birdwatcher behaviour"
+  - "COVID-19 in India **has not** reduced the intensity and coverage of birding at the national level"
 main_fontfamily: "Quicksand"
-main_textsize: "190px"
+main_textsize: "200px"
 main_textcol: "#E3F6F3"
 main_textalpha: 99
 logoleft_name: "pics/ncflogo.png"
@@ -63,7 +63,9 @@ library(patchwork)
 library(kableExtra)
 
 theme_set(theme_bw() +
-            theme(panel.grid = element_blank()))
+            theme(panel.grid = element_blank(),
+                  legend.position = "bottom",
+                  text = element_text(size = 18)))
 
 ```
 
@@ -87,7 +89,6 @@ margin-left: 0;
 
 ```
 
-
 ```{r prep, include=FALSE}
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
@@ -110,60 +111,126 @@ We compared data quantity and quality between three distinct periods: before (20
 
 # Results
 
-- **Data quantity** in terms of number and effort of birders **increased** rather than decreased with the pandemic, and also continued to rise afterward. This hints at the general growth in eBirding in India.  
-- Although total birding time remained similar for observers, checklists in general became **shorter** both spatially (distance covered) and temporally (list duration).  
+- Birdwatchers across India did not reduce their birding effort with the pandemic (Figure \@ref(fig:figure1)A), nor did spatial coverage decrease (Figure \@ref(fig:figure1)B).  
+- Birdwatching was highly **concentrated in urban areas** during the period of national lockdown and a few months following it in 2020 (Figure \@ref(fig:figure1)C).  
 
-```{r figure1, fig.asp=0.5, fig.width=12, fig.cap="Comparisons of data quality metrics relating to birder behaviour, before, during and after the pandemic. X-axis represents the twelve months of a calendar year. Site fidelity is defined as the number of unique 24kmx24km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
+```{r figure1, fig.asp=0.7, fig.width=14, fig.cap="Intensity and coverage of bird observations did not decrease with the pandemic. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
+
+ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
+  labs(title = "Urban birding",
+       x = "Month", y = "Proportion of urban lists \n per grid cell") -> s_UNU_lists
+
+ggplot(cover, aes(MONTH, PROP.CELLS, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
+  labs(title = "Spatial coverage",
+       x = "Month", y = "Proportion of grid cells \n with birding activity") -> s_cover
+
+ggplot(net_effort, aes(x = PERIOD, y = PROP.CHANGE)) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.1, position = position_dodge(0.5)) +
+  scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
+  scale_x_discrete(labels = c("Before to During", "During to After")) +
+  labs(title = "Net change in effort",
+       x = "Period", y = "Proportional change in no. of lists \n per month per grid cell") -> s_spread_netchange
+
+
+figure1 <- (s_spread_netchange | (s_cover / s_UNU_lists)) +
+  plot_layout(widths = c(2, 3), guides = "collect") +
+  plot_annotation(tag_levels = "A")
+
+
+figure1
+
+```
+
+- The peak lockdown period was also associated with **changes in birder behaviour**: people avoided public/interactive birding and instead stuck to local areas (higher site fidelity; see Figure \@ref(fig:figure2)).
+
+```{r figure2, fig.asp=1.8, fig.width=10, fig.cap="Site fidelity is defined as the number of unique 24kmx24km cells visited by an observer. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
 
 ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
   labs(title = "Group birding per observer",
-       x = "Month", y = "Proportion") -> no_lists_po
+       x = "Month", y = "Proportion of observer's \n lists that are group lists") -> no_lists_po
 
 ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
   labs(title = "Hotspot birding",
-       x = "Month", y = "Proportion") -> hotspot
+       x = "Month", y = "Proportion of all lists \n that are from hotspots") -> hotspot
 
 ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
   labs(title = "Travelling birding",
-       x = "Month", y = "Proportion") -> protocol
+       x = "Month", y = "Proportion of all lists \n that use travelling protocol") -> protocol
 
 ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
   scale_y_log10() + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
+                size = 1.5, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
   labs(title = "Observer site fidelity",
-       x = "Month", y = "No. of sites") -> fidelity
+       x = "Month", y = "No. of unique grid cells \n visited by an observer") -> fidelity
 
-figure1 <- (no_lists_po | hotspot) / (protocol | fidelity) +
+figure2 <- no_lists_po / hotspot / protocol / fidelity +
   plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(text = element_text(size = 15))
+  plot_annotation(tag_levels = "A",
+                  title = "What happened during lockdown?",
+                  theme = theme(plot.title = element_text(size = 30)))
 
-figure1
+figure2
 
 rm(list = c("nl_po_nw","no_lists_po","hot_nw","hotspot","prot_nw","protocol", "fidelity"))
 
 ```
 
-- Some expected changes in data quality were present: **group interactions and overall mobility decreased**, coinciding with higher observer site fidelity, less travel and a reluctance in visiting birding hotspots (Figure \@ref(fig:figure1); Table \@ref(tab:table1)). 
+- While site fidelity returned to pre-COVID levels immediately after the lockdown period, people **avoided birding in groups and in hotspots for the whole year**. In fact, group birding was avoided even in 2021 (Table \@ref(tab:table1)).  
 
 ```{r table1, out.width="100%"}
 
@@ -172,115 +239,82 @@ table1 <- data.frame(Metrics =
                          "Birding distance", "List duration", "List length", 
                          "Observer site fidelity", "Observer birding time"),
                      Change = c("-ve", "-ve", "-ve", "-ve", "-ve" ,"-ve", "+ve", NA),
-                     Period = c("Y", "Y", "M", "M", "M", "M", "M", NA))
+                     Period = c("Throughout", "2020", "2020", "Peaks", "Peaks", "Peaks",
+                                "Peaks", NA))
 
 table1 %>% 
-  kable(caption = "List of data quality metrics and how they changed duringy the pandemic. The *Period* column indicates the duration for which the change persisted: *Y* for a year, or *M* for the crucial months around March to May.",
-        align = "lcc", booktabs = F) %>%
-  column_spec(2, width = "25%") %>%
-  column_spec(3, width = "25%")
+  kable(caption = "List of data quality metrics and how they changed during the pandemic. The *Period* column indicates the duration for which the change persisted: throughout the two pandemic years, just 2020, or the crucial lockdown/peak months around March--May.",
+        align = "lcc", booktabs = F)
 
 ```
 
-- Despite this, **total spatial coverage did not change** (Figure \@ref(fig:figure3)); observations were, however, slightly biased towards urban landscapes. There was also a **"release" effect**, with observations spreading out from urban areas after the pandemic.  
+- In some states, especially ones with metropolitan cities, birding on **weekdays and at late afternoon hours** increased during the pandemic (Figure \@ref(fig:figure3)).    
+- Many **states showed different, often contradictory patterns**, reflecting differences in government response, severity of the disease, and perhaps general attitudes of the public.  
 
-```{r figure2, fig.asp=0.5, fig.width=12, fig.cap="(A) Proportion of checklists submitted from urban areas. (B) Proportion of 24kmx24km grid cells covered. (C) Net proportional change in gridwise number of checklists in transition periods of the pandemic and after, averaged across all 6491 24kmx24km grid cells. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
+```{r figure3, fig.asp=0.9, fig.width=12, fig.cap="The pandemic in some states resulted in reduced weekend bias in birding activity, and a small spike during evening rush hours. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
 
-ggplot(UNU_lists_nw, aes(MONTH, PROP.U, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  labs(title = "Urban birding",
-       x = "Month", y = "Proportion") -> s_UNU_lists
+(((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
+          aes(DAY.W, PROP.LISTS, colour = COVID)) + 
+     geom_point(size = 2, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1, width = 0.7, position = position_dodge(0.5)) +
+     scale_colour_manual(values = covid_palette,
+                         name = "Period", 
+                         labels = c("Before", "During (2020)", "During (2021)", "After")) +
+     scale_x_continuous(breaks = 1:7,
+                        labels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")) +
+     labs(title = "Kerala",
+          x = "Day of week", y = "Proportion of lists \n in a week")) |
+    (ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
+            aes(DAY.W, PROP.LISTS, colour = COVID)) + 
+       geom_point(size = 2, position = position_dodge(0.5)) +
+       geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                     size = 1, width = 0.7, position = position_dodge(0.5)) +
+       scale_colour_manual(values = covid_palette,
+                           name = "Period", 
+                           labels = c("Before", "During (2020)", "During (2021)", "After")) +
+       scale_x_continuous(breaks = 1:7,
+                          labels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")) +
+       labs(title = "Karnataka",
+            x = "Day of week", y = ""))) /
+   (ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
+            aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
+       geom_point(size = 2, position = position_dodge(0.5)) +
+       geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                     size = 1, width = 0.8, position = position_dodge(0.5)) +
+       scale_colour_manual(values = covid_palette,
+                           name = "Period", 
+                           labels = c("Before", "During (2020)", "During (2021)", "After")) +
+       labs(title = "Gujarat",
+            x = "Time of day (hours)", y = "Proportion of lists \n in a day")) /
+      (ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
+              aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
+         geom_point(size = 2, position = position_dodge(0.5)) +
+         geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                       size = 1, width = 0.8, position = position_dodge(0.5)) +
+         scale_colour_manual(values = covid_palette,
+                             name = "Period", 
+                             labels = c("Before", "During (2020)", "During (2021)", "After")) +
+         labs(title = "Maharashtra",
+              x = "Time of day (hours)", y = "Proportion of lists \n in a day"))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") -> figure3
 
-ggplot(cover_nw, aes(MONTH, PROP.CELLS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  labs(title = "Spatial coverage",
-       x = "Month", y = "Proportion") -> s_cover
-
-ggplot(boot_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE)) + 
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.1, position = position_dodge(0.5)) +
-  scale_y_continuous(limits = c(1.1, 2.5), breaks = seq(1, 3, 0.2))+
-  labs(title = "Net change in effort",
-       x = "Period", y = "Proportional change") -> s_spread_netchange
-
-
-figure2 <- ((s_UNU_lists / s_cover) | s_spread_netchange) +
-  plot_layout(widths = c(2, 1), guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(text = element_text(size = 15))
-
-figure2
+figure3
 
 ```
 
-```{r figure3, out.width="100%", fig.cap="Log proportional change in number of checklists across 24kmx24km grid cells in transition periods of the pandemic and after. Aside from a few small patches with decreased effort during the pandemic, there are no major spatial clusters of very high increase or decrease in birding effort.", cache=TRUE, echo=FALSE}
+```{r figure4, out.width="100%", fig.cap="Log proportional change in number of checklists across 24kmx24km grid cells in transition periods of the pandemic. Aside from a few small patches with decreased effort during the pandemic, there are no major spatial clusters of very high increase or decrease in birding effort.", cache=TRUE, echo=FALSE}
 
 knitr::include_graphics("02_poster_BMS_figs/s_spread_SoIBmap.png")
 
 ```
 
-- Temporal distribution changed slightly in some states (Figure \@ref(fig:figure4)), with more observations during the pandemic on certain weekdays and at late afternoon hours.    
-
-```{r figure4, fig.asp=0.55, fig.width=12, fig.cap="Temporal spread of birding activity across days of the weeks in (A) Kerala and (B) Karnataka, and times of the day in (C) Gujarat and (D) Maharashtra. The pandemic in some states resulted in reduced weekend bias in birding activity, and a small spike during evening rush hours. Points represent mean values, and error bars show 95% confidence intervals.", cache=TRUE, echo=FALSE}
-
-(((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Day", y = "Proportion")) /
-(ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.7, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Day", y = "Proportion"))) |
-((ggplot(filter(t_tod_sw, STATE == "Gujarat"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.8, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Gujarat",
-         x = "Time of day (hours)", y = "Proportion")) /
-(ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.8, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Time of day (hours)", y = "Proportion")))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(text = element_text(size = 15)) -> figure4
-
-figure4
-
-```
-
-- The slight changes in data quality were restricted to the months of **March--May**---which saw the nationwide lockdown in 2020 and the devastating second wave in 2021---returning to "normal" levels in the other months.  
-- **State-level idiosyncrasies** perhaps reflect differences in government response, severity of the disease, and possibly general attitudes of the public.  
-
-
 # Conclusions
 
-- The minor and expected changes in data quality, while present, did not result in any prominent bias that would negatively impact interpretability of patterns in eBird data from the pandemic years.  
-- Thus, eBird data from India can continue to be used in large-scale analyses of bird ecology. At the smaller-scale, diligence against artefactual abundance trends is advised.  
-- The pandemic is an opportunity to study the relationship between birds and anthropogenic factors. For example, an interesting question to answer would be whether or not bird detectability increased during the pandemic due to lower disturbance.  
+- There was no negative impact on data quantity and its spatial and temporal coverage at the national level.  
+- A few months, mostly around the periods of lockdown, witnessed changes in birder behaviour. These periods should be handled with diligence against artefactual abundance trends.
+- Overall, eBird data from India can continue to be used in large-scale analyses of bird ecology, e.g., exploring whether or not bird detectability increased during the pandemic due to lower anthropogenic disturbance.  
 
 # References
 
