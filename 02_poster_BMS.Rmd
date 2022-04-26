@@ -5,7 +5,7 @@ author:
     affil: 1
     main: true
     orcid: 0000-0003-2863-5879 
-    twitter: rikudoukarthik
+    twitter: TrickDEerie
     github: rikudoukarthik
     email: karthik.t@ncf-india.org
   - name: Ashwin Viswanathan
@@ -334,8 +334,8 @@ table1 <- data.frame(Metrics =
                          "Birding distance", "List duration", "List length", 
                          "Observer site fidelity", "Observer birding time"),
                      Change = c("-ve", "-ve", "-ve", "-ve", "-ve" ,"-ve", "+ve", NA),
-                     Duration = c("Throughout", "2020", "2020", "Peaks", 
-                                  "Peaks", "Peaks", "Peaks", NA))
+                     Duration = c("Throughout", "2020", "2020", "Peak", 
+                                  "Peak", "Peak", "Peak", NA))
 
 table1 %>% 
   kable(caption = "List of metrics of birder behaviour and how they changed during the pandemic. The \"Duration\" column indicates how long the change persisted.",
