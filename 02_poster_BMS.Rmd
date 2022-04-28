@@ -172,6 +172,10 @@ figure1 <- (s_spread_netchange | (s_cover / s_UNU_lists)) +
 
 figure1
 
+
+# ggsave("02_poster_BMS_figs/figure1.png", figure1, dpi = 300,
+#        width = 15, height = 12, units = "in")
+
 ```
 
 - Birdwatching was **concentrated in urban areas only in a few months** during the "peak"[^3] phase in 2020 but returned to pre-COVID levels in 2021 (Figure \@ref(fig:figure1)C).  
@@ -249,6 +253,11 @@ figure2 <- no_lists_po / hotspot / protocol / fidelity +
 
 figure2
 
+
+# ggsave("02_poster_BMS_figs/figure2.png", figure2, dpi = 300,
+#        width = 11, height = 21, units = "in")
+
+
 rm(list = c("nl_po_nw","no_lists_po","hot_nw","hotspot","prot_nw","protocol", "fidelity"))
 
 ```
@@ -298,7 +307,7 @@ rm(list = c("nl_po_nw","no_lists_po","hot_nw","hotspot","prot_nw","protocol", "f
        scale_colour_manual(values = covid_palette,
                            name = "Period", 
                            labels = c("Before", "During (2020)", "During (2021)", "After")) +
-       labs(title = "Gujarat birders utlitised regular evening commute hours for birding",
+       labs(title = "Gujarat birders utilised regular evening commute hours for birding",
             x = "Time of day (hours)", y = "Proportion of lists\nin a day")) /
       (ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
               aes(HOUR, PROP.LISTS, colour = COVID)) + 
@@ -311,7 +320,7 @@ rm(list = c("nl_po_nw","no_lists_po","hot_nw","hotspot","prot_nw","protocol", "f
          scale_colour_manual(values = covid_palette,
                              name = "Period", 
                              labels = c("Before", "During (2020)", "During (2021)", "After")) +
-         labs(title = "Maharashtra birders utlitised regular evening commute hours for birding",
+         labs(title = "Maharashtra birders utilised regular evening commute hours for birding",
               x = "Time of day (hours)", y = "Proportion of lists\nin a day"))) +
   plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "A",
@@ -320,6 +329,11 @@ rm(list = c("nl_po_nw","no_lists_po","hot_nw","hotspot","prot_nw","protocol", "f
                   theme = theme(plot.title = element_text(size = 35))) -> figure3
 
 figure3
+
+
+
+# ggsave("02_poster_BMS_figs/figure3.png", figure3, dpi = 300,
+#        width = 13, height = 13.5, units = "in")
 
 ```
 
