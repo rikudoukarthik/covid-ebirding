@@ -137,8 +137,6 @@ Changes in eBirder behaviour will be analysed using the focal data point, checkl
 
 When running the actual models, observer will be used as a random effect because all of these metrics would vary differently from observer to observer.
 
-Aside from comparing trends before and during the pandemic, at a finer scale we will also try to find patterns matching the various waves of spread and complete lockdown, as well as the vaccination progress.
-
 Post-presentation: regarding averaging national level patterns by state for some metrics, this means that means are manually calculated for states and the points plotted in the graph are only these single points per state (instead of all the raw data points).
 
 
@@ -239,7 +237,7 @@ plot_layout(guides = "collect") +
 
 no_lists # plot
 
-ggsave("02_explor_figs/01_no_lists.png", plot = no_lists,
+ggsave("03_wrap_figs/01_no_lists.png", plot = no_lists,
        width = 9, height = 9, units = "in")
 
 rm(list = c("nl_sw","nl_nw","no_lists"))
@@ -342,7 +340,7 @@ plot_annotation(title = "Change in proportion of group birding per observer with
 
 no_lists_po # plot
 
-ggsave("02_explor_figs/02_no_lists_po.png", plot = no_lists_po,
+ggsave("03_wrap_figs/02_no_lists_po.png", plot = no_lists_po,
        width = 9, height = 9, units = "in")
 
 rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
@@ -447,7 +445,7 @@ subtitle = "Y-axis shows average number of unique sites (25kmx25km cells) visite
 
 fidelity # plot
 
-ggsave("02_explor_figs/03_fidelity.png", plot = fidelity,
+ggsave("03_wrap_figs/03_fidelity.png", plot = fidelity,
        width = 9, height = 9, units = "in")
   
 rm(list = c("fidel_nw","fidel_sw","fidelity"))
@@ -532,7 +530,7 @@ plot_annotation(title = "Change in birding time per observer with the pandemic",
 
 time # plot
 
-ggsave("02_explor_figs/04_time.png", plot = time,
+ggsave("03_wrap_figs/04_time.png", plot = time,
        width = 9, height = 9, units = "in")
 
 rm(time_nw, time_sw, time)
@@ -629,7 +627,7 @@ plot_annotation(title = "Change in proportion of hotspot birding with the pandem
 
 hotspot # plot
 
-ggsave("02_explor_figs/05_hotspot.png", plot = hotspot,
+ggsave("03_wrap_figs/05_hotspot.png", plot = hotspot,
        width = 9, height = 9, units = "in")
 
 rm(list = c("hot_nw","hot_sw", "hotspot"))
@@ -728,7 +726,7 @@ plot_annotation(title = "Change in birding mobility with the pandemic",
 
 protocol 
 
-ggsave("02_explor_figs/06_protocol.png", plot = protocol,
+ggsave("03_wrap_figs/06_protocol.png", plot = protocol,
        width = 9, height = 9, units = "in")
 
 rm(list = c("prot_nw","prot_sw","protocol"))
@@ -820,7 +818,7 @@ plot_annotation(title = "Change in birding mobility with the pandemic",
 
 distance
 
-ggsave("02_explor_figs/07_distance.png", plot = distance,
+ggsave("03_wrap_figs/07_distance.png", plot = distance,
        width = 9, height = 9, units = "in")
 
 rm(dist_sw, dist_nw, distance)
@@ -915,7 +913,7 @@ plot_annotation(title = "Change in checklist duration with the pandemic",
 
 duration
 
-ggsave("02_explor_figs/08_duration.png", plot = duration,
+ggsave("03_wrap_figs/08_duration.png", plot = duration,
        width = 9, height = 9, units = "in")
 
 rm(dur_sw, dur_nw, duration)
@@ -1012,7 +1010,7 @@ plot_annotation(title = "Change in checklist length with the pandemic",
 
 length
 
-ggsave("02_explor_figs/09_length.png", plot = length,
+ggsave("03_wrap_figs/09_length.png", plot = length,
        width = 9, height = 9, units = "in")
 
 rm(length_nw, length_sw, length)
@@ -1286,7 +1284,7 @@ plot_annotation(title = "Change in proportion of urban birding with the pandemic
 
 s_UNU_lists
 
-ggsave("02_explor_figs/10a_s_UNU_lists.png", 
+ggsave("03_wrap_figs/10a_s_UNU_lists.png", 
        plot = s_UNU_lists,
        width = 9, height = 9, units = "in")
 
@@ -1371,7 +1369,7 @@ plot_annotation(title = "Change in proportion of urban birding with the pandemic
 
 s_UNU_cells
 
-ggsave("02_explor_figs/10b_s_UNU_cells.png",
+ggsave("03_wrap_figs/10b_s_UNU_cells.png",
        plot = s_UNU_cells,
        width = 9, height = 9, units = "in")
 
@@ -1387,6 +1385,10 @@ rm(temp, UNU_cells_sw, UNU_cells_nw, s_UNU_cells)
 cover_sw <- data_UNU %>% 
   group_by(STATE) %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>% 
+  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
+                   N.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(N.LISTS >= 10) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    NO.CELLS = n_distinct(CELL.ID),
@@ -1395,10 +1397,18 @@ cover_sw <- data_UNU %>%
                    CI.L = PROP.CELLS - 1.96*SE,
                    CI.U = PROP.CELLS + 1.96*SE)
 
-cover_nw <- cover_sw %>% 
+cover_nw <- data_UNU %>% 
+  ungroup() %>% 
+  mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
+                   N.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(N.LISTS >= 10) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.CELLS = mean(PROP.CELLS),
-                   SE = sqrt(sum((SE)^2))/n(),
+  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
+                   NO.CELLS = n_distinct(CELL.ID),
+                   PROP.CELLS = NO.CELLS/TOT.CELLS,
+                   SE = sqrt((PROP.CELLS)*(1 - PROP.CELLS)/TOT.CELLS),
                    CI.L = PROP.CELLS - 1.96*SE,
                    CI.U = PROP.CELLS + 1.96*SE)
 
@@ -1453,7 +1463,7 @@ plot_annotation(title = "Change in spatial coverage of monthly birding with the 
 
 s_cover
 
-ggsave("02_explor_figs/11a_s_cover.png", 
+ggsave("03_wrap_figs/11a_s_cover.png", 
        plot = s_cover,
        width = 9, height = 9, units = "in")
 
@@ -1466,6 +1476,10 @@ rm(cover_sw, cover_nw, s_cover)
 temp1 <- data_UNU %>% 
   group_by(STATE, URBAN) %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
+  group_by(COVID, YEAR, MONTH, STATE, URBAN, SUBCELL.ID) %>% 
+  dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
+                   N.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(N.LISTS >= 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE, URBAN) %>% 
   dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
                    NO.SUBCELLS = n_distinct(SUBCELL.ID),
@@ -1474,12 +1488,21 @@ temp1 <- data_UNU %>%
                    CI.L = PROP.SUBCELLS - 1.96*SE,
                    CI.U = PROP.SUBCELLS + 1.96*SE)
 
-temp2 <- temp1 %>% 
+temp2 <- data_UNU %>% 
+  ungroup() %>% 
+  mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
+  group_by(COVID, YEAR, MONTH, URBAN, SUBCELL.ID) %>% 
+  dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
+                   N.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(N.LISTS >= 1) %>% 
   group_by(COVID, YEAR, MONTH, URBAN) %>% 
-  dplyr::summarise(PROP.SUBCELLS = mean(PROP.SUBCELLS),
-                   SE = sqrt(sum((SE)^2))/n(),
+  dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
+                   NO.SUBCELLS = n_distinct(SUBCELL.ID),
+                   PROP.SUBCELLS = NO.SUBCELLS/TOT.SUBCELLS,
+                   SE = sqrt((PROP.SUBCELLS)*(1 - PROP.SUBCELLS)/TOT.SUBCELLS),
                    CI.L = PROP.SUBCELLS - 1.96*SE,
                    CI.U = PROP.SUBCELLS + 1.96*SE)
+
 
 cover_U_sw <- temp1 %>% filter(URBAN == 1)
 cover_U_nw <- temp2 %>% filter(URBAN == 1)
@@ -1590,11 +1613,11 @@ s_cover_U
 s_cover_NU
 
 
-ggsave("02_explor_figs/11b_s_cover_U.png", 
+ggsave("03_wrap_figs/11b_s_cover_U.png", 
        plot = s_cover_U,
        width = 9, height = 9, units = "in")
 
-ggsave("02_explor_figs/11b_s_cover_NU.png", 
+ggsave("03_wrap_figs/11b_s_cover_NU.png", 
        plot = s_cover_NU,
        width = 9, height = 9, units = "in")
 
@@ -1707,398 +1730,64 @@ levelplot(rast_SoIBmap,
 
 s_spread_SoIBmap
 
-png(file = "02_explor_figs/12a_s_spread_SoIBmap.png", 
+png(file = "03_wrap_figs/12a_s_spread_SoIBmap.png", 
     width = 17, height = 8, units = "in", res = 300)
 print(s_spread_SoIBmap)
 dev.off()
 
 
-##### Change in birding effort (no. of lists) in each 2x2 UNU cell averaged across 25x25 cell  ####
+##### Final analysis: net change across grids with SEs ####
 
-
-data_UNUmap0 <- data_UNU %>% 
+temp <- data_UNU %>% 
+  ungroup() %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
-  mutate(SUBCELL.LONG = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"x"],
-         SUBCELL.LAT = raster::xyFromCell(rast_UNU, SUBCELL.ID)[,"y"]) %>%
-  group_by(CELL.ID, URBAN, SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT, COVID, MONTH) %>% 
+  group_by(COVID, CELL.ID, MONTH) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
 
+temp0 <- temp %>% distinct(CELL.ID)
 
-temp0 <- data_UNUmap0 %>% 
-  distinct(CELL.ID, URBAN, SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT)
-
-
-data_UNUmap1 <- data_UNUmap0 %>% 
+temp1 <- temp %>% 
   filter(COVID == "BEF") %>% 
-  # to include subcells not visited in BEF
+  # to include all grid cells and not just those with birding in BEF
   right_join(temp0) %>% 
-  mutate(COVID = "BEF", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(BEF = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, BEF)
 
-rast_UNUmap1 <- raster::rasterFromXYZ(xyz = data_UNUmap1,
-                                      crs = raster::crs(rast_UNU))
-
-
-data_UNUmap2 <- data_UNUmap0 %>% 
+temp2 <- temp %>% 
   filter(COVID %in% c("DUR_20","DUR_21")) %>% 
-  group_by(SUBCELL.ID, SUBCELL.LONG, SUBCELL.LAT) %>% 
+  group_by(CELL.ID) %>% 
   # averages cells with lists from both years, and returns single year value for others (n/1)
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup() %>% 
   right_join(temp0) %>% 
-  mutate(COVID = "DUR", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(DUR = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, DUR)
 
-rast_UNUmap2 <- raster::rasterFromXYZ(xyz = data_UNUmap2,
-                                      crs = raster::crs(rast_UNU))
-
-
-data_UNUmap3 <- data_UNUmap0 %>% 
+temp3 <- temp %>% 
   filter(COVID == "AFT") %>% 
+  # to include all grid cells and not just those with birding in BEF
   right_join(temp0) %>% 
-  mutate(COVID = "AFT", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(SUBCELL.LONG, SUBCELL.LAT, NO.LISTS)
-
-rast_UNUmap3 <- raster::rasterFromXYZ(xyz = data_UNUmap3,
-                                      crs = raster::crs(rast_UNU))
-
-
-
-temp1 <- temp0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, 
-                                                      y = rast_UNUmap2, 
-                                                      k = 1,
-                                                      fun = rast_logpropchange), 
-                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
-  group_by(CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup() 
-
-temp1a <- temp1 %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-temp1b <- temp1 %>% 
-  filter(URBAN != 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-
-temp2 <- data_UNUmap0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap2, 
-                                                      y = rast_UNUmap3, 
-                                                      k = 1,
-                                                      fun = rast_logpropchange), 
-                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
-  group_by(CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup()
-
-temp2a <- temp2 %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-temp2b <- temp2 %>% 
-  filter(URBAN != 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-
-temp3 <- temp0 %>% 
-  # extracting values of log prop. change for each subcell to then average for cell
-  mutate(CHANGE = raster::extract(x = raster::overlay(x = rast_UNUmap1, 
-                                                      y = rast_UNUmap3, 
-                                                      k = 1,
-                                                      fun = rast_logpropchange), 
-                                  y = cbind(SUBCELL.LONG, SUBCELL.LAT))) %>% 
-  group_by(CELL.ID, URBAN) %>% 
-  dplyr::summarise(CHANGE = mean(CHANGE)) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>% 
-  ungroup()
-
-temp3a <- temp3 %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-temp3b <- temp3 %>% 
-  filter(URBAN != 1) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, CHANGE)
-
-
-
-# Within each 25x25 cell, how have urban birding (no. of lists in urban subcells) and non-urban birding changed?
-
-rast_UNUmapU <- raster::stack(
-  raster::rasterFromXYZ(xyz = temp1a,
-                        crs = raster::crs(rast_SoIB)),
-  raster::rasterFromXYZ(xyz = temp2a,
-                        crs = raster::crs(rast_SoIB)),
-  raster::rasterFromXYZ(xyz = temp3a,
-                        crs = raster::crs(rast_SoIB)))
-names(rast_UNUmapU) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
-
-
-
-rast_UNUmapN <- raster::stack(
-  raster::rasterFromXYZ(xyz = temp1b,
-                        crs = raster::crs(rast_SoIB)),
-  raster::rasterFromXYZ(xyz = temp2b,
-                        crs = raster::crs(rast_SoIB)),
-  raster::rasterFromXYZ(xyz = temp3b,
-                        crs = raster::crs(rast_SoIB)))
-names(rast_UNUmapN) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
-
-
-
-plotfromU <- round(raster::cellStats(rast_UNUmapU, "min")[1], 2)
-plottoU <- round(raster::cellStats(rast_UNUmapU, "max")[1], 2)
-
-plotfromN <- round(raster::cellStats(rast_UNUmapN, "min")[1], 2)
-plottoN <- round(raster::cellStats(rast_UNUmapN, "max")[1], 2)
-
-
-rast_UNUmapU_a <- rast_UNUmapU
-rast_UNUmapU_a[rast_UNUmapU_a >= 0] <- NA
-rast_UNUmapU_b <- rast_UNUmapU
-rast_UNUmapU_b[rast_UNUmapU_b <= 0] <- NA
-
-rast_UNUmapN_a <- rast_UNUmapN
-rast_UNUmapN_a[rast_UNUmapN_a >= 0] <- NA
-rast_UNUmapN_b <- rast_UNUmapN
-rast_UNUmapN_b[rast_UNUmapN_b <= 0] <- NA
-
-
-levelplot(rast_UNUmapU_a, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromU, plottoU, 0.03),
-          main = "Negative log prop. change in monthly (seven months) urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_a
-
-levelplot(rast_UNUmapU_b, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromU, plottoU, 0.03),
-          main = "Positive log prop. change in monthly (seven months) urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU_b
-
-levelplot(rast_UNUmapU, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromU, plottoU, 0.03),
-          main = "Log prop. change in monthly (seven months) urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapU
-
-
-levelplot(rast_UNUmapN_a, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromN, plottoN, 0.03),
-          main = "Negative log prop. change in monthly (seven months) non-urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_a
-
-levelplot(rast_UNUmapN_b, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromN, plottoN, 0.03),
-          main = "Positive log prop. change in monthly (seven months) non-urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN_b
-
-levelplot(rast_UNUmapN, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfromN, plottoN, 0.03),
-          main = "Log prop. change in monthly (seven months) non-urban lists per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUmapN
-
-
-s_spread_UNUmapU
-s_spread_UNUmapN
-
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapU_a.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapU_a)
-dev.off()
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapU_b.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapU_b)
-dev.off()
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapU.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapU)
-dev.off()
-
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapN_a.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapN_a)
-dev.off()
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapN_b.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapN_b)
-dev.off()
-
-png(file = "02_explor_figs/12b_s_spread_UNUmapN.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUmapN)
-dev.off()
-
-
-
-##### Change in monthly UNU ratio in each 24x24 cell  ####
-
-# How did the urban-non-urban ratio of number of checklists change across cells with the pandemic?
-
-data_UNUpropmap0 <- data_UNU %>% 
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, CELL.ID, MONTH, URBAN) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  dplyr::summarise(TOT.LISTS = sum(NO.LISTS),
-                   U.LISTS = ifelse(URBAN == 1, NO.LISTS, 0),
-                   PROP.UNU = U.LISTS/TOT.LISTS) %>% 
-  dplyr::summarise(PROP.UNU = mean(PROP.UNU)) %>% 
-  ungroup() %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"])
-
-
-temp0 <- data_UNUpropmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
-
-
-data_UNUpropmap1 <- data_UNUpropmap0 %>% 
-  filter(COVID == "BEF") %>% 
-  right_join(temp0) %>% 
-  mutate(COVID = "BEF", 
-         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, PROP.UNU) 
-
-rast_UNUpropmap1 <- raster::rasterFromXYZ(xyz = data_UNUpropmap1,
-                                          crs = raster::crs(rast_SoIB))
-
-
-data_UNUpropmap2 <- data_UNUpropmap0 %>% 
-  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
-  group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  dplyr::summarise(PROP.UNU = mean(PROP.UNU)) %>% 
-  ungroup() %>% 
-  right_join(temp0) %>% 
-  mutate(COVID = "DUR", 
-         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, PROP.UNU) 
-
-rast_UNUpropmap2 <- raster::rasterFromXYZ(xyz = data_UNUpropmap2,
-                                          crs = raster::crs(rast_SoIB))
-
-
-data_UNUpropmap3 <- data_UNUpropmap0 %>% 
-  filter(COVID == "AFT") %>% 
-  right_join(temp0) %>% 
-  mutate(COVID = "AFT", 
-         PROP.UNU = replace_na(PROP.UNU, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, PROP.UNU) 
-
-rast_UNUpropmap3 <- raster::rasterFromXYZ(xyz = data_UNUpropmap3,
-                                          crs = raster::crs(rast_SoIB))
-
-
-
-rast_UNUpropmap <- raster::stack(
-  raster::overlay(x = rast_UNUpropmap1, y = rast_UNUpropmap2, 
-                  k = 0.00001, # not 1, since this is prop.
-                  fun = rast_logpropchange),
-  raster::overlay(x = rast_UNUpropmap2, y = rast_UNUpropmap3, 
-                  k = 0.00001,
-                  fun = rast_logpropchange),
-  raster::overlay(x = rast_UNUpropmap1, y = rast_UNUpropmap3, 
-                  k = 0.00001,
-                  fun = rast_logpropchange))
-names(rast_UNUpropmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
-
-
-rast_UNUpropmap_a <- rast_UNUpropmap
-rast_UNUpropmap_a[rast_UNUpropmap_a >= 0] <- NA
-
-rast_UNUpropmap_b <- rast_UNUpropmap
-rast_UNUpropmap_b[rast_UNUpropmap_b <= 0] <- NA
-
-plotfrom <- round(raster::cellStats(rast_UNUpropmap, "min")[1], 2)
-plotto <- round(raster::cellStats(rast_UNUpropmap, "max")[1], 2)
-
-
-levelplot(rast_UNUpropmap_a, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfrom, plotto, 0.01),
-          main = "Negative log prop. change in monthly (seven months) urban birding proportion per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_a
-
-levelplot(rast_UNUpropmap_b, 
-          par.settings = mytheme, 
-          margin = F, 
-          at = seq(plotfrom, plotto, 0.01),
-          main = "Positive log prop. change in monthly (seven months) urban birding proportion per 24kmx24km cell") +
-  latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_UNUpropmap_b
-
-
-
-# only considers 24x24 cells that contain urban cells. so, the question these maps ask is:
-# in areas that have urban birding, was there an increase or decrease in urban proportion?
-
-
-png(file = "02_explor_figs/12c_s_spread_UNUpropmap_a.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUpropmap_a)
-dev.off()
-
-png(file = "02_explor_figs/12c_s_spread_UNUpropmap_b.png", 
-    width = 17, height = 8, units = "in", res = 300)
-print(s_spread_UNUpropmap_b)
-dev.off()
-
-
-##### Final analysis: net change across grids with SEs ####
-
-
-rast_SoIBmap_prop <- raster::stack(
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap2, 
-                  k = 1, # constant to prevent NAs
-                  fun = rast_propchange),
-  raster::overlay(x = rast_SoIBmap2, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_propchange),
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_propchange))
-names(rast_SoIBmap_prop) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
-
-
-temp <- data_SoIBmap0 %>% 
-  distinct(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  mutate(BeforeDuring = raster::extract(rast_SoIBmap_prop$BeforeDuring, 
-                                        cbind(CELL.LONG, CELL.LAT)),
-         DuringAfter = raster::extract(rast_SoIBmap_prop$DuringAfter, 
-                                        cbind(CELL.LONG, CELL.LAT))) %>% 
+  mutate(NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
+  rename(AFT = NO.LISTS) %>% 
+  dplyr::select(CELL.ID, AFT)
+
+
+set.seed(23) # for bootstrap
+net_effort <- temp0 %>% 
+  left_join(temp1) %>% 
+  left_join(temp2) %>% 
+  left_join(temp3) %>% 
+  group_by(CELL.ID) %>% 
+  dplyr::summarise(BeforeDuring = rast_propchange(BEF, DUR, k = 1),
+                   DuringAfter = rast_propchange(DUR, AFT, k = 1)) %>% 
   pivot_longer(cols = c(BeforeDuring, DuringAfter),
                names_to = "PERIOD", 
-               values_to = "PROP.CHANGE")  # log. prop. change in monthly no.lists per 24x24
-  
-set.seed(23) # for bootstrap
-boot_SoIBmap <- temp %>% 
+               values_to = "PROP.CHANGE") %>%  # log. prop. change in monthly no.lists per 24x24
   group_by(PERIOD) %>% 
   # this gives B number of means/medians of bootstrapped samples
   # median resulting in just 1s so mean is fine
@@ -2109,21 +1798,66 @@ boot_SoIBmap <- temp %>%
                    PROP.CHANGE = mean(PROP.CHANGE))
 
 
-ggplot(boot_SoIBmap, aes(x = PERIOD, y = PROP.CHANGE)) + 
+rm(temp1, temp2, temp3, temp0, temp)
+
+ggplot(net_effort, aes(x = PERIOD, y = PROP.CHANGE)) + 
   geom_point(size = 4, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.07, position = position_dodge(0.5)) +
-  scale_y_continuous(limits = c(1.1, 2.5), breaks = seq(1, 3, 0.2))+
+                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
+  scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
+  scale_x_discrete(labels = c("Before to During", "During to After")) +
   labs(title = "Net proportional change in birding effort (no. of lists)",
        subtitle = "Change per 24kmx24km cell averaged across all cells with birding activity",
        x = "Period", y = "Proportional change") -> s_spread_netchange
 
 s_spread_netchange
 
-ggsave("02_explor_figs/12d_s_spread_netchange.png", 
+ggsave("03_wrap_figs/12d_s_spread_netchange.png", 
        plot = s_spread_netchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
+
+##### Final analysis: change in proportion of urban lists per grid cell ####
+
+temp <- data_UNU %>% 
+  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
+  filter(URBAN == 1) %>% 
+  dplyr::summarise(U.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  ungroup()
+
+urban_lists <- data_UNU %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>%
+  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  left_join(temp) %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>%
+  dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
+                   PROP.U = U.LISTS/TOT.LISTS,
+                   SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS)) %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  dplyr::summarise(PROP.U = mean(PROP.U),
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PROP.U - 1.96*SE,
+                   CI.U = PROP.U + 1.96*SE)
+
+rm(temp)
+
+
+ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  annotate("rect", xmin = 2.5, xmax = 9.5, ymin = -Inf, ymax = Inf, 
+            fill = "#E0DDE3", col = NA, alpha = 0.5) +
+  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.75, width = 0.7, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
+  labs(title = "2020 lockdown restricted birders to urban \nareas",
+       x = "Month", y = "Proportion of urban \nlists per grid cell") -> s_UNU_lists
+
+s_UNU_lists
   
 ##### Removing workspace objects ####
 
@@ -2231,7 +1965,7 @@ plot_annotation(title = "Change in temporal spread of checklists with the pandem
 
 t_spread_dow
 
-ggsave("02_explor_figs/13_t_spread_dow.png", 
+ggsave("03_wrap_figs/13_t_spread_dow.png", 
        plot = t_spread_dow,
        width = 9, height = 9, units = "in")
 
@@ -2319,7 +2053,7 @@ plot_annotation(title = "Change in temporal spread of checklists with the pandem
 
 t_spread_tod
 
-ggsave("02_explor_figs/14_t_spread_tod.png", 
+ggsave("03_wrap_figs/14_t_spread_tod.png", 
        plot = t_spread_tod,
        width = 13, height = 9, units = "in")
 
@@ -2418,7 +2152,7 @@ plot_annotation(title = "Change in proportion of media lists with the pandemic",
 
 media
 
-ggsave("02_explor_figs/15_media.png", plot = media,
+ggsave("03_wrap_figs/15_media.png", plot = media,
        width = 9, height = 9, units = "in")
 
 rm(list = c("media_nw","media_sw","media"))
@@ -2497,7 +2231,7 @@ plot_annotation(title = "Change in eBirder growth with the pandemic",
 
 new # plot
 
-ggsave("02_explor_figs/16_new.png", plot = new,
+ggsave("03_wrap_figs/16_new.png", plot = new,
        width = 9, height = 9, units = "in")
 
 
@@ -2507,6 +2241,15 @@ rm(list = c("new_obsr_nw","new_obsr_sw","new"))
 
 * At the national level, the pandemic has seen a greater number of monthly new eBirders than before, presumably due to greater frequency and impact of outreach initiatives.  
 * While Kerala and Karnataka both have seen increases in monthly new eBirders with the pandemic, the increase is more striking in Karnataka than in Kerala. 
+
+
+
+# Bird behaviour 
+
+Two sets of bird species will be selected, one of birds common in human-dominated areas, and the other of common birds that are not very common in human-dominated areas. Reporting frequencies of all species will be calculated for every month and year. If there is an increase during the Mar--May period of birds in the first set and a decrease of birds in the second set, this means that birdwatcher bias has affected bird abundance as seen from the data. 
+
+## Bengaluru Urban
+
 
 
 # References
