@@ -544,16 +544,16 @@ rm(time_nw, time_sw, time)
 
 ### Hotspot birding  
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_slice_G %>% 
   filter(LOCALITY.TYPE == "H") %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -625,7 +625,7 @@ hot_nw <- hot_sw %>%
        x = "Month", y = "Hotspot birding proportion"))) +
 plot_layout(guides = "collect") +
 plot_annotation(title = "Change in proportion of hotspot birding with the pandemic",
-                subtitle = "Y-axis shows proportion of checklists that are from hotspots")-> hotspot
+                subtitle = "Y-axis shows proportion of checklists that are from hotspots") -> hotspot
 
 hotspot # plot
 
@@ -643,16 +643,16 @@ rm(list = c("hot_nw","hot_sw", "hotspot"))
 
 ### Birding protocol  
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -742,12 +742,12 @@ rm(list = c("prot_nw","prot_sw","protocol"))
 
 ### Birding distance
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course. Only considers travelling lists.
+Not "per observer", as this metric from data POV. Only considers travelling lists.
 
 ```{r distance, cache=TRUE, message=FALSE}
 
 set.seed(192) 
-dist_sw <- data0_slice_S %>% 
+dist_sw <- data0_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DIST = boot_conf(x = EFFORT.DISTANCE.KM)) %>% 
@@ -836,12 +836,12 @@ rm(dist_sw, dist_nw, distance)
 
 ### List duration
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 ```{r duration, cache=TRUE, message=FALSE}
 
 set.seed(834)
-dur_sw <- data0_slice_S %>% 
+dur_sw <- data0_slice_G %>% 
   filter(!is.na(DURATION.MINUTES)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DURATION = boot_conf(x = DURATION.MINUTES)) %>% 
@@ -930,7 +930,7 @@ rm(dur_sw, dur_nw, duration)
 
 ### List length
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 ```{r length, cache=TRUE, message=FALSE}
 
@@ -939,7 +939,7 @@ Not "per observer", as this metric from data POV. Includes duplicate lists, of c
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
 set.seed(98)
-length_sw <- data0_slice_S %>% 
+length_sw <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
@@ -2153,7 +2153,7 @@ detach("package:luna", unload=T)
 
 ### Temporal spread
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
 
@@ -2161,7 +2161,7 @@ Since month is not considered here (and instead data from multiple months are av
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
-t_dow_sw <- data0_slice_S %>% 
+t_dow_sw <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
@@ -2250,7 +2250,7 @@ rm(t_dow_sw, t_dow_nw, t_spread_dow)
 
 ```{r t_spread_2, cache=TRUE, message=FALSE}
 
-t_tod_sw <- data0_slice_S %>% 
+t_tod_sw <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, STATE, YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -2335,16 +2335,16 @@ rm(t_tod_nw, t_tod_sw, t_spread_tod)
 
 ### Media
 
-Not "per observer", as this metric from data POV. Includes duplicate lists, of course.
+Not "per observer", as this metric from data POV. 
 
 ```{r media, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_slice_G %>% 
   filter(HAS.MEDIA == 1) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
