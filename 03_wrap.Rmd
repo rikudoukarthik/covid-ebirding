@@ -2250,6 +2250,181 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 ## Bengaluru Urban
 
+```{r blr, cache=TRUE, message=FALSE}
+
+# load("data/data0.RData")
+
+species_bang <- data.frame(
+  COMMON.NAME = c("Red-whiskered Bulbul", "Common Tailorbird", "Black Kite",
+                  "Jerdon's Bushlark", "Pied Bushchat", "Oriental Honey-buzzard"),
+  SP.CATEGORY = c(rep("U", 3), rep("R", 3)))
+
+data_bang <- data0_slice_G %>% 
+  filter(COUNTY == "Bangalore") %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_bang$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+  summarise(REP.FREQ = boot_conf(x = REP.FREQ)) %>% 
+  group_by(COMMON.NAME, COVID, YEAR) %>% 
+  summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+            CI.U = stats::quantile(REP.FREQ, 0.975),
+            REP.FREQ = mean(REP.FREQ))
+
+
+
+( ((ggplot(filter(data_bang, COMMON.NAME == "Red-whiskered Bulbul"), 
+       aes(COVID, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Red-whiskered Bulbul",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_bang, COMMON.NAME == "Common Tailorbird"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Common Tailorbird",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_bang, COMMON.NAME == "Black Kite"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Black Kite",
+       x = "Month", y = "Reporting frequency"))) |
+((ggplot(filter(data_bang, COMMON.NAME == "Jerdon's Bushlark"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Jerdon's Bushlark",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_bang, COMMON.NAME == "Pied Bushchat"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Pied Bushchat",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_bang, COMMON.NAME == "Oriental Honey-buzzard"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Oriental Honey-buzzard",
+       x = "Month", y = "Reporting frequency"))) ) +
+plot_layout(guides = "collect") -> birds_blr
+
+ggsave("03_wrap_figs/birds_blr.png", birds_blr,
+       width = 11, height = 10, units = "in", dpi = 300)
+
+```
+
+## Pune
+
+```{r pun, cache=TRUE, message=FALSE}
+
+species_pune <- data.frame(
+  COMMON.NAME = c("Red-whiskered Bulbul", "Common Tailorbird", "Black Kite",
+                  "Common Iora", "Pied Bushchat", "Oriental Honey-buzzard"),
+  SP.CATEGORY = c(rep("U", 3), rep("R", 3)))
+
+data_pune <- data0_slice_G %>% 
+  filter(COUNTY == "Pune") %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_pune$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE)
+
+
+( ((ggplot(filter(data_pune, COMMON.NAME == "Red-whiskered Bulbul"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Red-whiskered Bulbul",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_pune, COMMON.NAME == "Common Tailorbird"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Common Tailorbird",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_pune, COMMON.NAME == "Black Kite"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Black Kite",
+       x = "Month", y = "Reporting frequency"))) |
+((ggplot(filter(data_pune, COMMON.NAME == "Common Iora"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Common Iora",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_pune, COMMON.NAME == "Pied Bushchat"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Pied Bushchat",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(data_pune, COMMON.NAME == "Oriental Honey-buzzard"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  labs(title = "Oriental Honey-buzzard",
+       x = "Month", y = "Reporting frequency"))) ) +
+plot_layout(guides = "collect") -> birds_pun
+
+ggsave("03_wrap_figs/birds_pun.png", birds_pun,
+       width = 11, height = 10, units = "in", dpi = 300)
+
+```
 
 
 # References
