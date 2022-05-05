@@ -2333,7 +2333,7 @@ birds_monthly <- data0_slice_G %>%
   labs(title = "Oriental Honey-buzzard",
        x = "Month", y = "Reporting frequency"))) ) +
 plot_layout(guides = "collect") +
-plot_annotation(title = "South Karnataka (south of 14 deg latitude; 254 cells)") -> b01_bang_monthly
+plot_annotation(title = "Bengaluru Urban county") -> b01_bang_monthly
 
 
 ggsave("03_wrap_figs/b01_bang_monthly.png", b01_bang_monthly,
@@ -2418,7 +2418,7 @@ birds <- data0_slice_G_MY %>%
   scale_x_continuous(breaks = 2019:2021) +
   labs(title = "Oriental Honey-buzzard",
        x = "Migratory year", y = "Reporting frequency")))) +
-plot_annotation(title = "South Karnataka (south of 14 deg latitude; 254 cells)") -> b02_bang
+plot_annotation(title = "Bengaluru Urban county") -> b02_bang
 
 ggsave("03_wrap_figs/b02_bang.png", b02_bang,
        width = 10, height = 11, units = "in", dpi = 300)
