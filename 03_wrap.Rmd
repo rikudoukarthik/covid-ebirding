@@ -2263,6 +2263,8 @@ data0_slice_G_MY <- data0_slice_G %>%
   mutate(DAY.Y = yday(OBSERVATION.DATE),
          M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR)) # from 1st June to 31st May
 
+rm(data0_slice_G, data0_slice_S)
+
 
 # bird species to analyse/compare
 species <- data.frame(
@@ -2270,6 +2272,9 @@ species <- data.frame(
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
                   "Green Bee-eater", "Black Drongo", "Pied Bushchat", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "Black-winged Kite", "Small Minivet", "Long-tailed Shrike", "Gray Francolin"),
   SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 12)))
+
+# Guwahati lacks PBFl, WCBa (but BTBa), InRo, GrFr.
+# Ernakulam lacks GrFr, SmMi, BWKi, LTSh, PiBu (in good numbers)
 
 # # check if common names are written correctly
 # species$COMMON.NAME %in% data0$COMMON.NAME
@@ -2333,7 +2338,7 @@ birds_monthly <- data0_slice_G_MY %>%
   labs(title = "Wetland species",
        x = "Month", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Bengaluru Urban county") -> b_bang_01_monthly
+plot_annotation(title = "Bengaluru Urban district") -> b_bang_01_monthly
 
 
 ggsave("03_wrap_figs/b_bang_01_monthly.png", b_bang_01_monthly,
@@ -2401,7 +2406,7 @@ birds <- data0_slice_G_MY %>%
   labs(title = "Wetland species",
        x = "Migratory year", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Bengaluru Urban county") -> b_bang_02_annual
+plot_annotation(title = "Bengaluru Urban district") -> b_bang_02_annual
 
 
 ggsave("03_wrap_figs/b_bang_02_annual.png", b_bang_02_annual,
@@ -2546,22 +2551,16 @@ ggsave("03_wrap_figs/b_bang_03_spatial_a.png", b_bang_03_spatial_a,
 
 ```
 
+There is no clear direction of change in migratory year 2019. Need to check whether some of the patterns are "significant" (i.e., effect size).
 
 ## Pune
 
-```{r pun_01, cache=TRUE, message=FALSE}
+```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
 
-species <- data.frame(
-  COMMON.NAME = c("Red-whiskered Bulbul", "Common Tailorbird", "Black Kite",
-                  "Common Iora", "Pied Bushchat", "Oriental Honey-buzzard"),
-  SP.CATEGORY = c(rep("U", 3), rep("R", 3)))
-
-area <- "Pune"
-
-birds_monthly <- data0_slice_G %>% 
-  filter(COUNTY == area) %>% 
+birds_monthly <- data0_slice_G_MY %>% 
+  filter(COUNTY == "Pune") %>% 
   group_by(COVID, YEAR, MONTH) %>% 
-  summarise(GROUP.ID = GROUP.ID,
+  summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
@@ -2572,80 +2571,60 @@ birds_monthly <- data0_slice_G %>%
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
             SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS),
             CI.L = REP.FREQ - 1.96*SE,
-            CI.U = REP.FREQ + 1.96*SE)
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species)
 
 
-( ((ggplot(filter(birds_monthly, COMMON.NAME == "Red-whiskered Bulbul"), 
+((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
        aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
   scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Red-whiskered Bulbul",
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
        x = "Month", y = "Reporting frequency")) /
-(ggplot(filter(birds_monthly, COMMON.NAME == "Common Tailorbird"), 
+(ggplot(filter(birds_monthly, SP.CATEGORY == "R"), 
        aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
   scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Common Tailorbird",
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
        x = "Month", y = "Reporting frequency")) /
-(ggplot(filter(birds_monthly, COMMON.NAME == "Black Kite"), 
+(ggplot(filter(birds_monthly, SP.CATEGORY == "W"), 
        aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
   scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
-  labs(title = "Black Kite",
-       x = "Month", y = "Reporting frequency"))) |
-((ggplot(filter(birds_monthly, COMMON.NAME == "Common Iora"), 
-       aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
-  scale_colour_manual(values = covid_palette) +
-  labs(title = "Common Iora",
-       x = "Month", y = "Reporting frequency")) /
-(ggplot(filter(birds_monthly, COMMON.NAME == "Pied Bushchat"), 
-       aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
-  scale_colour_manual(values = covid_palette) +
-  labs(title = "Pied Bushchat",
-       x = "Month", y = "Reporting frequency")) /
-(ggplot(filter(birds_monthly, COMMON.NAME == "Oriental Honey-buzzard"), 
-       aes(MONTH, REP.FREQ, colour = COVID)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.6, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
-  scale_colour_manual(values = covid_palette) +
-  labs(title = "Oriental Honey-buzzard",
-       x = "Month", y = "Reporting frequency"))) ) +
-plot_layout(guides = "collect") -> b_pun_monthly
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Month", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Pune district") -> b_pune_01_monthly
 
-ggsave("03_wrap_figs/b_pun_monthly.png", b_pun_monthly,
-       width = 11, height = 10, units = "in", dpi = 300)
+
+ggsave("03_wrap_figs/b_pune_01_monthly.png", b_pune_01_monthly,
+       width = 11, height = 15, units = "in", dpi = 300)
 
 ```
 
-Some patterns are present, like with PiBu decreasing during the peak pandemic. Do these patterns persist at the annual level?
+Non-urban bird species (8/12) showed a prominent decrease in reporting frequency during the "peak" period. 
 
-```{r pun_02, cache=TRUE, message=FALSE}
+```{r b_pune_02_annual, cache=TRUE, message=FALSE}
 
 birds <- data0_slice_G_MY %>% 
-  filter(COUNTY == area,
-         M.YEAR > 2018) %>% 
+  filter(COUNTY == "Pune", M.YEAR > 2018) %>% 
   group_by(M.YEAR, MONTH) %>% 
-  summarise(YEAR = YEAR,
-            GROUP.ID = GROUP.ID,
+  summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
@@ -2653,68 +2632,476 @@ birds <- data0_slice_G_MY %>%
   group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
-  summarise(REP.FREQ = boot_conf(x = REP.FREQ)) %>% 
-  group_by(COMMON.NAME, M.YEAR) %>% 
-  summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
-            CI.U = stats::quantile(REP.FREQ, 0.975),
-            REP.FREQ = mean(REP.FREQ))
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species)
 
-(((ggplot(filter(birds, COMMON.NAME == "Red-whiskered Bulbul"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Red-whiskered Bulbul",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, COMMON.NAME == "Common Tailorbird"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Common Tailorbird",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, COMMON.NAME == "Black Kite"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Black Kite",
-       x = "Migratory year", y = "Reporting frequency"))) |
-((ggplot(filter(birds, COMMON.NAME == "Common Iora"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Common Iora",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, COMMON.NAME == "Pied Bushchat"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Pied Bushchat",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, COMMON.NAME == "Oriental Honey-buzzard"), 
-       aes(x = M.YEAR, y = REP.FREQ)) + 
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 2019:2021) +
-  labs(title = "Oriental Honey-buzzard",
-       x = "Migratory year", y = "Reporting frequency")))) +
-plot_annotation(title = "Pune county") -> b_pune
 
-ggsave("03_wrap_figs/b_pune.png", b_pune,
-       width = 10, height = 11, units = "in", dpi = 300)
+((ggplot(filter(birds, SP.CATEGORY == "U"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "R"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "W"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Migratory year", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Pune district") -> b_pune_02_annual
+
+
+ggsave("03_wrap_figs/b_pune_02_annual.png", b_pune_02_annual,
+       width = 9, height = 13, units = "in", dpi = 300)
+
 
 ```
 
+They persist at the annual level for some species with high effect size. What happens when considering a larger spatial scale?
+
+```{r b_pune_03_spatial, cache=TRUE, message=FALSE}
+
+birds_monthly <- data0_slice_G_MY %>% 
+  filter(STATE == "Maharashtra") %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species)
+
+
+((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "R"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "W"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Month", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Maharashtra state") -> b_pune_03_spatial_m
+
+ggsave("03_wrap_figs/b_pune_03_spatial_m.png", b_pune_03_spatial_m,
+       width = 11, height = 15, units = "in", dpi = 300)
+
+
+
+birds <- data0_slice_G_MY %>% 
+  filter(STATE == "Maharashtra", M.YEAR > 2018) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n()) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species)
+
+
+((ggplot(filter(birds, SP.CATEGORY == "U"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "R"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "W"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Migratory year", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Maharashtra state") -> b_pune_03_spatial_a
+
+
+ggsave("03_wrap_figs/b_pune_03_spatial_a.png", b_pune_03_spatial_a,
+       width = 10, height = 14, units = "in", dpi = 300)
+
+
+```
+
+Except a couple of species that still show patterns of the pandemic impact, the majority was unaffected or showed the opposite patterns.
+
+## Ernakulam
+
+```{r b_eklm_01_monthly, cache=TRUE, message=FALSE}
+
+# different from list for BLR and PUN because 5 non-urban species from that list do not occur in sufficient numbers in EKM
+species_eklm <- data.frame(
+  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
+                  "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
+                  "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
+  SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 10)))
+
+
+birds_monthly <- data0_slice_G_MY %>% 
+  filter(COUNTY == "Ernakulam") %>% 
+  group_by(COVID, YEAR, MONTH) %>% 
+  summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>%
+  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species_eklm)
+
+
+((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "R"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "W"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Month", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Ernakulam district") -> b_eklm_01_monthly
+
+
+ggsave("03_wrap_figs/b_eklm_01_monthly.png", b_eklm_01_monthly,
+       width = 11, height = 15, units = "in", dpi = 300)
+
+```
+
+No prominent effect of the pandemic.
+
+```{r b_eklm_02_annual, cache=TRUE, message=FALSE}
+
+birds <- data0_slice_G_MY %>% 
+  filter(COUNTY == "Ernakulam", M.YEAR > 2018) %>% 
+  group_by(M.YEAR, MONTH) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species_eklm)
+
+
+((ggplot(filter(birds, SP.CATEGORY == "U"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "R"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "W"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Migratory year", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Ernakulam district") -> b_eklm_02_annual
+
+
+ggsave("03_wrap_figs/b_eklm_02_annual.png", b_eklm_02_annual,
+       width = 9, height = 13, units = "in", dpi = 300)
+
+
+```
+
+Here, many strong patterns in urban species, showing lower reporting frequencies in migratory year 2021. In non-urban species a majority of the patterns are contradictory, with lower reporting frequencies in migratory year 2021. The same goes for wetland species.
+
+This is a strange result, but maybe has to do with the ecology of these "urban" and "non-urban" species in Kerala. For example, treepies, drongos, kingfishers and bee eaters are a relatively common sight in cities. 
+
+There is probably also an effect of the fact that EKM district is not dominated by urban areas, as BLR and PUN districts. Moreover, 2019 might have seen several birding events/surveys in Kerala.
+
+```{r b_eklm_03_spatial, cache=TRUE, message=FALSE}
+
+birds_monthly <- data0_slice_G_MY %>% 
+  filter(STATE == "Kerala") %>% 
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species_eklm)
+
+
+((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "R"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Month", y = "Reporting frequency")) /
+(ggplot(filter(birds_monthly, SP.CATEGORY == "W"), 
+       aes(MONTH, REP.FREQ, colour = COVID)) +
+  geom_point(size = 1.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1, width = 0.6, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Month", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Kerala state") -> b_eklm_03_spatial_m
+
+ggsave("03_wrap_figs/b_eklm_03_spatial_m.png", b_eklm_03_spatial_m,
+       width = 11, height = 15, units = "in", dpi = 300)
+
+
+
+birds <- data0_slice_G_MY %>% 
+  filter(STATE == "Kerala", M.YEAR > 2018) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
+            # not bootstrapping here cos only averaging across 12 months
+            # using binomial confidence
+            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n()) %>% 
+  summarise(REP.FREQ = mean(REP.FREQ),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = REP.FREQ - 1.96*SE,
+            CI.U = REP.FREQ + 1.96*SE) %>% 
+  left_join(species_eklm)
+
+
+((ggplot(filter(birds, SP.CATEGORY == "U"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "R"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Non-urban species",
+       x = "Migratory year", y = "Reporting frequency")) /
+(ggplot(filter(birds, SP.CATEGORY == "W"), 
+       aes(M.YEAR, REP.FREQ)) +
+  geom_point(size = 2.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.1, width = 0.1, position = position_dodge(0.5)) +
+  scale_x_continuous(breaks = 1:12) +
+  scale_colour_manual(values = covid_palette) +
+  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
+  theme(strip.text = element_text(size = 7)) +
+  labs(title = "Wetland species",
+       x = "Migratory year", y = "Reporting frequency"))) +
+plot_layout(guides = "collect", heights = c(4, 4, 1)) +
+plot_annotation(title = "Kerala state") -> b_eklm_03_spatial_a
+
+
+ggsave("03_wrap_figs/b_eklm_03_spatial_a.png", b_eklm_03_spatial_a,
+       width = 10, height = 14, units = "in", dpi = 300)
+
+
+```
+
+Some urban species still show an effect of the pandemic, but the effect size would have to be judged. Non-urban and wetland species don't show any consistent directional change.
 
 # References
 
