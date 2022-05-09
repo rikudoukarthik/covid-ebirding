@@ -38,37 +38,38 @@ states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") 
   terra::vect()
 
 
+
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
                       messages = FALSE, cache.lazy = FALSE)
 
 ```
 
-```{r data_filt, cache=TRUE}
+```{r data, cache=TRUE}
+
+source("scripts/functions.R")
+
+
+# # Getting MODIS data ###
+# Only needed once in the beginning to obtain the data.
+# getmodisdata()
+
+
+
+# Getting EBD data ###
 
 datapath <- "data/ebd_IN_relMar-2022.RData"
 groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
 covidclasspath <- "data/covid_classification.csv"
+rast_UNU_path <- "data/rast_UNU.RData"
+rast_SoIB_path <- "data/rast_SoIB.RData"
 
-source("scripts/functions.R")
-# filtering the data for current use (10 mins)
-dataqual_filt(datapath, groupaccspath, covidclasspath,
-              maxvel = 20, minsut = 2)
+# filtering and preparing the data for current use (10 mins on server)
+data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
+                   rast_UNU_path, rast_SoIB_path,
+                   maxvel = 20, minsut = 2)
 
 
-# load("data/data0_slice.RData")
-
-
-# choosing only months with data from all 3 COVID categories
-month_compar <- data0_slice_S %>% 
-  group_by(MONTH) %>% 
-  mutate(COVID = as.character(COVID)) %>% 
-  mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
-                                  TRUE ~ COVID),
-                        levels = c("BEF","DUR","AFT"))) %>% 
-  dplyr::summarise(N = n_distinct(COVID)) %>% 
-  filter(N == 3) %>%  # all 3 COVID categories
-  dplyr::select(MONTH)
-
+load("data/data0_slice.RData")
 
 ```
 
@@ -1035,179 +1036,11 @@ rm(length_nw, length_sw, length)
     - Averaged monthly proportional change in no. of lists per 2x2 UNU cell averaged across 24x24 cell, for urban and non-urban separately.
     - Averaged monthly urban:non-urban ratio in no. of lists per 24x24 cell 
 
-```{r MODIS, cache=TRUE, message=FALSE}
-
-library(raster) # masks dplyr functions, so have used package::function()
-require(terra)
-library(gdalUtils)
-library(geodata)
-# install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
-library(luna)
-
-
-###### Obtaining MODIS LULC maps for urban/non-urban classification ####
-
-## Obtaining MODIS data from within R for reproducibility, then saving the cropped and masked raster of area of interest as .tif file.
-## Walkthrough at https://rspatial.org/terra/modis/2-download.html
-
-# The MODIS Land Cover Type Product (MCD12Q1) provides a suite of science data sets (SDSs) that map global land cover at 500 meter spatial resolution at annual time step for six different land cover legends. The maps were created from classifications of spectro-temporal features derived of data from the Moderate Resolution Imaging Spectroradiometer (MODIS).
-
-
-# ## To see list of MODIS products. We already know which one we want, so ignore.
-# MODISprod <- getProducts("^MOD|^MYD|^MCD")
-# MODISprod
-
-
-prod <- "MCD12Q1" # short name of product of interest
-start <- "2019-12-31" # time period of mapping
-end <- "2019-12-31" # time period of mapping
-
-
-# creating folder to store MODIS data that will be downloaded
-MODISpath <- "data/in_LULC_MODIS/"
-dir.create(MODISpath, showWarnings=FALSE)
-
-
-# ## create RDS file containing login credentials for EOSDIS account
-# cred <- data.frame(UN = "xxx",
-#                    PW = "yyy")
-# saveRDS(cred, "userpass.rds")
-userpass <- readRDS("userpass.rds")
-
-
-## downloading MODIS tiled data (16 tiles for our defined area of interest, India)
-# resulting object is a list of file names
-modis <- luna::getModis(prod, start, end,
-                        aoi = india, download = T, path = MODISpath,
-                        username = userpass$UN, password = userpass$PW)
-
-# choose the band (SDS) that you want using sds[] option and write GTiff files.
-# University of Maryland SDS (LC_Type2) is SDS1
-for (i in (modis)) {
-  sds <- get_subdatasets(i)
-  modis2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))
-  }
-
-
-## listing all the different tiles present as .tif files, to later merge into one
-rast_list <- list.files(path = MODISpath,
-                        pattern = "MCD12Q1*.*tif",
-                        all.files = TRUE, full.names = TRUE)
-
-# merge into one raster
-rast_full <- rast_list %>%
-  lapply(raster::raster) %>% # rasterise the different files
-  do.call(what = raster::merge) %>% # merge the files
-  terra::rast()
-
-
-## projecting from MODIS sinusoidal to WGS84 (flat 2D)
-projto <- raster::crs(india)
-# next step takes a few minutes
-# "near" because LC values are categories despite being numerical
-rast_proj <- terra::project(rast_full, projto, method = "near")
-
-
-## cropping and masking the raster to our area of interest
-rast_aoi <- terra::crop(rast_proj, india)
-rast_aoi <- terra::mask(rast_aoi, india)
-
-
-raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
-
-rm(prod, start, end, MODISpath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
-
-
-
-##### Modifying the MODIS data ####
-
-## read in cropped and masked .tif
-rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
-
-
-## reclassifying the raster as urban vs. non-urban 
-
-# (help from: http://www.wvview.org/spatial_analytics/Raster_Analysis/_site/index.html ; http://zevross.com/blog/2015/03/30/map-and-analyze-raster-data-in-r/ )
-# category 13 corresponds to "urban and built-up lands"
-categs <- unique(values(rast))
-reclass <- data.frame(old = categs) %>% 
-  mutate(new = case_when(old == 13 ~ 1, TRUE ~ 0)) %>% 
-  as.matrix()
-# ocean also becomes "non-urban" but that's fine since we won't be looking at those locations
-
-rast_UNU <- raster::reclassify(rast, rcl = reclass)
-
-
-## changing resolution of data (MODIS data has 500m*500m resolution)
-# https://stackoverflow.com/questions/37956422/resample-raster
-
-# aggregating to 2km*2km
-rast_UNU <- rast_UNU %>% 
-  raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
-  raster::aggregate(fact = 2, fun = rast_agg_fn)
-
-save(rast_UNU, file = "data/rast_UNU.RData")
-
-# aggregating to 24km*24km for SoIB inference
-# (here, priority is getting grid cell information, not so much the UNU classification, as that is not directly going to be used; instead will use birding values from them which will be averaged to the SoIB scale)
-rast_SoIB <- rast_UNU %>% 
-  raster::aggregate(fact = 12, fun = rast_agg_fn)
-
-save(rast_SoIB, file = "data/rast_SoIB.RData")
-
-
-##### Leaflet overlay to verify urban/non- classification ####
-
-# https://rstudio.github.io/leaflet/raster.html
-# https://rpubs.com/mgei/drivingtimes
-
-library(leaflet)
-
-leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU),
-                         na.color = "#ffba00")
-
-# leaflet uses different crs so must be projected; method should be made categorical
-
-leaflet() %>% 
-  addTiles() %>% 
-  addRasterImage(rast_UNU, 
-                 method = "ngb", # nearest neighbour
-                 colors = leafcols,
-                 opacity = 0.7,
-                 maxBytes = 150 * 1024 * 1024) %>% 
-  addLegend(pal = leafcols, values = values(rast_UNU))
-
-
-##### Adding UNU classification to eBird data ####
-
-# load("data/rast_UNU.RData")
-# load("data/rast_SoIB.RData")
-
-# adding extracted land cover values at eBird data points with grid cell information at both scales
-# Pakistan-administered Kashmir lists produce NA for URBAN
-data_UNU <- data0_slice_G %>% 
-  ### Creating smaller data object for spatial patterns 
-  dplyr::select(STATE, COUNTY, LATITUDE, LONGITUDE, OBSERVATION.DATE,
-                TIME.OBSERVATIONS.STARTED, SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER,
-                GROUP.ID, YEAR, MONTH, DAY.M, COVID, NO.SP, HOUR) %>% 
-  mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
-         NONURBAN = if_else(URBAN == 1, 0, 1),
-         # 2km*2km
-         SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
-         # 24km*24km
-         CELL.ID = raster::cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
-  filter(!is.na(URBAN))
-
-save(data_UNU, file = "data/data_UNU.RData")
-
-```
-
 ```{r s_UNU, cache=TRUE, message=FALSE}
 
 ##### Proportion of checklists that are from urban areas  ####
 
 # load("data/data_UNU.RData")
-
 
 temp <- data_UNU %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>%
@@ -2252,18 +2085,18 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 # load("data/data0_slice.RData")
 # load("data/data_UNU.RData")
-# load("data/data0.RData")
 
+# load("data/data0.RData")
 
 data0_slice_G_MY <- data0_slice_G %>% 
   # adding UNU info to each checklist
   left_join((data_UNU %>% distinct(URBAN, CELL.ID, SUBCELL.ID, GROUP.ID)), 
-            by = "GROUP.ID") %>% 
-  # adding migratory year column
-  mutate(DAY.Y = yday(OBSERVATION.DATE),
-         M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR)) # from 1st June to 31st May
+            by = "GROUP.ID")
 
-rm(data0_slice_G, data0_slice_S)
+rm(data0_slice_G, data0_slice_S, data_UNU)
+save(data0_slice_G_MY, file = "data/data0_slice_G_MY.RData")
+
+# load("data/data0_slice_G_MY.RData")
 
 
 # bird species to analyse/compare
