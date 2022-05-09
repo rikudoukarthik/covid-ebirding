@@ -175,12 +175,6 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
            M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR)) # from 1st June to 31st May
   
   
-  require(tidyverse)
-  require(lubridate)
-  require(terra)
-  require(sp)
-  
-  
   ### list of group accounts to be filtered
   groupaccs <- read.csv(groupaccspath, 
                         na.strings = c(""," ",NA), quote = "", header = T, 
@@ -198,20 +192,26 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
 
   ### adding UNU information ######
   
+  require(tidyverse)
+  require(lubridate)
+  require(terra)
+  require(sp)
+  
   load(rast_UNU_path)
   load(rast_SoIB_path)
   
   # adding extracted land cover values at eBird data points with grid cell information at both scales
   # Pakistan-administered Kashmir lists produce NA for URBAN
   lists_UNU <- data %>% 
-    group_by(GROUP.ID) %>% 
-    dplyr::summarise(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
-                     NONURBAN = if_else(URBAN == 1, 0, 1),
-                     # 2km*2km
-                     SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
-                     # 24km*24km
-                     CELL.ID = raster::cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
-    filter(!is.na(URBAN))
+    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
+    mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
+           NONURBAN = if_else(URBAN == 1, 0, 1),
+           # 2km*2km
+           SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
+           # 24km*24km
+           CELL.ID = raster::cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
+    filter(!is.na(URBAN)) %>% 
+    select(-LONGITUDE, -LATITUDE)
   
   save(lists_UNU, file = "data/lists_UNU.RData")
   
@@ -256,8 +256,8 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   
   data0_MY <- data %>% 
     # this data (including latter months of 2018 only needed for bird behaviour section)
-    # so will later save separate data without 2018 months
-    filter(M.YEAR >= 2019) %>%
+    # so will later save separate data filtering out 2018 months
+    filter(M.YEAR >= 2018) %>%
     anti_join(filtGA) %>% # removing data from group accounts
     # creating COVID factor
     left_join(covidclass) %>% 
@@ -319,8 +319,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
                 (ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Incidental")) &
              # pelagic filter
              (GROUP.ID %in% temp2$GROUP.ID)) %>% 
-    select(-SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER) 
-  
+    select(-BREEDING.CODE, -SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER)
   
   # sliced data which is what is required for analyses
   data0_MY_slice_S <- data0_MY %>% 

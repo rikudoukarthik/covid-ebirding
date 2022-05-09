@@ -54,8 +54,7 @@ source("scripts/functions.R")
 # getmodisdata()
 
 
-
-# Getting EBD data ###
+# Getting EBD data + filtering and preparing for current use (16 mins on server) ###
 
 datapath <- "data/ebd_IN_relMar-2022.RData"
 groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
@@ -63,7 +62,6 @@ covidclasspath <- "data/covid_classification.csv"
 rast_UNU_path <- "data/rast_UNU.RData"
 rast_SoIB_path <- "data/rast_SoIB.RData"
 
-# filtering and preparing the data for current use (10 mins on server)
 data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
                    rast_UNU_path, rast_SoIB_path,
                    maxvel = 20, minsut = 2)
