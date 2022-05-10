@@ -2081,6 +2081,7 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 load("data/data0_MY_slice.RData")
 load("data/data0.RData")
+load("data/data0_slice.RData")
 
 
 ### bird species to analyse/compare ####
@@ -2167,7 +2168,7 @@ city_guwa <- c(11648, 11824, 11825)
 ```{r b_bang_01_monthly, cache=TRUE, message=FALSE}
 
 birds_monthly <- data0_slice_G %>% 
-  filter(COUNTY == "Bangalore") %>% 
+  filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2218,7 +2219,7 @@ birds_monthly <- data0_slice_G %>%
   labs(title = "Wetland species",
        x = "Month", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Bengaluru Urban district") -> b_bang_01_monthly
+plot_annotation(title = "Bengaluru city") -> b_bang_01_monthly
 
 
 ggsave("03_wrap_figs/b_bang_01_monthly.png", b_bang_01_monthly,
@@ -2226,12 +2227,12 @@ ggsave("03_wrap_figs/b_bang_01_monthly.png", b_bang_01_monthly,
 
 ```
 
-Some strange patterns are present, though nothing conclusively due to the pandemic and not in one particular direction. Do these patterns persist at the annual level (considering SoIB scale of migratory year)?
+Nothing conclusively due to the pandemic or in one particular direction. Do these slight patterns persist at the annual level (considering SoIB scale of migratory year)?
 
 ```{r b_bang_02_annual, cache=TRUE, message=FALSE}
 
 birds <- data0_MY_slice_G %>% 
-  filter(COUNTY == "Bangalore") %>% 
+  filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2257,7 +2258,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2268,7 +2268,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2279,14 +2278,13 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
   labs(title = "Wetland species",
        x = "Migratory year", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Bengaluru Urban district") -> b_bang_02_annual
+plot_annotation(title = "Bengaluru city") -> b_bang_02_annual
 
 
 ggsave("03_wrap_figs/b_bang_02_annual.png", b_bang_02_annual,
@@ -2295,7 +2293,9 @@ ggsave("03_wrap_figs/b_bang_02_annual.png", b_bang_02_annual,
 
 ```
 
-A lot of the patterns seemingly significant at the level of migratory year are not necessarily related to COVID. Many bird species had considerably lower reporting frequencies in 2019 even before the pandemic, for some reason. This is what is dragging the average for migratory year 2019 down for many species here.
+Urban species show a wide range of patterns, often contradictory. Non-urban species do not seem to have been necessarily affected by the pandemic, but have shown a consistent increase over the years (from even before the pandemic). So, pandemic is unlikely to have had a major impact.
+
+A lot of the patterns seemingly significant at the level of migratory year are not necessarily related to COVID. Many bird species had considerably lower reporting frequencies in even before the pandemic, for some reason. This is what is dragging the average for migratory year 2019 down for many species here. 
 
 What happens when these patterns in urban areas are averaged across space? 
 
@@ -2393,7 +2393,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2404,7 +2403,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2415,7 +2413,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2431,20 +2428,23 @@ ggsave("03_wrap_figs/b_bang_03_spatial_a.png", b_bang_03_spatial_a,
 
 ```
 
-There is no clear direction of change in migratory year 2019. Need to check whether some of the patterns are "significant" (i.e., effect size).
+At the larger spatial scale, pandemic effects are restricted to the two months, mostly in 2020. Some urban species increased in frequency while most decreased (surprisingly) and some did not change. Most non-urban species decreased in frequency, and so did wetland species. But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed.
+
+Thus, there is no clear direction of change. Even the slight patterns seen in these visualisations may not have a large effect size.
 
 ## Pune
 
 ```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
 
 birds_monthly <- data0_slice_G %>% 
-  filter(COUNTY == "Pune") %>% 
+  filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME, 
+         COMMON.NAME != "White-cheeked Barbet") %>% 
   group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2489,7 +2489,7 @@ birds_monthly <- data0_slice_G %>%
   labs(title = "Wetland species",
        x = "Month", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Pune district") -> b_pune_01_monthly
+plot_annotation(title = "Pune city") -> b_pune_01_monthly
 
 
 ggsave("03_wrap_figs/b_pune_01_monthly.png", b_pune_01_monthly,
@@ -2497,18 +2497,19 @@ ggsave("03_wrap_figs/b_pune_01_monthly.png", b_pune_01_monthly,
 
 ```
 
-Non-urban bird species (8/12) showed a prominent decrease in reporting frequency during the "peak" period. 
+Many non-urban and wetland bird species showed a slight decrease in reporting frequency during the "peak" period, but none of the urban species did. Also, WCBa is rare in Pune city so can be ignored at this level.
 
 ```{r b_pune_02_annual, cache=TRUE, message=FALSE}
 
 birds <- data0_MY_slice_G %>% 
-  filter(COUNTY == "Pune") %>% 
+  filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME, 
+         COMMON.NAME != "White-cheeked Barbet") %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2528,7 +2529,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2539,7 +2539,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2550,14 +2549,13 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
   labs(title = "Wetland species",
        x = "Migratory year", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Pune district") -> b_pune_02_annual
+plot_annotation(title = "Pune city") -> b_pune_02_annual
 
 
 ggsave("03_wrap_figs/b_pune_02_annual.png", b_pune_02_annual,
@@ -2566,7 +2564,7 @@ ggsave("03_wrap_figs/b_pune_02_annual.png", b_pune_02_annual,
 
 ```
 
-They persist at the annual level for some species with high effect size. What happens when considering a larger spatial scale?
+There is no clear direction of change with the pandemic in Pune city. What happens when considering a larger spatial scale?
 
 ```{r b_pune_03_spatial, cache=TRUE, message=FALSE}
 
@@ -2577,7 +2575,8 @@ birds_monthly <- data0_slice_G %>%
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME, 
+         COMMON.NAME != "White-cheeked Barbet") %>% 
   group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2640,7 +2639,8 @@ birds <- data0_MY_slice_G %>%
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME, 
+         COMMON.NAME != "White-cheeked Barbet") %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2662,7 +2662,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2673,7 +2672,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2684,7 +2682,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2700,20 +2697,20 @@ ggsave("03_wrap_figs/b_pune_03_spatial_a.png", b_pune_03_spatial_a,
 
 ```
 
-Except a couple of species that still show patterns of the pandemic impact, the majority was unaffected or showed the opposite patterns.
+At the larger spatial scale, pandemic effects are restricted to the "peak" period, mostly in 2020. Most species decreased (surprisingly, including urban ones) in frequency. But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed. Only urban species seem to show a decrease in frequency, probably due to increased birding in non-urban areas over the years.
 
-## Ernakulam
+## Kochi
 
-```{r b_eklm_01_monthly, cache=TRUE, message=FALSE}
+```{r b_koch_01_monthly, cache=TRUE, message=FALSE}
 
 birds_monthly <- data0_slice_G %>% 
-  filter(COUNTY == "Ernakulam") %>% 
+  filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>%
+  filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>%
   group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2721,7 +2718,7 @@ birds_monthly <- data0_slice_G %>%
             SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS),
             CI.L = REP.FREQ - 1.96*SE,
             CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species_eklm)
+  left_join(species_koch)
 
 
 ((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
@@ -2758,26 +2755,26 @@ birds_monthly <- data0_slice_G %>%
   labs(title = "Wetland species",
        x = "Month", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Ernakulam district") -> b_eklm_01_monthly
+plot_annotation(title = "Kochi city") -> b_koch_01_monthly
 
 
-ggsave("03_wrap_figs/b_eklm_01_monthly.png", b_eklm_01_monthly,
+ggsave("03_wrap_figs/b_koch_01_monthly.png", b_koch_01_monthly,
        width = 11, height = 15, units = "in", dpi = 300)
 
 ```
 
-No prominent effect of the pandemic.
+No prominent effect of the pandemic. Biggest change is in wetland birds.
 
-```{r b_eklm_02_annual, cache=TRUE, message=FALSE}
+```{r b_koch_02_annual, cache=TRUE, message=FALSE}
 
 birds <- data0_MY_slice_G %>% 
-  filter(COUNTY == "Ernakulam") %>% 
+  filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2789,7 +2786,7 @@ birds <- data0_MY_slice_G %>%
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ - 1.96*SE,
             CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species_eklm)
+  left_join(species_koch)
 
 
 ((ggplot(filter(birds, SP.CATEGORY == "U"), 
@@ -2797,7 +2794,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2808,7 +2804,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2819,29 +2814,24 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
   labs(title = "Wetland species",
        x = "Migratory year", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Ernakulam district") -> b_eklm_02_annual
+plot_annotation(title = "Kochi city") -> b_koch_02_annual
 
 
-ggsave("03_wrap_figs/b_eklm_02_annual.png", b_eklm_02_annual,
+ggsave("03_wrap_figs/b_koch_02_annual.png", b_koch_02_annual,
        width = 9, height = 13, units = "in", dpi = 300)
 
 
 ```
 
-Here, many strong patterns in urban species, showing lower reporting frequencies in migratory year 2021. In non-urban species a majority of the patterns are contradictory, with lower reporting frequencies in migratory year 2021. The same goes for wetland species.
+No prominent effects directly attributable to the pandemic. Most patterns even out.
 
-This is a strange result, but maybe has to do with the ecology of these "urban" and "non-urban" species in Kerala. For example, treepies, drongos, kingfishers and bee eaters are a relatively common sight in cities. 
-
-There is probably also an effect of the fact that EKM district is not dominated by urban areas, as BLR and PUN districts. Moreover, 2019 might have seen several birding events/surveys in Kerala.
-
-```{r b_eklm_03_spatial, cache=TRUE, message=FALSE}
+```{r b_koch_03_spatial, cache=TRUE, message=FALSE}
 
 birds_monthly <- data0_slice_G %>% 
   filter(STATE == "Kerala") %>% 
@@ -2850,7 +2840,7 @@ birds_monthly <- data0_slice_G %>%
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
   group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2862,7 +2852,7 @@ birds_monthly <- data0_slice_G %>%
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ - 1.96*SE,
             CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species_eklm)
+  left_join(species_koch)
 
 
 ((ggplot(filter(birds_monthly, SP.CATEGORY == "U"), 
@@ -2899,9 +2889,9 @@ birds_monthly <- data0_slice_G %>%
   labs(title = "Wetland species",
        x = "Month", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Kerala state") -> b_eklm_03_spatial_m
+plot_annotation(title = "Kerala state") -> b_koch_03_spatial_m
 
-ggsave("03_wrap_figs/b_eklm_03_spatial_m.png", b_eklm_03_spatial_m,
+ggsave("03_wrap_figs/b_koch_03_spatial_m.png", b_koch_03_spatial_m,
        width = 11, height = 15, units = "in", dpi = 300)
 
 
@@ -2913,7 +2903,7 @@ birds <- data0_MY_slice_G %>%
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
-  filter(COMMON.NAME %in% species_eklm$COMMON.NAME) %>% 
+  filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
@@ -2927,7 +2917,7 @@ birds <- data0_MY_slice_G %>%
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ - 1.96*SE,
             CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species_eklm)
+  left_join(species_koch)
 
 
 ((ggplot(filter(birds, SP.CATEGORY == "U"), 
@@ -2935,7 +2925,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2946,7 +2935,6 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
@@ -2957,23 +2945,22 @@ birds <- data0_MY_slice_G %>%
   geom_point(size = 2.5, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.1, width = 0.1, position = position_dodge(0.5)) +
-  scale_x_continuous(breaks = 1:12) +
   scale_colour_manual(values = covid_palette) +
   facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
   theme(strip.text = element_text(size = 7)) +
   labs(title = "Wetland species",
        x = "Migratory year", y = "Reporting frequency"))) +
 plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Kerala state") -> b_eklm_03_spatial_a
+plot_annotation(title = "Kerala state") -> b_koch_03_spatial_a
 
 
-ggsave("03_wrap_figs/b_eklm_03_spatial_a.png", b_eklm_03_spatial_a,
+ggsave("03_wrap_figs/b_koch_03_spatial_a.png", b_koch_03_spatial_a,
        width = 10, height = 14, units = "in", dpi = 300)
 
 
 ```
 
-Some urban species still show an effect of the pandemic, but the effect size would have to be judged. Non-urban and wetland species don't show any consistent directional change.
+3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the larger spatial scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
 
 # References
 
