@@ -48,23 +48,21 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 source("scripts/functions.R")
 
-
-# # Getting MODIS data ###
 # Only needed once in the beginning to obtain the data.
+#
+# # Getting MODIS data ###
 # getmodisdata()
-
-
-# Getting EBD data + filtering and preparing for current use (16 mins on server) ###
-
-datapath <- "data/ebd_IN_relMar-2022.RData"
-groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
-covidclasspath <- "data/covid_classification.csv"
-rast_UNU_path <- "data/rast_UNU.RData"
-rast_SoIB_path <- "data/rast_SoIB.RData"
-
-data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
-                   rast_UNU_path, rast_SoIB_path,
-                   maxvel = 20, minsut = 2)
+#
+# # Getting EBD data + filtering and preparing for current use (16 mins on server) ###
+# datapath <- "data/ebd_IN_relMar-2022.RData"
+# groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
+# covidclasspath <- "data/covid_classification.csv"
+# rast_UNU_path <- "data/rast_UNU.RData"
+# rast_SoIB_path <- "data/rast_SoIB.RData"
+# 
+# data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
+#                    rast_UNU_path, rast_SoIB_path,
+#                    maxvel = 20, minsut = 2)
 
 
 load("data/data0_slice.RData")
@@ -2085,7 +2083,7 @@ load("data/data0_MY_slice.RData")
 load("data/data0.RData")
 
 
-### bird species to analyse/compare ###
+### bird species to analyse/compare ####
 
 species <- data.frame(
   COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
@@ -2102,7 +2100,7 @@ species <- data.frame(
 
 
 # different from list for BLR and PUN because 5 non-urban species from that list do not occur in sufficient numbers in EKM
-species_eklm <- data.frame(
+species_koch <- data.frame(
   COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
                   "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
@@ -2110,13 +2108,56 @@ species_eklm <- data.frame(
 
 
 
-### choosing grid cells of 4 cities ###
+### choosing grid cells of 4 cities ####
 
-load("data/rast_SoIB.RData")
+# load("data/rast_SoIB.RData")
+# 
+# # poly_SoIB <- rast_SoIB %>% 
+# #   raster::intersect(as(india, "Spatial")) %>%
+# #   raster::projectRaster(crs = "EPSG:3857", method = "ngb") %>% 
+# #   raster::rasterToPolygons() 
+# # 
+# poly_SoIB <- rast_SoIB %>%
+#   raster::intersect(as(india, "Spatial")) %>%
+#   raster::rasterToPolygons() %>%
+#   sp::spTransform("+proj=longlat +init=EPSG:3857 +no_defs")
+# 
+# poly_SoIB <- rast_SoIB %>%
+#   # raster::intersect(as(india, "Spatial")) %>%
+#   raster::rasterToPolygons()
+# 
+# # because raster and poly do not align perfectly:
+# # https://stackoverflow.com/questions/33742107/raster-image-seems-to-be-shifted-using-leaflet-for-r
+# rast_SoIB2 <- rast_SoIB
+# raster::nrow(rast_SoIB2) <- 600
+# raster::ncol(rast_SoIB2) <- 600
+# rast_SoIB3 <- raster::resample(rast_SoIB, rast_SoIB2, method = "ngb")
+# 
+# 
+# library(leaflet)
+# leafcols <- colorFactor(c(NA, "#0C2C84"), 
+#                         raster::values(rast_SoIB),
+#                         na.color = "#ffba00")
+# leaflet() %>%
+#   addTiles() %>% 
+#   addPolygons(data = poly_SoIB, color = "#000000",
+#               label = sp::getSpPPolygonsIDSlots(poly_SoIB)) %>%
+#   addRasterImage(rast_SoIB3,
+#                  method = "ngb", # nearest neighbour
+#                  colors = leafcols,
+#                  opacity = 0.7,
+#                  maxBytes = 150 * 1024 * 1024) %>%
+#   addLegend(pal = leafcols, values = raster::values(rast_SoIB3))
 
+city_bang <- c(25545, 25722, 25723, 25899, 25900)
+city_pune <- c(19681, 19682, 19859)
+city_koch <- c(28900, 28901)
+city_guwa <- c(11648, 11824, 11825)
 
-
-
+# # verifying whether chosen "city" area includes most of birding activity in county
+# data0_MY_slice_G %>% filter(COUNTY == "Kamrup Metropolitan") %>% n_distinct()
+# data0_MY_slice_G %>% filter(COUNTY == "Kamrup Metropolitan", 
+#                             CELL.ID %in% city_guwa) %>% n_distinct()
 
 ```
 
