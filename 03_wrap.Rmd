@@ -1040,15 +1040,15 @@ rm(length_nw, length_sw, length)
 
 # load("data/data_UNU.RData")
 
-temp <- data_UNU %>% 
+temp <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>%
   filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup()
 
-UNU_lists_sw <- data_UNU %>% 
+UNU_lists_sw <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(temp) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
@@ -1125,13 +1125,13 @@ rm(temp, UNU_lists_sw, UNU_lists_nw, s_UNU_lists)
 
 ##### Proportion of covered cells urban (vs. non-urban)  ####
 
-temp <- data_UNU %>% 
+temp <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>%
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   ungroup()
 
-UNU_cells_sw <- data_UNU %>% 
+UNU_cells_sw <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   left_join(temp) %>% 
@@ -1213,7 +1213,7 @@ rm(temp, UNU_cells_sw, UNU_cells_nw, s_UNU_cells)
 
 ##### Proportion of total grid cells covered ####
 
-cover_sw <- data_UNU %>% 
+cover_sw <- data0_slice_G %>% 
   group_by(STATE) %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
   group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>% 
@@ -1228,7 +1228,7 @@ cover_sw <- data_UNU %>%
                    CI.L = PROP.CELLS - 1.96*SE,
                    CI.U = PROP.CELLS + 1.96*SE)
 
-cover_nw <- data_UNU %>% 
+cover_nw <- data0_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
@@ -1304,7 +1304,7 @@ rm(cover_sw, cover_nw, s_cover)
 
 ##### Proportion of total urban cells & non-urban cells covered ####
 
-temp1 <- data_UNU %>% 
+temp1 <- data0_slice_G %>% 
   group_by(STATE, URBAN) %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   group_by(COVID, YEAR, MONTH, STATE, URBAN, SUBCELL.ID) %>% 
@@ -1319,7 +1319,7 @@ temp1 <- data_UNU %>%
                    CI.L = PROP.SUBCELLS - 1.96*SE,
                    CI.U = PROP.SUBCELLS + 1.96*SE)
 
-temp2 <- data_UNU %>% 
+temp2 <- data0_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   group_by(COVID, YEAR, MONTH, URBAN, SUBCELL.ID) %>% 
@@ -1461,19 +1461,19 @@ rm(temp1, temp2, cover_U_sw, cover_U_nw, cover_NU_sw, cover_NU_nw, s_cover_U, s_
 
 library(rasterVis)
 
-# load("data/data_UNU.RData")
-
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
 
+load("data/rast_SoIB.RData")
+load("data/rast_UNU.RData")
 
 ##### Change in birding effort (no. of lists) per grid cell  ####
 
-data_SoIBmap0 <- data_UNU %>% 
+data_SoIBmap0 <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
   group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
@@ -1569,11 +1569,11 @@ dev.off()
 
 ##### Final analysis: net change across grids with SEs ####
 
-temp <- data_UNU %>% 
+temp <- data0_slice_G %>% 
   ungroup() %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, CELL.ID, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
@@ -1650,15 +1650,15 @@ ggsave("03_wrap_figs/12d_s_spread_netchange.png",
 
 ##### Final analysis: change in proportion of urban lists per grid cell ####
 
-temp <- data_UNU %>% 
+temp <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
   filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup()
 
-urban_lists <- data_UNU %>% 
+urban_lists <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>%
-  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(temp) %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>%
   dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
@@ -1696,8 +1696,8 @@ s_UNU_lists
 rm(list = setdiff(ls(), 
                   c("covid_palette", "covid_palette3", "india", "states",
                     "data0_slice_G", "data0_slice_S", "month_compar",
-                    # "data_UNU", "rast_UNU", 
-                    "boot_conf", "dataqual_filt", "rast_agg_fn", "rast_logpropchange")))
+                    "boot_conf", "rast_agg_fn", "rast_logpropchange",
+                    "rast_propchange")))
 
 
 detach("package:gdalUtils", unload=T)
@@ -2081,34 +2081,42 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 ```{r b_setup, cache=TRUE, message=FALSE}
 
-# load("data/data0_slice.RData")
-# load("data/data_UNU.RData")
-
-# load("data/data0.RData")
-
-data0_slice_G_MY <- data0_slice_G %>% 
-  # adding UNU info to each checklist
-  left_join((data_UNU %>% distinct(URBAN, CELL.ID, SUBCELL.ID, GROUP.ID)), 
-            by = "GROUP.ID")
-
-rm(data0_slice_G, data0_slice_S, data_UNU)
-save(data0_slice_G_MY, file = "data/data0_slice_G_MY.RData")
-
-# load("data/data0_slice_G_MY.RData")
+load("data/data0_MY_slice.RData")
+load("data/data0.RData")
 
 
-# bird species to analyse/compare
+### bird species to analyse/compare ###
+
 species <- data.frame(
   COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
                   "Green Bee-eater", "Black Drongo", "Pied Bushchat", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "Black-winged Kite", "Small Minivet", "Long-tailed Shrike", "Gray Francolin"),
   SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 12)))
 
+# # check if common names are written correctly
+# species$COMMON.NAME %in% data0$COMMON.NAME
+
+
 # Guwahati lacks PBFl, WCBa (but BTBa), InRo, GrFr.
 # Ernakulam lacks GrFr, SmMi, BWKi, LTSh, PiBu (in good numbers)
 
-# # check if common names are written correctly
-# species$COMMON.NAME %in% data0$COMMON.NAME
+
+# different from list for BLR and PUN because 5 non-urban species from that list do not occur in sufficient numbers in EKM
+species_eklm <- data.frame(
+  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
+                  "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
+                  "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
+  SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 10)))
+
+
+
+### choosing grid cells of 4 cities ###
+
+load("data/rast_SoIB.RData")
+
+
+
+
 
 ```
 
@@ -2117,7 +2125,7 @@ species <- data.frame(
 
 ```{r b_bang_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(COUNTY == "Bangalore") %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2181,8 +2189,8 @@ Some strange patterns are present, though nothing conclusively due to the pandem
 
 ```{r b_bang_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_slice_G_MY %>% 
-  filter(COUNTY == "Bangalore", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(COUNTY == "Bangalore") %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2252,7 +2260,7 @@ What happens when these patterns in urban areas are averaged across space?
 
 ```{r b_bang_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(STATE == "Karnataka") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2315,8 +2323,8 @@ ggsave("03_wrap_figs/b_bang_03_spatial_m.png", b_bang_03_spatial_m,
 
 
 
-birds <- data0_slice_G_MY %>% 
-  filter(STATE == "Karnataka", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(STATE == "Karnataka") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2388,7 +2396,7 @@ There is no clear direction of change in migratory year 2019. Need to check whet
 
 ```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(COUNTY == "Pune") %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2452,8 +2460,8 @@ Non-urban bird species (8/12) showed a prominent decrease in reporting frequency
 
 ```{r b_pune_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_slice_G_MY %>% 
-  filter(COUNTY == "Pune", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(COUNTY == "Pune") %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2521,7 +2529,7 @@ They persist at the annual level for some species with high effect size. What ha
 
 ```{r b_pune_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(STATE == "Maharashtra") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2584,8 +2592,8 @@ ggsave("03_wrap_figs/b_pune_03_spatial_m.png", b_pune_03_spatial_m,
 
 
 
-birds <- data0_slice_G_MY %>% 
-  filter(STATE == "Maharashtra", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(STATE == "Maharashtra") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2657,15 +2665,7 @@ Except a couple of species that still show patterns of the pandemic impact, the 
 
 ```{r b_eklm_01_monthly, cache=TRUE, message=FALSE}
 
-# different from list for BLR and PUN because 5 non-urban species from that list do not occur in sufficient numbers in EKM
-species_eklm <- data.frame(
-  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
-                  "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
-                  "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
-  SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 10)))
-
-
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(COUNTY == "Ernakulam") %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2729,8 +2729,8 @@ No prominent effect of the pandemic.
 
 ```{r b_eklm_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_slice_G_MY %>% 
-  filter(COUNTY == "Ernakulam", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(COUNTY == "Ernakulam") %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
@@ -2802,7 +2802,7 @@ There is probably also an effect of the fact that EKM district is not dominated 
 
 ```{r b_eklm_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G_MY %>% 
+birds_monthly <- data0_slice_G %>% 
   filter(STATE == "Kerala") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -2865,8 +2865,8 @@ ggsave("03_wrap_figs/b_eklm_03_spatial_m.png", b_eklm_03_spatial_m,
 
 
 
-birds <- data0_slice_G_MY %>% 
-  filter(STATE == "Kerala", M.YEAR > 2018) %>% 
+birds <- data0_MY_slice_G %>% 
+  filter(STATE == "Kerala") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
             SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
