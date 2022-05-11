@@ -176,10 +176,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   
   
   ### list of group accounts to be filtered
-  groupaccs <- read.csv(groupaccspath, 
-                        na.strings = c(""," ",NA), quote = "", header = T, 
-                        nrows = 401)  # excluding empty cells
-  groupaccs <- groupaccs %>% 
+  groupaccs <- read_csv(groupaccspath) %>% 
     mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
                                 GA.2 == 1 ~ "GA.2", 
                                 TRUE ~ "NG"))
