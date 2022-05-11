@@ -2177,7 +2177,6 @@ birds_monthly <- data0_slice_G %>%
   filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
@@ -2241,7 +2240,6 @@ birds <- data0_MY_slice_G %>%
   filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
@@ -2311,7 +2309,6 @@ birds_monthly <- data0_slice_G %>%
   filter(STATE == "Karnataka") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
@@ -2374,7 +2371,6 @@ birds <- data0_MY_slice_G %>%
   filter(STATE == "Karnataka") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
@@ -2446,7 +2442,6 @@ birds_monthly <- data0_slice_G %>%
   filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
@@ -2511,7 +2506,6 @@ birds <- data0_MY_slice_G %>%
   filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
@@ -2578,7 +2572,6 @@ birds_monthly <- data0_slice_G %>%
   filter(STATE == "Maharashtra") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
@@ -2642,7 +2635,6 @@ birds <- data0_MY_slice_G %>%
   filter(STATE == "Maharashtra") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
@@ -2713,7 +2705,6 @@ birds_monthly <- data0_slice_G %>%
   filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(COVID, YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>%
@@ -2777,7 +2768,6 @@ birds <- data0_MY_slice_G %>%
   filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
@@ -2843,7 +2833,6 @@ birds_monthly <- data0_slice_G %>%
   filter(STATE == "Kerala") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
@@ -2906,7 +2895,6 @@ birds <- data0_MY_slice_G %>%
   filter(STATE == "Kerala") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
@@ -2966,7 +2954,7 @@ ggsave("03_wrap_figs/b_koch_03_spatial_a.png", b_koch_03_spatial_a,
 
 ```
 
-3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the larger spatial scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
+3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the annual scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
 
 ## Guwahati
 
@@ -2978,7 +2966,6 @@ birds <- data0_MY_slice_G %>%
   filter(COUNTY == "Kamrup Metropolitan", CELL.ID %in% city_guwa) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_guwa$COMMON.NAME) %>% 
@@ -3044,7 +3031,6 @@ birds_monthly <- data0_slice_G %>%
   filter(STATE == "Assam") %>% 
   group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_guwa$COMMON.NAME) %>% 
@@ -3107,7 +3093,6 @@ birds <- data0_MY_slice_G %>%
   filter(STATE == "Assam") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            SAMPLING.EVENT.IDENTIFIER = SAMPLING.EVENT.IDENTIFIER,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_guwa$COMMON.NAME) %>% 
@@ -3167,7 +3152,7 @@ ggsave("03_wrap_figs/b_guwa_03_spatial_a.png", b_guwa_03_spatial_a,
 
 ```
 
-Very minor suggestions of changes during the 2 month period in a few species, but overall no pattern. At the larger spatial scale, wetland species show some differences, but others show no overall change in reporting frequency due to the pandemic.
+Very minor suggestions of changes during the 2 month period in a few species, but overall no pattern. At the annual scale, wetland species show some differences, but others show no overall change in reporting frequency due to the pandemic.
 
 # References
 
