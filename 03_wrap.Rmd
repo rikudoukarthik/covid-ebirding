@@ -2434,6 +2434,56 @@ At the larger spatial scale, pandemic effects are restricted to the two months, 
 
 Thus, there is no clear direction of change. Even the slight patterns seen in these visualisations may not have a large effect size.
 
+```{r b_bang_04_model, cache=TRUE, message=FALSE}
+
+library(lme4)
+
+data_b <- data0_MY_slice_G %>% 
+  filter(STATE == "Karnataka") %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+  left_join(species) %>% 
+  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  mutate(M.YEAR = as.factor(M.YEAR))
+
+data_b2 <- data0_MY_slice_G %>% 
+  filter(STATE == "Karnataka") %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+  left_join(species) %>% 
+  filter(SP.CATEGORY != "W") 
+
+# no building up of model from a "null" is required here as we are not trying to find which of our predictors is important; we want to know whether the predictors we think are important, actually are and whether they really had an impact on the data.
+
+bang1 <- glm(REP.FREQ ~ M.YEAR + poly(MONTH, 2) + SP.CATEGORY +
+                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
+               data = data_b, family = binomial(), weights = TOT.LISTS)
+
+summary(bang1)
+AIC(bang1)
+
+bang3 <- glm(REP.FREQ ~ M.YEAR + SP.CATEGORY + M.YEAR:SP.CATEGORY,
+               data = data_b, family = binomial(), weights = TOT.LISTS)
+
+summary(bang3)
+AIC(bang2) - AIC(bang1) # on 6 df. Definitely include month.
+
+```
+
 ## Pune
 
 ```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
