@@ -2080,7 +2080,7 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 ```{r b_setup, cache=TRUE, message=FALSE}
 
 load("data/data0_MY_slice.RData")
-load("data/data0.RData")
+load("data/data0_MY.RData")
 load("data/data0_slice.RData")
 
 
@@ -2443,7 +2443,7 @@ data_b <- data0_MY_slice_G %>%
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(data0) %>% 
+  left_join(data0_MY) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
@@ -2451,38 +2451,33 @@ data_b <- data0_MY_slice_G %>%
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(M.YEAR = as.factor(M.YEAR))
-
-data_b2 <- data0_MY_slice_G %>% 
-  filter(STATE == "Karnataka") %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(TOT.LISTS = min(TOT.LISTS),
-            NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
-  left_join(species) %>% 
-  filter(SP.CATEGORY != "W") 
+  mutate(M.YEAR = as.factor(M.YEAR),
+         MONTH = as.factor(MONTH)) %>% 
+  ungroup()
 
 # no building up of model from a "null" is required here as we are not trying to find which of our predictors is important; we want to know whether the predictors we think are important, actually are and whether they really had an impact on the data.
 
-bang1 <- glm(REP.FREQ ~ M.YEAR + poly(MONTH, 2) + SP.CATEGORY +
+bang1 <- glm(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
                data = data_b, family = binomial(), weights = TOT.LISTS)
 
 summary(bang1)
-AIC(bang1)
+exp(coef(bang1) + coef(bang1)[1])[-1]
+anova(bang1, test = "Chisq")
+plot(bang1)
 
-bang3 <- glm(REP.FREQ ~ M.YEAR + SP.CATEGORY + M.YEAR:SP.CATEGORY,
+
+bang2 <- glmer(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
+                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY +
+                 (1|CELL.ID),
                data = data_b, family = binomial(), weights = TOT.LISTS)
 
-summary(bang3)
-AIC(bang2) - AIC(bang1) # on 6 df. Definitely include month.
 
 ```
+
+- Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction. 
+- However, at the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding. 
+- The crucial months like April and May show higher urban species reporting frequency overall.
 
 ## Pune
 
@@ -2746,6 +2741,50 @@ ggsave("03_wrap_figs/b_pune_03_spatial_a.png", b_pune_03_spatial_a,
 ```
 
 At the larger spatial scale, pandemic effects are restricted to the "peak" period, mostly in 2020. Most species decreased (surprisingly, including urban ones) in frequency. But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed. Only urban species seem to show a decrease in frequency, probably due to increased birding in non-urban areas over the years.
+
+```{r b_pune_04_model, cache=TRUE, message=FALSE}
+
+require(lme4)
+
+data_b <- data0_MY_slice_G %>% 
+  filter(STATE == "Maharashtra") %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(GROUP.ID = GROUP.ID,
+            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+  left_join(data0) %>% 
+  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
+  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+  summarise(TOT.LISTS = min(TOT.LISTS),
+            NO.LISTS = n_distinct(GROUP.ID),
+            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+  left_join(species) %>% 
+  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  mutate(M.YEAR = as.factor(M.YEAR),
+         MONTH = as.factor(MONTH)) %>% 
+  ungroup()
+
+
+pune1 <- glm(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
+                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
+               data = data_b, family = binomial(), weights = TOT.LISTS)
+
+summary(pune1)
+exp(coef(pune1) + coef(pune1)[1])[-1]
+anova(bang1, test = "Chisq")
+plot(bang1)
+
+pune2 <- glm(REP.FREQ ~ M.YEAR + 
+               # MONTH + SP.CATEGORY +
+                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
+               data = data_b, family = binomial(), weights = TOT.LISTS)
+
+summary(pune2)
+
+```
+
+- From pune1, it seems that at the level of the migratory year the higher reporting frequency of urban species during the 3-4 crucial months is not visible. 
+- Although RF of urban species increased (month:spcategory), that of non-urban species didn't change notably (month:MY). 
+- With years, reporting frequency of urban species has simply been increasing steadily.
 
 ## Kochi
 
