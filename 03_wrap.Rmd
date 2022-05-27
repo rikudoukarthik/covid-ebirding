@@ -2472,7 +2472,7 @@ temp2 <- data0_MY %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, NO.SP)
+         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
 data_b2 <- data0_MY_slice_G %>% 
   filter(STATE == "Karnataka") %>% 
@@ -2490,14 +2490,19 @@ data_b2 <- data0_MY_slice_G %>%
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
   mutate(M.YEAR = as.factor(M.YEAR),
-         MONTH = as.factor(MONTH)) %>% 
+         MONTH = factor(MONTH, levels = as.character(1:12))) %>% 
   ungroup()
+
+
+x <- data_b2 %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  slice_sample(n = 100)
 
 
 
 bang1 <- glm(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = data_b2, family = binomial())
+               data = x, family = binomial())
 
 summary(bang1)
 # exp(coef(bang1) + coef(bang1)[1])[-1]
