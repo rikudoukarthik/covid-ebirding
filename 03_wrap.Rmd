@@ -2459,6 +2459,8 @@ data_b <- data0_MY_slice_G %>%
   ungroup()
 
 
+### to try directly with raw dat of presence-absence
+
 # to join for presence-absence of various species
 temp1 <- data0_MY %>% 
   filter(STATE == "Karnataka") %>% 
@@ -2489,8 +2491,8 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(M.YEAR = as.factor(M.YEAR),
-         MONTH = factor(MONTH, levels = as.character(1:12))) %>% 
+  mutate(MONTH = factor(MONTH),
+         M.YEAR = as.factor(M.YEAR)) %>% 
   ungroup()
 
 
@@ -2502,7 +2504,7 @@ x <- data_b2 %>%
 
 bang1 <- glm(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = x, family = binomial())
+               data = data_b2, family = binomial(link = 'cloglog'))
 
 summary(bang1)
 # exp(coef(bang1) + coef(bang1)[1])[-1]
@@ -2514,7 +2516,19 @@ summary(bang1)
 bang2 <- glmer(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY +
                  (1|CELL.ID),
-               data = data_b2, family = binomial())
+               data = data_b2, family = binomial(link = 'cloglog'),
+               nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+
+summary(bang2)
+
+
+bang3 <- glmer(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
+                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY +
+                 (1|CELL.ID),
+               data = data_b2, family = binomial(link = 'cloglog'),
+               nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+
+summary(bang3)
 
 
 ```
