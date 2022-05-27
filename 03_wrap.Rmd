@@ -2081,16 +2081,15 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 load("data/data0_MY_slice.RData")
 load("data/data0_MY.RData")
-load("data/data0_slice.RData")
 
 
 ### bird species to analyse/compare ####
 
 species <- data.frame(
-  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
+  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", 
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
                   "Green Bee-eater", "Black Drongo", "Pied Bushchat", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "Black-winged Kite", "Small Minivet", "Long-tailed Shrike", "Gray Francolin"),
-  SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 12)))
+  SP.CATEGORY = c(rep("U", 11), rep("W", 3), rep("R", 12)))
 
 # # check if common names are written correctly
 # species$COMMON.NAME %in% data0$COMMON.NAME
@@ -2102,10 +2101,10 @@ species <- data.frame(
 
 # different from list for BLR and PUN because 5 non-urban species from that list do not occur in sufficient numbers in EKM
 species_koch <- data.frame(
-  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", "Blue-throated Barbet",
+  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", 
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
                   "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
-  SP.CATEGORY = c(rep("U", 12), rep("W", 3), rep("R", 10)))
+  SP.CATEGORY = c(rep("U", 11), rep("W", 3), rep("R", 10)))
 
 
 species_guwa <- data.frame(
@@ -2442,11 +2441,15 @@ data_b <- data0_MY_slice_G %>%
   filter(STATE == "Karnataka") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+            TOT.LISTS = n_distinct(GROUP.ID),
+            AV.LENGTH = mean(NO.SP),
+            MED.LENGTH = median(NO.SP)) %>% 
   left_join(data0_MY) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
   group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
+            AV.LENGTH = min(AV.LENGTH),
+            MED.LENGTH = min(MED.LENGTH),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
   left_join(species) %>% 
@@ -2455,22 +2458,58 @@ data_b <- data0_MY_slice_G %>%
          MONTH = as.factor(MONTH)) %>% 
   ungroup()
 
-# no building up of model from a "null" is required here as we are not trying to find which of our predictors is important; we want to know whether the predictors we think are important, actually are and whether they really had an impact on the data.
 
-bang1 <- glm(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
+# to join for presence-absence of various species
+temp1 <- data0_MY %>% 
+  filter(STATE == "Karnataka") %>% 
+  group_by(GROUP.ID, COMMON.NAME) %>% 
+  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% ungroup()
+
+# to later join checklist metadata
+temp2 <- data0_MY %>% 
+  filter(STATE == "Karnataka") %>% 
+  arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
+  slice(1) %>% ungroup() %>% 
+  select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, NO.SP)
+  
+data_b2 <- data0_MY_slice_G %>% 
+  filter(STATE == "Karnataka") %>% 
+  group_by(GROUP.ID) %>% 
+  summarise(COMMON.NAME = species$COMMON.NAME) %>% 
+  left_join(temp1) %>% 
+  # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
+  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
+  select(-OBSERVATION.COUNT) %>% 
+  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+  # checklist metadata
+  left_join(temp2, by = "GROUP.ID") %>% 
+  arrange(GROUP.ID) %>% 
+  # species categories
+  left_join(species) %>% 
+  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  mutate(M.YEAR = as.factor(M.YEAR),
+         MONTH = as.factor(MONTH)) %>% 
+  ungroup()
+
+
+
+bang1 <- glm(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = data_b, family = binomial(), weights = TOT.LISTS)
+               data = data_b2, family = binomial())
 
 summary(bang1)
-exp(coef(bang1) + coef(bang1)[1])[-1]
-anova(bang1, test = "Chisq")
-plot(bang1)
+# exp(coef(bang1) + coef(bang1)[1])[-1]
+# anova(bang1, test = "Chisq")
+# plot(bang1)
 
 
-bang2 <- glmer(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
+
+bang2 <- glmer(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
                  M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY +
                  (1|CELL.ID),
-               data = data_b, family = binomial(), weights = TOT.LISTS)
+               data = data_b2, family = binomial())
 
 
 ```
