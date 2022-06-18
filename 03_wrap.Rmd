@@ -1036,8 +1036,6 @@ rm(length_nw, length_sw, length)
 
 ##### Proportion of checklists that are from urban areas  ####
 
-# load("data/data_UNU.RData")
-
 temp <- data0_slice_G %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>%
   filter(URBAN == 1) %>% 
@@ -1464,7 +1462,7 @@ library(rasterVis)
 load("data/rast_SoIB.RData")
 load("data/rast_UNU.RData")
 
-##### Change in birding effort (no. of lists) per grid cell  ####
+##### Change in birding effort (no. of lists) per grid cell (map)  ####
 
 data_SoIBmap0 <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
@@ -1649,7 +1647,7 @@ ggsave("03_wrap_figs/12d_s_spread_netchange.png",
 ##### Final analysis: change in proportion of urban lists per grid cell ####
 
 temp <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>%
+  group_by(COVID, YEAR, MONTH, CELL.ID) %>% # state is meaninglesss cos CELL.ID
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup()

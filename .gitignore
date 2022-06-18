@@ -5,13 +5,19 @@
 *.RData
 *.Rproj
 
+# RMD caches
+*_cache/
+*_files/
+
 # RDS file with login credentials
 *.rds
 
 # data files
-*.pdf
 *.txt
 *.zip
+*.pdf
+*.docx
+*.pptx
 
 # folders in repo
 Literature/
@@ -23,15 +29,16 @@ data/in_LULC_USGS/
 data/in_LULC_MODIS/
 # posters
 example_betterland_template_files/
+# Zoom recording
+recording/
 
 example_betterland_template.Rmd
 example_betterland_template.html
 example_betterport_template.Rmd
 example_html_template.Rmd
 
-# RMD caches
-*_cache/
-*_files/
+03_presentation_IOC_ppt.Rmd
+
 
 
 
