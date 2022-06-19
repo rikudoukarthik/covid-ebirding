@@ -5,6 +5,17 @@
     <meta charset="utf-8" />
     <meta name="author" content="Karthik Thrikkadeeri, Ashwin Viswanathan" />
     <script src="03_presentation_IOC_files/header-attrs/header-attrs.js"></script>
+    <html>
+
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
+      crossorigin="anonymous">
+    </script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/fnaufel/xaringan-smartify/smartify.min.js"></script>
+
+
+    </html>
     <link rel="stylesheet" href="03_presentation_IOC.css" type="text/css" />
   </head>
   <body>
@@ -15,8 +26,93 @@
 
 
 
+class: title-slide, middle, center, inverse
 
-class: inverse, center, middle, title-slide 
+&lt;style type="text/css"&gt;
+
+.title-slide h1 {
+  font-size: 2em;
+  color: var(--primary);
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.title-slide h2 {
+  font-size: 1.5em;
+  color: var(--tertiary);
+  /* text-shadow: 2px 1px 2px;*/ /* shadow for conference name */
+  margin-bottom: 2.5rem;
+}
+
+.title-slide h3 {
+  font-size: 1.3em;
+  color: var(--title-text);
+  line-height: 0.9;
+} 
+&lt;/style&gt;
+
+&lt;style type="text/css"&gt;
+div.event-logo {
+content: "";
+position: absolute;
+    top: 35px;
+    right: 25%;
+    height: 50%;
+    width: 50%;    
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/ioclogo.png");
+}
+
+div.instt-logo-bottomleft {
+content: "";
+    position: absolute;
+    bottom: 15px;
+    left:   350px;
+    height: 80px;
+    width: 240px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/ncflogo.png");
+}
+
+div.instt-logo-bottomright {
+content: "";
+    position: absolute;
+    bottom: 15px;
+    right:   350px;
+    height: 80px;
+    width: 240px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/bcilogo.png");
+}
+
+div.image-left {
+content: "";
+    position: absolute;
+    bottom: 250px;
+    left:   100px;
+    height: 15%;
+    width: 15%;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/coronavirus.png");
+}
+
+div.image-right {
+content: "";
+    position: absolute;
+    bottom: 150px;
+    right:   100px;
+    height: 15%;
+    width: 15%;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/coronavirus.png");
+}
+
+&lt;/style&gt;
 
 &lt;div class="event-logo"&gt;&lt;/div&gt;    
 
@@ -66,15 +162,14 @@ Changed how we consume information, learn, work, socialise, communicate.
 ---
 class: center, middle
 
-# .fancy[Anthropause]
-
-### .fancy[/anθrəpɔːz/]
+&gt; # .fancy[Anthropause]
+&gt; ### .fancy[/anθrəpɔːz/]
 
 --
 
-.fancy[a considerable global slowing of modern human activities, notably travel]
-
-[.right[.fancy[Rutz et al., 2020]]](https://www.nature.com/articles/s41559-020-1237-z)
+&gt; a considerable global slowing of modern human activities, notably travel
+&gt; &lt;br&gt;
+&gt; [.right[Rutz et al., 2020]](https://www.nature.com/articles/s41559-020-1237-z)
 
 ---
 class: center, middle
@@ -152,12 +247,12 @@ background-color: black
 
 .middle2[
 .yellow[
-3,62,747 locations  
-19,54,724 lists  
-18,03,095 hrs  
+362,747 locations  
+1,954,724 lists  
+1,803,095 hours  
 30,564 people  
 &lt;br&gt;
-36 States/UTs  
+36 states/UTs  
 635 districts  
 &lt;br&gt;
 1,352 species  
@@ -166,7 +261,7 @@ background-color: black
 
 &lt;br&gt;
 
-.small[.grey[
+.smaller[.grey[
 *Data until March 2022*
 ]]
 
@@ -174,21 +269,18 @@ background-color: black
 
 
 ---
-class: centre, middle
-background-image: url("pics/amfa.gif")
-background-size: contain
-
-Maybe a slide showing what insights eBird data has enabled in India? Migration maps, ...
-
-???
-The quality and reliability of this data is highly contingent on the collectors, i.e., citizens.  
-Birder behaviour needs to be uniform and consistent.  
-Thus, our primary concern now is whether or not the usefulness of such data has changed with the pandemic.
-
----
-class: centre, middle
+class: center, middle
 background-image: url("pics/soib-cover.jpg")
 background-size: contain
+
+--
+
+![:scale 81%](pics/soib-example.png)
+
+???
+The quality and reliability of this data is highly contingent on the collectors, i.e., citizens.
+Birder behaviour needs to be uniform and consistent.  
+Thus, our primary concern now is whether or not the usefulness of such data has changed with the pandemic.
 
 ---
 class: inverse, center, middle
@@ -198,7 +290,7 @@ class: inverse, center, middle
 ---
 class: middle
 
-### 1. Did eBirder behaviour change during the pandemic?  
+### Did eBirder behaviour change during the pandemic?  
 
 &lt;br&gt;
 
@@ -214,50 +306,65 @@ What are the implications for usefulness of eBird data from the pandemic years?
 
 --
 
-### 2. Was there a visible difference in patterns of bird detection?
+### Was there a visible difference in patterns of species reporting?
 
 ???
 Can this be attributed to changes in birder behaviour, or did birds truly modify their behaviour?
 
 ---
-background-image: url("pics/ebird-explore.png")
-background-size: contain
+background-image: url("pics/sample-explore-1.png")
+background-size: cover
+class: no-page-number
 
 ---
-background-image: url("pics/ebird-explore-2.png")
-background-size: contain
+background-image: url("pics/sample-explore-sa.png")
+background-size: cover
+class: no-page-number
+
+---
+background-image: url("pics/sample-explore-2.png")
+background-size: cover
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-1.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-2.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-3.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-4.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-5.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-6.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-7.png")
 background-size: contain
+class: no-page-number
 
 ???
 How bias in birder behaviour can affect rep.freq.  
@@ -271,22 +378,12 @@ class: inverse, center, middle
 ---
 class: middle
 
-&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-2-1.png" width="100%" /&gt;
+&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-4-1.png" width="100%" /&gt;
 
 ---
 class: inverse, center, middle
 
-### 1. Did eBirder behaviour change during the pandemic?
-
----
-class: middle
-
-&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-3-1.png" width="100%" /&gt;
-
----
-class: middle
-
-&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-4-1.png" width="100%" /&gt;
+## Did eBirder behaviour change during the pandemic?
 
 ---
 class: middle
@@ -304,8 +401,16 @@ class: middle
 &lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-7-1.png" width="100%" /&gt;
 
 ---
+class: middle
+
+&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-8-1.png" width="100%" /&gt;
+
+---
 background-image: url("pics/03_presentation_IOC_map.png")
 background-size: contain
+
+???
+Clarify log and non-
 
 ---
 background-image: url("pics/03_presentation_IOC_map-2.png")
@@ -318,12 +423,7 @@ background-size: contain
 ---
 class: center, middle
 
-## What happened during lockdown?
-
----
-class: center, middle
-
-&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-8-1.png" width="100%" /&gt;
+### What happened during lockdown?
 
 ---
 class: center, middle
@@ -343,6 +443,30 @@ class: center, middle
 ---
 class: center, middle
 
+&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-12-1.png" width="100%" /&gt;
+
+---
+class: center, middle
+
+&lt;img src="03_presentation_IOC_files/figure-html/unnamed-chunk-13-1.png" width="100%" /&gt;
+
+---
+class: center, middle
+
+--
+
+Birding intensity and coverage increased
+
+Expected changes in birder behaviour
+
+Urban birding bias
+
+???
+with no major spatial clusters
+
+---
+class: center, middle
+
 ### Implications of changes in birder behaviour?
 
 --
@@ -352,13 +476,13 @@ class: center, middle
 ---
 class: inverse, center, middle
 
-### 2. Was there a visible difference in patterns of bird detection?
+## Was there a visible difference in patterns of species reporting?
 
 --
 
 &lt;br&gt;
 
-*If so, is it an artefact of the changes in birder behaviour, or was there actually a behavioural shift in birds?*
+*If so, is it an artefact of the changes in birder behaviour, or due to changes in abundance, detectability or behaviour of birds?*
 
 ---
 
@@ -370,46 +494,74 @@ class: inverse, center, middle
 ### What does this all mean?
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+&lt;style type="text/css"&gt;
 
---
+div.end-image-1 {
+content: "";
+position: absolute;
+top: 150px;
+right: 15px;
+height: 360px;
+width: 360px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/data.gif");
+}
 
-- National lockdown in 2020  
-- Second wave in 2021  
+div.end-image-2 {
+content: "";
+position: absolute;
+top: 220px;
+right: 35px;
+height: 210px;
+width: 350px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/social-distancing.gif");
+}
+
+&lt;/style&gt;
+
+Data quantity---completely unaffected
+
+&lt;div class="end-image-1"&gt;&lt;/div&gt;
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+Data quantity---completely unaffected
 
-- National lockdown in 2020  
-- Second wave in 2021  
-
-Disappears at scale of interest  
+Data quality---slight changes due to birder behaviour
 
 --
 
-![:scale 30%](pics/soib-cover.jpg)
+*Group birding remained low throughout*
+
+&lt;div class="end-image-2"&gt;&lt;/div&gt;
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+Data quantity---completely unaffected
 
-- National lockdown in 2020  
-- Second wave in 2021  
+Data quality---slight changes due to birder behaviour  
 
-Disappears at scale of interest  
+*Group birding remained low throughout*
 
-- Birders active again after "peak" periods  
+Care to be taken with small-scale analyses
 
---
-
-Care to be taken when operating at the small scale
+???
+effect of lowered group birding is unknown and difficult to gauge
+small-scale (bird graphs too); birders active again after peak
 
 ---
 class: center, bottom
 
-### eBird data still useful!
+## eBird data still useful!
+
+&lt;br&gt;
 
 &lt;br&gt;
 
@@ -419,16 +571,108 @@ class: center, bottom
 
 ## Acknowledgements
 
----
-class: inverse, center, middle
+&lt;style type="text/css"&gt;
 
-# Thank you! &amp;#x1F604;
+div.ack-funders {
+content: "";
+position: absolute;
+top: 45px;
+right: 35px;
+height: 250px;
+width: 450px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/funders-logos.png");
+}
+
+div.ack-self-1 {
+content: "";
+position: absolute;
+bottom: 30px;
+left:   100px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/ncflogo.png");
+}
+
+div.ack-self-2 {
+content: "";
+position: absolute;
+bottom: 30px;
+left:   850px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/bcilogo.png");
+}
+
+div.ack-self-3 {
+content: "";
+position: absolute;
+bottom: 30px;
+left: 535px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/ebirdindialogo.png");
+}
+
+&lt;/style&gt;
+
+#### Funders
+
+- Rohini Nilekani Philanthropies  
+- Duleep Mathai Nature Conservation Trust  
+- Cholamandalam Investment and Finance Co. Ltd.  
+- National Centre for Biological Sciences  
+
+&lt;div class="ack-funders"&gt;&lt;/div&gt;
+
+&lt;div class="ack-self-1"&gt;&lt;/div&gt;
+
+&lt;div class="ack-self-2"&gt;&lt;/div&gt;
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+--
+
+.center[
+### Thanks to all birdwatchers and eBird editors!
+]
+
+&lt;div class="ack-self-3"&gt;&lt;/div&gt;
+
+---
+class: inverse, bottom, right
+
+# Thank you!
+
+#### Find me at...
+
+.smaller[
+[<svg aria-hidden="true" role="img" viewBox="0 0 496 512" style="height:1em;width:0.97em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg> @rikudoukarthik](https://github.com/rikudoukarthik)  
+[&lt;svg viewBox="0 0 512 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"&gt;&lt;/path&gt;&lt;/svg&gt; @TrickDEerie](https://twitter.com/TrickDEerie)  
+[&lt;svg viewBox="0 0 512 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"&gt;&lt;/path&gt;&lt;/svg&gt; kartrick.rbind.io](https://kartrick.rbind.io)  
+[&lt;svg viewBox="0 0 512 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M440 6.5L24 246.4c-34.4 19.9-31.1 70.8 5.7 85.9L144 379.6V464c0 46.4 59.2 65.5 86.6 28.6l43.8-59.1 111.9 46.2c5.9 2.4 12.1 3.6 18.3 3.6 8.2 0 16.3-2.1 23.6-6.2 12.8-7.2 21.6-20 23.9-34.5l59.4-387.2c6.1-40.1-36.9-68.8-71.5-48.9zM192 464v-64.6l36.6 15.1L192 464zm212.6-28.7l-153.8-63.5L391 169.5c10.7-15.5-9.5-33.5-23.7-21.2L155.8 332.6 48 288 464 48l-59.4 387.3z"&gt;&lt;/path&gt;&lt;/svg&gt; karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)
+]
+
+#### Slide deck: 
+[]()
+
+.footnote[Made with &amp;#10084; and [![:scale 2%](pics/xaringan.png)](https://github.com/yihui/xaringan)]
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="libs/remark-latest.min.js"></script>
 <script src="macros.js"></script>
 <script>var slideshow = remark.create({
-"slideNumberFormat": "%current%",
+"slideNumberFormat": "<div class=\"progress-bar-container\">\n  <div class=\"progress-bar\" style=\"width: calc(%current% / %total% * 100%);\">\n  </div>\n</div>\n",
 "highlightStyle": "github",
 "highlightLines": true,
 "ratio": "16:9",

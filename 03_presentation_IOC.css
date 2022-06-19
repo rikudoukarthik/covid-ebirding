@@ -1,8 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&display=swap');
-@import url(https://fonts.googleapis.com/css?family=Rubik&display=swap);
-@import url(https://fonts.googleapis.com/css?family=Source+Code+Pro:400,700&display=swap);
-@import url('https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Dosis:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Sen&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,300;1,300;1,600&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Petrona&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
 @import url(https://fonts.googleapis.com/css?family=Roboto+Slab:400,700&display=swap);
 
 :root {
@@ -11,260 +10,89 @@
   --secondary: #D1F0EE;
   --tertiary: #37A9A2;
   --accent: #984447;
-  --white: #FFFFFF;
-  --black: #000000;
+  --quote-bg: #DDCABB;
+  --quote: #6F7C12;
+  --main-text: #141414;
+  --code-bg: #f3e0e1;
 }
 
 body {
-  font-family: 'Fira Sans';
-  font-weight: 300;
+  font-family: 'Sen', sans-serif;
+  font-weight: 400;
+  color: var(--main-text);
 }
 
 /* The margin- lines crucial for preventing headings from being position too far to the right and bottom */
 
-h1, h2, h3 {
-  font-family: 'Dosis';
-  font-weight: 700;
+h1 {
+  font-family: 'Petrona', serif;
+  font-weight: 800;
+  font-size: 2em;
   color: var(--primary);
   margin-top: 0;
   margin-bottom:.5rem;
 }
 
-h4,h5,h6 {
+h2 {
+  font-family: 'Petrona', serif;
+  font-weight: 600;
+  font-size: 1.5em;
   color: var(--primary);
   margin-top: 0;
   margin-bottom:.5rem;
 }
+
+h3 {
+  font-family: 'Sen', sans-serif;
+  font-weight: 600;
+  font-size: 1.3em;
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom:.5rem;
+}
+
+h4 {
+  font-weight: 500;
+  color: var(--primary);
+  text-transform: uppercase;
+  font-size: 1.3em !important;
+}
+
+
+
+.remark-code, 
+.remark-inline-code {
+  font-family: 'Courier Prime', monospace;
+}
+
+.remark-slide-content p, ul, ol, li {
+  font-size: 1.5rem;
+}
+
 
 .fancy {
   font-family: Roboto Slab;
   font-weight: 700;
-  color: var(--primary);
-  margin-top: 0;
-  margin-bottom:.5rem;
+  color: var(--quote);
 }
-
-b, strong {
-  font-weight: 600;
-  colour: var(--accent);
-}
-
-p {
-  margin-top:0;
-  margin-bottom:1rem;
-}
-
-.inverse {
-  background-color: var(--secondary);
-}
-
-.inverse .remark-slide-number {
-  display: none;
-}
-
-.subsection h1 {
-  font-size: 70px;
-  color: var(--primary);
-}
-
-.subsection h2 {
-  font-size: 55px;
-  color: var(--primary);
-}
-
-.subsection .remark-slide-number {
-  display: none;
-}
-
-.remark-code, .remark-inline-code {
-  font-family: 'Source Code Pro';
-  font-weight: 400;
-}
-
-.remark-code {
-  font-size: 16px;
-}
-
-.mjx-chtml{
-  font-size: 110% !important;
-}
-
-.remark-slide-content {
-  font-size: 25px;
-}
-
-.remark-slide-content h1 {
-  font-size: 70px;
-}
-
-.remark-slide-content h2 {
-  font-size: 55px;
-}
-
-.remark-slide-content h3 {
-  font-size: 40px;
-}
-
-.alpha {
-  background-color: rgba(0,0,0,0.6);
-  padding: 10px;
-  border-radius: 10px;
-}
-
-.title-slide {
-  background-color: var(--secondary);
-  background-position: bottom;
-  background-size: cover;
-  /*background-image: url('./resources/franki-chamaki-682112-unsplash.jpg');*/
-}
-
-div.event-logo {
-content: "";
-position: absolute;
-    top: 35px;
-    right: 25%;
-    height: 50%;
-    width: 50%;    
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/ioclogo.png");
-}
-
-div.instt-logo-bottomleft {
-content: "";
-    position: absolute;
-    bottom: 15px;
-    left:   350px;
-    height: 80px;
-    width: 240px;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/ncflogo.png");
-}
-
-div.instt-logo-bottomright {
-content: "";
-    position: absolute;
-    bottom: 15px;
-    right:   350px;
-    height: 80px;
-    width: 240px;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/bcilogo.png");
-}
-
-div.image-left {
-content: "";
-    position: absolute;
-    bottom: 250px;
-    left:   100px;
-    height: 15%;
-    width: 15%;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/coronavirus.png");
-}
-
-div.image-right {
-content: "";
-    position: absolute;
-    bottom: 150px;
-    right:   100px;
-    height: 15%;
-    width: 15%;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/coronavirus.png");
-}
-
-.title-slide h1 {
-  color: var(--primary);
-  font-size: 50px;
-  margin-top: 3.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.title-slide h2 {
-  color: var(--tertiary);
-  text-shadow: 2px 1px 2px; /* shadow for conference name */
-  font-size: 35px;
-  margin-bottom: 2.5rem;
-}
-
-.title-slide h3 {
-  color: var(--title-text);
-  font-size: 25px;
-  line-height: 0.9;
-} 
-
-.title-slide h4 {
-  color: var(--title-text);
-  font-size: 19px;
-  line-height: 0.85;
-} 
-
-.title-slide .remark-slide-number {
-  display: none;
-}
-
-.remark-slide-number {
-  color: var(--accent);
-  font-size: 0.75em;
-}
-
-.remark-slide-number .progress-bar-container {
-    position: absolute;
-    bottom: 0;
-    height: 6px;
-    display: block;
-    left: 0;
-    right: 0;
-    text-shadow: none;
-}
-
-.remark-slide-number .progress-bar {
-    height: 100%;
-    background-color: var(--accent);
-    text-shadow: none;
-    color: var(--accent);
-}
-
-.remark-slide-number .inverse .progress-bar {
-    height: 100%;
-    background-color: var(--accent);
-    text-shadow: none;
-    color: var(--accent);
-} 
 
 .footnote {
-  bottom: 0.5em;
-  left: 0.5em;
+  bottom: 1em;
+  font-size: 70%;
 }
 
-.references {
-  position: absolute;
-  padding-right: 4em;
-  bottom: 0.5em;
-  left: 3em;
-  font-size: 0.75em;
-}
 
-.img-caption {
-  font-size: 0.5em;
-  font-style: italic;
-}
 
 .smallcaps {
   font-variant: small-caps;
 }
 
 .small {
-  font-size: 0.75em;
+  font-size: 0.85em;
 }
 
 .smaller {
-  font-size: 0.5em;
+  font-size: 0.5rem;
 }
 
 .big {
@@ -275,40 +103,74 @@ content: "";
   font-size: 2em;
 }
 
-.middle2 {
-  margin: 0;
-  position: absolute;
-  top: 50%;
-  left: 20%;
-  transform: translate(-50%, -50%);
+
+
+
+/* ##### theme below */
+
+
+
+p {
+  margin-top:0;
+  margin-bottom:1rem;
 }
 
-.center-fig {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.text-highlight {
-  color: var(--secondary);
-}
-
-a {
+ul li::marker {
   color: var(--accent);
+  font-size: 1.2em;
 }
 
-a:hover {
-  color: var(--accent);
+blockquote {
+  font-family: Roboto Slab;
+  font-weight: 700;
+	border-left: solid 5px var(--quote);
+	color: var(--quote);
+	background-color: var(--quote-bg);
+	padding: 2em;
 }
 
-a:focus {
-  color: var(--accent);
+/* link color */
+:any-link {
+    color: var(--main-text);
+    text-decoration: underline;
 }
 
-a:visited {
-  color: var(--accent);
+/* mouse over link */
+a:hover, a:active, a:focus {
+    color: var(--accent);
+    text-decoration: underline;
 }
+
+
+.inverse {
+  background-color: var(--secondary);
+}
+
+.inverse .remark-slide-number {
+  display: none;
+}
+
+.no-page-number .remark-slide-number {
+  display: none;
+}
+
+.remark-code {
+  color: var(--main-text);
+  font-size: 1.25em;
+}
+
+.remark-inline-code {
+  color: var(--main-text);
+  font-size: 1em;
+}
+
+.mjx-chtml{
+  font-size: 110% !important;
+}
+
+
+
+/* layouts */
 
 .left-column {
   width: 25%;
@@ -334,6 +196,109 @@ a:visited {
 .pull-right + * {
   clear: both;
 }
+
+.right-wide {
+  width: 60%;
+  float: right;
+  padding-top: 1em;
+}
+
+.left-narrow {
+  width: 40%;
+  float: left;
+  padding-top: 1em;
+}
+
+.left-wide {
+  width: 60%;
+  float: left;
+  padding-top: 1em;
+}
+
+.right-narrow {
+  width: 40%;
+  float: right;
+  padding-top: 1em;
+}
+
+
+/* footer */
+div.my-footer {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    height: 20px;
+    width: 100%;
+}
+div.my-footer span {
+    font-size: 10pt;
+    color: var(--main-text);
+    position: absolute;
+    left: 15px;
+    bottom: 2px;
+}
+a.footer-link {
+    position: absolute;
+    bottom: 5px;
+    right: 50px;
+    height: 40px;
+    width: 150px;
+    color: var(--main-text);
+}
+
+
+
+
+/* Progress bar https://github.com/yihui/xaringan/wiki/Progressbar */
+
+.remark-slide-number {
+  color: var(--accent);
+}
+
+.remark-slide-number .progress-bar-container {
+    position: absolute;
+    bottom: 0;
+    height: 40px;
+    display: block;
+    left: 0;
+    right: 0;
+}
+
+.remark-slide-number .progress-bar {
+    height: 100%;
+    background-color: var(--accent);
+}
+
+.title-slide .remark-slide-number.progress-bar {
+    height: 0px;
+    background-color: var(--accent);
+} 
+
+
+
+
+
+.middle2 {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 20%;
+  transform: translate(-50%, -50%);
+}
+
+.center-fig {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.text-highlight {
+  color: var(--secondary);
+}
+
+
+
 
 
 @page { margin: 0; }
