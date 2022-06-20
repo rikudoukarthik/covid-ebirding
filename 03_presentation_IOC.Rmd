@@ -9,7 +9,7 @@ output:
     css: ["03_presentation_IOC.css"]
     nature:
       beforeInit: "macros.js"
-      slideNumberFormat: |
+      slideNumberFormat: | 
         <div class="progress-bar-container">
           <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
           </div>
@@ -18,7 +18,6 @@ output:
       highlightLines: true
       ratio: 16:9
       countIncrementalSlides: false
-      titleSlideClass: [inverse, center, middle, title-slide]
     includes:
       in_header: "in_header.html"
       after_body: "after_body.html"
@@ -87,24 +86,26 @@ class: title-slide, middle, center, inverse
 ```{css}
 
 .title-slide h1 {
-  font-size: 2em;
+  font-size: 2.2em;
   color: var(--primary);
   margin-top: 3.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .title-slide h2 {
   font-size: 1.5em;
-  color: var(--tertiary);
+  color: var(--secondary);
   /* text-shadow: 2px 1px 2px;*/ /* shadow for conference name */
   margin-bottom: 2.5rem;
 }
 
 .title-slide h3 {
-  font-size: 1.3em;
-  color: var(--title-text);
+  font-size: 1.2em;
+  color: var(--main-text);
   line-height: 0.9;
+  opacity: 70%;
 } 
+
 ```
 
 ```{css}
@@ -144,6 +145,7 @@ content: "";
     background-image: url("pics/bcilogo.png");
 }
 
+/*
 div.image-left {
 content: "";
     position: absolute;
@@ -158,33 +160,29 @@ content: "";
 
 div.image-right {
 content: "";
-    position: absolute;
-    bottom: 150px;
-    right:   100px;
-    height: 15%;
-    width: 15%;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-image: url("pics/coronavirus.png");
-}
+position: absolute;
+bottom: 150px;
+right:   100px;
+height: 15%;
+width: 15%;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/coronavirus.png");
+} */
 
 ```
 
 <div class="event-logo"></div>    
 
-# The impact of the COVID-19 pandemic on birding and birds in India
+# The impact of the C![:scale 3%](pics/coronavirus.png)VID-19 pandemic on birding and birds in India
 
 ## International Ornithological Congress <br> 14&ndash;20 August 2022
 
-### Karthik Thrikkadeeri, Ashwin Viswanathan
+### Karthik Thrikkadeeri &middot; Ashwin Viswanathan
 
 <div class="instt-logo-bottomleft"></div>    
 
 <div class="instt-logo-bottomright"></div>   
-
-<div class="image-left"></div>    
-
-<div class="image-right"></div>   
 
 ---
 class: inverse, center, middle
@@ -445,7 +443,7 @@ x <- read_csv("data/covid_classification.csv") %>%
          COVID = factor(COVID, levels = c("BEF", "DUR_20", "DUR_21", "AFT")))
 
 y <- x %>% 
-  summarise(YEAR.RANGE = as.Date(seq(min(DATE) + months(1), # buffers for placement on graph
+  summarise(YEAR.RANGE = as.Date(seq(min(DATE), # buffers for placement on graph
                                      max(DATE) + months(1), 
                                      by = "year"),  
                                    origin = "1970-01-01"))
@@ -454,8 +452,8 @@ y <- x %>%
 z <- x %>% 
   group_by(COVID) %>% 
   summarise(DATE = DATE,
-            START = min(DATE) - months(1),
-            END = max(DATE))
+            START = min(DATE),
+            END = max(DATE) + months(1))
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 
@@ -622,9 +620,9 @@ ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) +
 no_lists_po_hide + 
   annotate("rect", xmin = 2.5, xmax = 11.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> no_lists_po
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> no_lists_po
 
 
 ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
@@ -639,9 +637,9 @@ ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) +
 hotspot_hide + 
   annotate("rect", xmin = 3.5, xmax = 10.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> hotspot
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> hotspot
 
 
 ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
@@ -656,13 +654,13 @@ ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) +
 protocol_hide + 
   annotate("rect", xmin = 2.5, xmax = 8.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> protocol
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> protocol
 
 
 ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
-  scale_y_log10() + 
+  scale_y_log10(expand = c(0, 0)) + 
   scale_x_continuous(breaks = 1:12,
                      labels = month(unique(fidel_nw$MONTH), label = T)) + 
   scale_colour_manual(values = covid_palette,
@@ -674,9 +672,9 @@ ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) +
 fidelity_hide + 
   annotate("rect", xmin = 3.5, xmax = 6.5, ymin = 1, ymax = +Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> fidelity
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> fidelity
 
 
 ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
@@ -692,9 +690,9 @@ ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) +
 s_UNU_lists_hide + 
   annotate("rect", xmin = 2.5, xmax = 7.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> s_UNU_lists
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> s_UNU_lists
 
 
 
@@ -931,13 +929,29 @@ background-image: url("pics/ebirdindialogo.png");
 --
 
 .center[
-### Thanks to all birdwatchers and eBird editors!
+## Thanks to all birdwatchers and eBird editors!
 ]
 
 <div class="ack-self-3"></div>
 
 ---
-class: inverse, bottom, right
+class: end-slide, inverse, bottom, right
+
+```{css}
+
+.end-slide {
+background-color: var(--accent-pale);
+}
+
+.end-slide h1 {
+  color: var(--accent);
+}
+
+.end-slide h4 {
+  color: var(--accent);
+}
+
+```
 
 # Thank you!
 
@@ -945,13 +959,10 @@ class: inverse, bottom, right
 
 .smaller[
 [`r fontawesome::fa("github")` @rikudoukarthik](https://github.com/rikudoukarthik)  
-[`r icons::fontawesome("twitter")` @TrickDEerie](https://twitter.com/TrickDEerie)  
-[`r icons::fontawesome("link")` kartrick.rbind.io](https://kartrick.rbind.io)  
-[`r icons::fontawesome("paper-plane")` karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)
+[`r fontawesome::fa("twitter")` @TrickDEerie](https://twitter.com/TrickDEerie)  
+[`r fontawesome::fa("link")` kartrick.rbind.io](https://kartrick.rbind.io)  
+[`r fontawesome::fa("paper-plane")` karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)
 ]
 
-#### Slide deck: 
-[]()
-
-.footnote[Made with &#10084; and [![:scale 2%](pics/xaringan.png)](https://github.com/yihui/xaringan)]
+.footnote[Slides made with &#10084;, `r fontawesome::fa("r-project")` and [![:scale 1.5%](pics/xaringan.png)](https://github.com/yihui/xaringan)]
 
