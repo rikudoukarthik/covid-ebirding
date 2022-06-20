@@ -2452,12 +2452,12 @@ data_b <- data0_MY_slice_G %>%
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(M.YEAR = as.factor(M.YEAR),
-         MONTH = as.factor(MONTH)) %>% 
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 
-### to try directly with raw dat of presence-absence
+### modelling directly with presence-absence data instead of relative abundance
 
 # to join for presence-absence of various species
 temp1 <- data0_MY %>% 
@@ -2489,45 +2489,69 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(MONTH = factor(MONTH),
-         M.YEAR = as.factor(M.YEAR)) %>% 
   ungroup()
 
 
-x <- data_b2 %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
-  slice_sample(n = 100)
 
 
+# getting median list length for prediction later
+median_length <- data_b2 %>% 
+  distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+  group_by(MONTH) %>% 
+  summarise(NO.SP.MED = median(NO.SP))
 
-bang1 <- glm(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
-                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = data_b2, family = binomial(link = 'cloglog'))
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+bang0 <- data_b2 %>% 
+  expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  left_join(species) %>% 
+  mutate(REP.FREQ.PRED = NA)
 
-summary(bang1)
-# exp(coef(bang1) + coef(bang1)[1])[-1]
-# anova(bang1, test = "Chisq")
-# plot(bang1)
+count <- 0
+for (i in 1:n_distinct(bang0$COMMON.NAME)) {
+  
+  data_spec <- data_b2 %>% 
+    filter(COMMON.NAME == unique(bang0$COMMON.NAME)[i])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (j in 1:n_distinct(bang0$MONTH)) {
+    for (k in 1:n_distinct(bang0$M.YEAR)) {
+      count <- count + 1
+      
+      bang0$REP.FREQ.PRED[count] = predict(
+        model_spec,
+        data.frame(COMMON.NAME = bang0$COMMON.NAME[count],
+                   MONTH = bang0$MONTH[count],
+                   M.YEAR = bang0$M.YEAR[count],
+                   NO.SP = median_length$NO.SP.MED[bang0$MONTH[count]]),
+        re.form = NA, 
+        type = "response")
+    }
+  }
+}
 
 
+bang1 <- bang0 %>% 
+  filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
 
-bang2 <- glmer(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
-                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY +
-                 (1|CELL.ID),
-               data = data_b2, family = binomial(link = 'cloglog'),
-               nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+bang2 <- bang0 %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
 
-summary(bang2)
-
-
-bang3 <- glmer(REPORT ~ M.YEAR + MONTH + SP.CATEGORY + NO.SP +
-                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY +
-                 (1|CELL.ID),
-               data = data_b2, family = binomial(link = 'cloglog'),
-               nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-
-summary(bang3)
-
+save(bang1, bang2, 
+     file = "data/birds_bang.RData")
 
 ```
 
