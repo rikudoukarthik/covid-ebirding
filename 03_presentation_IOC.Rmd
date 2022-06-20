@@ -9,14 +9,17 @@ output:
     css: ["03_presentation_IOC.css"]
     nature:
       beforeInit: "macros.js"
-      slideNumberFormat: "%current%"
+      slideNumberFormat: | 
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
+          </div>
+        </div>
       highlightStyle: github
       highlightLines: true
       ratio: 16:9
       countIncrementalSlides: false
-      titleSlideClass: [inverse, center, middle, title-slide]
     includes:
-      in_header: 
+      in_header: "in_header.html"
       after_body: "after_body.html"
     # using seal to create custom title slide independent of YAML
     seal: false 
@@ -42,6 +45,9 @@ library(lubridate)
 library(patchwork)
 library(xaringanBuilder)
 
+# devtools::install_github("ropenscilabs/icon")
+# icons::download_fontawesome()
+
 # knitr::clean_cache(clean = TRUE)
 
 # plot defaults
@@ -50,8 +56,7 @@ theme_set(theme_bw() +
                   plot.tag.position = c(0.05, 0.98),
                   legend.position = "bottom",
                   text = element_text(size = 16),
-                  legend.text = element_text(size = 12),
-                  plot.margin = margin(0,0,0,0)))
+                  legend.text = element_text(size = 12)))
 
 theme_hide <- function () { 
     theme_classic() +
@@ -76,24 +81,108 @@ source("scripts/functions.R")
 
 ```
 
+class: title-slide, middle, center, inverse
 
-class: inverse, center, middle, title-slide 
+```{css}
+
+.title-slide h1 {
+  font-size: 2.2em;
+  color: var(--primary);
+  margin-top: 3.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.title-slide h2 {
+  font-size: 1.5em;
+  color: var(--secondary);
+  /* text-shadow: 2px 1px 2px;*/ /* shadow for conference name */
+  margin-bottom: 2.5rem;
+}
+
+.title-slide h3 {
+  font-size: 1.2em;
+  color: var(--main-text);
+  line-height: 0.9;
+  opacity: 70%;
+} 
+
+```
+
+```{css}
+div.event-logo {
+content: "";
+position: absolute;
+    top: 35px;
+    right: 25%;
+    height: 50%;
+    width: 50%;    
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/ioclogo.png");
+}
+
+div.instt-logo-bottomleft {
+content: "";
+    position: absolute;
+    bottom: 15px;
+    left:   350px;
+    height: 80px;
+    width: 240px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/ncflogo.png");
+}
+
+div.instt-logo-bottomright {
+content: "";
+    position: absolute;
+    bottom: 15px;
+    right:   350px;
+    height: 80px;
+    width: 240px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/bcilogo.png");
+}
+
+/*
+div.image-left {
+content: "";
+    position: absolute;
+    bottom: 250px;
+    left:   100px;
+    height: 15%;
+    width: 15%;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url("pics/coronavirus.png");
+}
+
+div.image-right {
+content: "";
+position: absolute;
+bottom: 150px;
+right:   100px;
+height: 15%;
+width: 15%;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/coronavirus.png");
+} */
+
+```
 
 <div class="event-logo"></div>    
 
-# The impact of the COVID-19 pandemic on birding and birds in India
+# The impact of the C![:scale 3%](pics/coronavirus.png)VID-19 pandemic on birding and birds in India
 
 ## International Ornithological Congress <br> 14&ndash;20 August 2022
 
-### Karthik Thrikkadeeri, Ashwin Viswanathan
+### Karthik Thrikkadeeri &middot; Ashwin Viswanathan
 
 <div class="instt-logo-bottomleft"></div>    
 
 <div class="instt-logo-bottomright"></div>   
-
-<div class="image-left"></div>    
-
-<div class="image-right"></div>   
 
 ---
 class: inverse, center, middle
@@ -127,15 +216,14 @@ Changed how we consume information, learn, work, socialise, communicate.
 ---
 class: center, middle
 
-# .fancy[Anthropause]
-
-### .fancy[/anθrəpɔːz/]
+> # .fancy[Anthropause]
+> ### .fancy[/anθrəpɔːz/]
 
 --
 
-.fancy[a considerable global slowing of modern human activities, notably travel]
-
-[.right[.fancy[Rutz et al., 2020]]](https://www.nature.com/articles/s41559-020-1237-z)
+> a considerable global slowing of modern human activities, notably travel
+> <br>
+> [.right[Rutz et al., 2020]](https://www.nature.com/articles/s41559-020-1237-z)
 
 ---
 class: center, middle
@@ -201,7 +289,7 @@ background-color: black
 ![:scale 95%](pics/ind-coverage.png)
 ]
 
-```{css echo=FALSE}
+```{css}
 .yellow {
   color: #EECF69;
 }
@@ -213,12 +301,12 @@ background-color: black
 
 .middle2[
 .yellow[
-3,62,747 locations  
-19,54,724 lists  
-18,03,095 hrs  
+362,747 locations  
+1,954,724 lists  
+1,803,095 hours  
 30,564 people  
 <br>
-36 States/UTs  
+36 states/UTs  
 635 districts  
 <br>
 1,352 species  
@@ -227,7 +315,7 @@ background-color: black
 
 <br>
 
-.small[.grey[
+.smaller[.grey[
 *Data until March 2022*
 ]]
 
@@ -235,21 +323,18 @@ background-color: black
 
 
 ---
-class: centre, middle
-background-image: url("pics/amfa.gif")
-background-size: contain
-
-Maybe a slide showing what insights eBird data has enabled in India? Migration maps, ...
-
-???
-The quality and reliability of this data is highly contingent on the collectors, i.e., citizens.  
-Birder behaviour needs to be uniform and consistent.  
-Thus, our primary concern now is whether or not the usefulness of such data has changed with the pandemic.
-
----
-class: centre, middle
+class: center, middle
 background-image: url("pics/soib-cover.jpg")
 background-size: contain
+
+--
+
+![:scale 81%](pics/soib-example.png)
+
+???
+The quality and reliability of this data is highly contingent on the collectors, i.e., citizens.
+Birder behaviour needs to be uniform and consistent.  
+Thus, our primary concern now is whether or not the usefulness of such data has changed with the pandemic.
 
 ---
 class: inverse, center, middle
@@ -259,7 +344,7 @@ class: inverse, center, middle
 ---
 class: middle
 
-### 1. Did eBirder behaviour change during the pandemic?  
+### Did eBirder behaviour change during the pandemic?  
 
 <br>
 
@@ -275,50 +360,65 @@ What are the implications for usefulness of eBird data from the pandemic years?
 
 --
 
-### 2. Was there a visible difference in patterns of bird detection?
+### Was there a visible difference in patterns of species reporting?
 
 ???
 Can this be attributed to changes in birder behaviour, or did birds truly modify their behaviour?
 
 ---
-background-image: url("pics/ebird-explore.png")
-background-size: contain
+background-image: url("pics/sample-explore-1.png")
+background-size: cover
+class: no-page-number
 
 ---
-background-image: url("pics/ebird-explore-2.png")
-background-size: contain
+background-image: url("pics/sample-explore-sa.png")
+background-size: cover
+class: no-page-number
+
+---
+background-image: url("pics/sample-explore-2.png")
+background-size: cover
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-1.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-2.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-3.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-4.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-5.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-6.png")
 background-size: contain
+class: no-page-number
 
 ---
 background-image: url("pics/sample-checklist-7.png")
 background-size: contain
+class: no-page-number
 
 ???
 How bias in birder behaviour can affect rep.freq.  
@@ -343,7 +443,7 @@ x <- read_csv("data/covid_classification.csv") %>%
          COVID = factor(COVID, levels = c("BEF", "DUR_20", "DUR_21", "AFT")))
 
 y <- x %>% 
-  summarise(YEAR.RANGE = as.Date(seq(min(DATE) + months(1), # buffers for placement on graph
+  summarise(YEAR.RANGE = as.Date(seq(min(DATE), # buffers for placement on graph
                                      max(DATE) + months(1), 
                                      by = "year"),  
                                    origin = "1970-01-01"))
@@ -352,8 +452,8 @@ y <- x %>%
 z <- x %>% 
   group_by(COVID) %>% 
   summarise(DATE = DATE,
-            START = min(DATE) - months(1),
-            END = max(DATE))
+            START = min(DATE),
+            END = max(DATE) + months(1))
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 
@@ -397,7 +497,7 @@ ggplot(x, aes(x = DATE)) +
 ---
 class: inverse, center, middle
 
-### 1. Did eBirder behaviour change during the pandemic?
+## Did eBirder behaviour change during the pandemic?
 
 ---
 class: middle
@@ -407,7 +507,7 @@ class: middle
 ggplot(net_effort, aes(x = PERIOD, y = PROP.CHANGE)) + 
   scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
   scale_x_discrete(labels = c("Before to During", "During to After")) +
-  labs(title = "Birders continued to upload an increasing \nnumber of lists",
+  labs(title = "Birders continued to upload an \nincreasing number of lists",
        x = "Period", y = "Proportional change in monthly no. of lists per grid cell") -> s_spread_netchange_hide
 
 ggplot(cover, aes(MONTH, PROP.CELLS, colour = COVID)) + 
@@ -418,18 +518,7 @@ ggplot(cover, aes(MONTH, PROP.CELLS, colour = COVID)) +
                       name = "Period", 
                       labels = c("Before", "During (2020)", "During (2021)", "After")) +
   labs(title = "Birders collectively covered larger overall areas each year",
-       x = "Month", y = "Proportion of grid cells \nwith birding activity") -> s_cover_hide
-
-ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12,
-                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
-                                "Sep", "Oct", "Nov", "Dec")) + 
-  scale_colour_manual(values = covid_palette,
-                      name = "Period", 
-                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
-  labs(title = "2020 lockdown restricted birders to urban areas",
-       x = "Month", y = "Proportion of urban \nlists per grid cell") -> s_UNU_lists_hide
-
+       x = "Month", y = "Proportion of grid cells with birding activity") -> s_cover_hide
 
 s_spread_netchange_hide + 
   geom_point(size = 4, position = position_dodge(0.5)) +
@@ -441,17 +530,10 @@ s_cover_hide +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.75, width = 0.7, position = position_dodge(0.5)) -> s_cover
 
-s_UNU_lists_hide + 
-  annotate("rect", xmin = 2.5, xmax = 7.5, ymin = -Inf, ymax = Inf, 
-            fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> s_UNU_lists
 
 ((s_spread_netchange_hide + theme_hide()) | 
-    ((s_cover_hide + theme_hide()) / 
-       (s_UNU_lists_hide + theme_hide()))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
+    (s_cover_hide + theme_hide())) +
+  plot_layout(widths = c(3, 7)) +
   plot_annotation(tag_levels = "A",
                   title = "Birdwatching effort did not decrease in the pandemic years",
                   subtitle = "",
@@ -465,11 +547,9 @@ class: middle
 ```{r fig.dim=c(16,9)}
 
 ((s_spread_netchange_hide) | 
-    ((s_cover_hide + theme_hide()) / 
-       (s_UNU_lists_hide + theme_hide()))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
-  plot_annotation(tag_levels = "A",
-                  title = "Birdwatching effort did not decrease in the pandemic years",
+    (s_cover_hide + theme_hide())) +
+  plot_layout(widths = c(3, 7)) +
+  plot_annotation(title = "Birdwatching effort did not decrease in the pandemic years",
                   subtitle = "Size of grid cells is 24km \u00d7 24km",
                   theme = theme(plot.title = element_text(size = 35)))
 
@@ -481,11 +561,9 @@ class: middle
 ```{r fig.dim=c(16,9)}
 
 ((s_spread_netchange) | 
-    ((s_cover_hide + theme_hide()) / 
-       (s_UNU_lists_hide + theme_hide()))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
-  plot_annotation(tag_levels = "A",
-                  title = "Birdwatching effort did not decrease in the pandemic years",
+    (s_cover_hide + theme_hide())) +
+  plot_layout(widths = c(3, 7)) +
+  plot_annotation(title = "Birdwatching effort did not decrease in the pandemic years",
                   subtitle = "Size of grid cells is 24km \u00d7 24km",
                   theme = theme(plot.title = element_text(size = 35)))
 
@@ -497,27 +575,9 @@ class: middle
 ```{r fig.dim=c(16,9)}
 
 ((s_spread_netchange) | 
-    ((s_cover) / 
-       (s_UNU_lists_hide + theme_hide()))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
-  plot_annotation(tag_levels = "A",
-                  title = "Birdwatching effort did not decrease in the pandemic years",
-                  subtitle = "Size of grid cells is 24km \u00d7 24km",
-                  theme = theme(plot.title = element_text(size = 35)))
-
-```
-
----
-class: middle
-
-```{r fig.dim=c(16,9)}
-
-((s_spread_netchange) | 
-    ((s_cover) / 
-       (s_UNU_lists))) +
-  plot_layout(widths = c(2, 3), guides = "collect") +
-  plot_annotation(tag_levels = "A",
-                  title = "Birdwatching effort did not decrease in the pandemic years",
+    (s_cover)) +
+  plot_layout(widths = c(3, 7)) +
+  plot_annotation(title = "Birdwatching effort did not decrease in the pandemic years",
                   subtitle = "Size of grid cells is 24km \u00d7 24km",
                   theme = theme(plot.title = element_text(size = 35)))
 
@@ -526,6 +586,9 @@ class: middle
 ---
 background-image: url("pics/03_presentation_IOC_map.png")
 background-size: contain
+
+???
+Clarify log and non-
 
 ---
 background-image: url("pics/03_presentation_IOC_map-2.png")
@@ -538,7 +601,7 @@ background-size: contain
 ---
 class: center, middle
 
-## What happened during lockdown?
+### What happened during lockdown?
 
 ---
 class: center, middle
@@ -557,9 +620,9 @@ ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) +
 no_lists_po_hide + 
   annotate("rect", xmin = 2.5, xmax = 11.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> no_lists_po
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> no_lists_po
 
 
 ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
@@ -574,9 +637,9 @@ ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) +
 hotspot_hide + 
   annotate("rect", xmin = 3.5, xmax = 10.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> hotspot
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> hotspot
 
 
 ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
@@ -591,13 +654,13 @@ ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) +
 protocol_hide + 
   annotate("rect", xmin = 2.5, xmax = 8.5, ymin = -Inf, ymax = Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> protocol
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> protocol
 
 
 ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
-  scale_y_log10() + 
+  scale_y_log10(expand = c(0, 0)) + 
   scale_x_continuous(breaks = 1:12,
                      labels = month(unique(fidel_nw$MONTH), label = T)) + 
   scale_colour_manual(values = covid_palette,
@@ -609,9 +672,29 @@ ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) +
 fidelity_hide + 
   annotate("rect", xmin = 3.5, xmax = 6.5, ymin = 1, ymax = +Inf, 
             fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) -> fidelity
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> fidelity
+
+
+ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
+  scale_x_continuous(breaks = 1:12,
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
+                                "Sep", "Oct", "Nov", "Dec")) + 
+  scale_colour_manual(values = covid_palette,
+                      name = "Period", 
+                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
+  labs(title = "2020 lockdown restricted birders to urban areas",
+       x = "Month", y = "Proportion of urban lists per grid cell") -> s_UNU_lists_hide
+
+s_UNU_lists_hide + 
+  annotate("rect", xmin = 2.5, xmax = 7.5, ymin = -Inf, ymax = Inf, 
+            fill = "#E0DDE3", col = NA, alpha = 0.5) +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> s_UNU_lists
+
+
 
 no_lists_po
 
@@ -647,6 +730,29 @@ fidelity
 ---
 class: center, middle
 
+```{r fig.dim=c(13,7)}
+
+s_UNU_lists
+
+```
+
+---
+class: center, middle
+
+--
+
+Birding intensity and coverage increased
+
+Expected changes in birder behaviour
+
+Urban birding bias
+
+???
+with no major spatial clusters
+
+---
+class: center, middle
+
 ### Implications of changes in birder behaviour?
 
 --
@@ -656,13 +762,13 @@ class: center, middle
 ---
 class: inverse, center, middle
 
-### 2. Was there a visible difference in patterns of bird detection?
+## Was there a visible difference in patterns of species reporting?
 
 --
 
 <br>
 
-*If so, is it an artefact of the changes in birder behaviour, or was there actually a behavioural shift in birds?*
+*If so, is it an artefact of the changes in birder behaviour, or due to changes in abundance, detectability or behaviour of birds?*
 
 ---
 
@@ -674,46 +780,74 @@ class: inverse, center, middle
 ### What does this all mean?
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+```{css}
 
---
+div.end-image-1 {
+content: "";
+position: absolute;
+top: 150px;
+right: 15px;
+height: 360px;
+width: 360px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/data.gif");
+}
 
-- National lockdown in 2020  
-- Second wave in 2021  
+div.end-image-2 {
+content: "";
+position: absolute;
+top: 220px;
+right: 35px;
+height: 210px;
+width: 350px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/social-distancing.gif");
+}
+
+```
+
+Data quantity---completely unaffected
+
+<div class="end-image-1"></div>
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+Data quantity---completely unaffected
 
-- National lockdown in 2020  
-- Second wave in 2021  
-
-Disappears at scale of interest  
+Data quality---slight changes due to birder behaviour
 
 --
 
-![:scale 30%](pics/soib-cover.jpg)
+*Group birding remained low throughout*
+
+<div class="end-image-2"></div>
 
 ---
+class: middle
 
-Visible effect during "peak" periods  
+Data quantity---completely unaffected
 
-- National lockdown in 2020  
-- Second wave in 2021  
+Data quality---slight changes due to birder behaviour  
 
-Disappears at scale of interest  
+*Group birding remained low throughout*
 
-- Birders active again after "peak" periods  
+Care to be taken with small-scale analyses
 
---
-
-Care to be taken when operating at the small scale
+???
+effect of lowered group birding is unknown and difficult to gauge
+small-scale (bird graphs too); birders active again after peak
 
 ---
 class: center, bottom
 
-### eBird data still useful!
+## eBird data still useful!
+
+<br>
 
 <br>
 
@@ -723,7 +857,112 @@ class: center, bottom
 
 ## Acknowledgements
 
----
-class: inverse, center, middle
+```{css}
 
-# Thank you! &#x1F604;
+div.ack-funders {
+content: "";
+position: absolute;
+top: 45px;
+right: 35px;
+height: 250px;
+width: 450px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/funders-logos.png");
+}
+
+div.ack-self-1 {
+content: "";
+position: absolute;
+bottom: 30px;
+left:   100px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/ncflogo.png");
+}
+
+div.ack-self-2 {
+content: "";
+position: absolute;
+bottom: 30px;
+left:   850px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/bcilogo.png");
+}
+
+div.ack-self-3 {
+content: "";
+position: absolute;
+bottom: 30px;
+left: 535px;
+height: 100px;
+width: 300px;
+background-repeat: no-repeat;
+background-size: contain;
+background-image: url("pics/ebirdindialogo.png");
+}
+
+```
+
+#### Funders
+
+- Rohini Nilekani Philanthropies  
+- Duleep Mathai Nature Conservation Trust  
+- Cholamandalam Investment and Finance Co. Ltd.  
+- National Centre for Biological Sciences  
+
+<div class="ack-funders"></div>
+
+<div class="ack-self-1"></div>
+
+<div class="ack-self-2"></div>
+
+<br>
+
+<br>
+
+--
+
+.center[
+## Thanks to all birdwatchers and eBird editors!
+]
+
+<div class="ack-self-3"></div>
+
+---
+class: end-slide, inverse, bottom, right
+
+```{css}
+
+.end-slide {
+background-color: var(--accent-pale);
+}
+
+.end-slide h1 {
+  color: var(--accent);
+}
+
+.end-slide h4 {
+  color: var(--accent);
+}
+
+```
+
+# Thank you!
+
+#### Find me at...
+
+.smaller[
+[`r fontawesome::fa("github")` @rikudoukarthik](https://github.com/rikudoukarthik)  
+[`r fontawesome::fa("twitter")` @TrickDEerie](https://twitter.com/TrickDEerie)  
+[`r fontawesome::fa("link")` kartrick.rbind.io](https://kartrick.rbind.io)  
+[`r fontawesome::fa("paper-plane")` karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)
+]
+
+.footnote[Slides made with &#10084;, `r fontawesome::fa("r-project")` and [![:scale 1.5%](pics/xaringan.png)](https://github.com/yihui/xaringan)]
+
