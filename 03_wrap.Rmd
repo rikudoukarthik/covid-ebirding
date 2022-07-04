@@ -353,22 +353,12 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
 ```{r fidelity, cache=TRUE, message=FALSE}
 
-# 111 km = 1 deg
-# 111 * n * 1 km = n deg
-# 111 * n (5K) = n deg * 5
-# 111/5 * n (5K) = n deg 
-#
-# here, doing 25km x 25km (SoIB and also more lenient and appropriate)
+# here, doing 24km x 24km (SoIB and also more lenient and appropriate)
 
 set.seed(213) # for bootstrap
 fidel_sw <- data0_slice_S %>% 
-  # grouping in terms of 25kmx25km cells (not 1degx1deg)
-  mutate(LAT.25K = LATITUDE*111/25, 
-         LON.25K = LONGITUDE*111/25) %>% 
-  # pasting lat-lon as string to find truly unique sites
-  mutate(COORD.25K = paste0(ceiling(LON.25K), ",", ceiling(LAT.25K))) %>% 
   group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
-  dplyr::summarise(NO.SITES = n_distinct(COORD.25K)) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
   mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
   group_by(COVID, YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
