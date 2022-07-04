@@ -31,13 +31,13 @@ data/in_LULC_MODIS/
 example_betterland_template_files/
 # Zoom recording
 recording/
+03_presentation_IOC/
 
 example_betterland_template.Rmd
 example_betterland_template.html
 example_betterport_template.Rmd
 example_html_template.Rmd
 
-03_presentation_IOC_ppt.Rmd
 
 
 

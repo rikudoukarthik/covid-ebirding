@@ -329,12 +329,15 @@ background-size: contain
 
 --
 
-![:scale 81%](pics/soib-example.png)
+![:scale 78%](pics/soib-example.png)
 
 ???
 The quality and reliability of this data is highly contingent on the collectors, i.e., citizens.
 Birder behaviour needs to be uniform and consistent.  
 Thus, our primary concern now is whether or not the usefulness of such data has changed with the pandemic.
+
+---
+background-color: black
 
 ---
 class: inverse, center, middle
@@ -364,6 +367,9 @@ What are the implications for usefulness of eBird data from the pandemic years?
 
 ???
 Can this be attributed to changes in birder behaviour, or did birds truly modify their behaviour?
+
+---
+background-color: black
 
 ---
 background-image: url("pics/sample-explore-1.png")
@@ -493,6 +499,9 @@ ggplot(x, aes(x = DATE)) +
   labs(title = "Timeline of study \n ", subtitle = " \n ")
 
 ```
+
+???
+Mention "peak" months
 
 ---
 class: inverse, center, middle
@@ -625,23 +634,6 @@ no_lists_po_hide +
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) -> no_lists_po
 
 
-ggplot(hot_nw, aes(MONTH, PROP.HLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12,
-                     labels = month(unique(hot_nw$MONTH), label = T)) + 
-  scale_colour_manual(values = covid_palette,
-                      name = "Period", 
-                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
-  labs(title = "Birders avoided hotspot visits during the first lockdown, but this gradually returned to normal",
-       x = "Month", y = "Proportion of all lists that are from hotspots") -> hotspot_hide
-
-hotspot_hide + 
-  annotate("rect", xmin = 3.5, xmax = 10.5, ymin = -Inf, ymax = Inf, 
-            fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.5, width = 0.4, position = position_dodge(0.5)) -> hotspot
-
-
 ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
   scale_x_continuous(breaks = 1:12,
                      labels = month(unique(prot_nw$MONTH), label = T)) + 
@@ -705,15 +697,6 @@ class: center, middle
 
 ```{r fig.dim=c(13,7)}
 
-hotspot
-
-```
-
----
-class: center, middle
-
-```{r fig.dim=c(13,7)}
-
 protocol
 
 ```
@@ -729,6 +712,8 @@ fidelity
 
 ---
 class: center, middle
+
+--
 
 ```{r fig.dim=c(13,7)}
 
@@ -771,8 +756,121 @@ class: inverse, center, middle
 *If so, is it an artefact of the changes in birder behaviour, or due to changes in abundance, detectability or behaviour of birds?*
 
 ---
+class: center, middle
 
+```{r fig.dim=c(16,6)}
 
+load("data/birds_bang.RData")
+
+(ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+     theme_hide() |
+  ggplot(bang2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     theme_hide()) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Predicted reporting frequencies of 23 species:",
+                  subtitle = " ",
+                  theme = theme(plot.title = element_text(size = 35)))
+
+```
+
+---
+class: center, middle
+
+```{r fig.dim=c(16,6)}
+
+load("data/birds_bang.RData")
+
+(ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") |
+  ggplot(bang2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     theme_hide()) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Predicted reporting frequencies of 23 species:",
+                  subtitle = " ",
+                  theme = theme(plot.title = element_text(size = 35)))
+
+```
+
+---
+class: center, middle
+
+```{r fig.dim=c(16,6)}
+
+load("data/birds_bang.RData")
+
+(ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(bang2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     theme_hide()) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Predicted reporting frequencies of 23 species:",
+                  subtitle = " ",
+                  theme = theme(plot.title = element_text(size = 35)))
+
+```
+
+---
+class: center, middle
+
+```{r fig.dim=c(16,6)}
+
+load("data/birds_bang.RData")
+
+(ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(bang2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     geom_point(size = 3, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Predicted reporting frequencies of 23 species:",
+                  subtitle = " ",
+                  theme = theme(plot.title = element_text(size = 35)))
+
+```
 
 ---
 class: inverse, center, middle
@@ -835,6 +933,19 @@ Data quantity---completely unaffected
 Data quality---slight changes due to birder behaviour  
 
 *Group birding remained low throughout*
+
+Species reporting---largely unaffected at large scale
+
+---
+class: middle
+
+Data quantity---completely unaffected
+
+Data quality---slight changes due to birder behaviour  
+
+*Group birding remained low throughout*
+
+Species reporting---largely unaffected at large scale
 
 Care to be taken with small-scale analyses
 
@@ -953,16 +1064,21 @@ background-color: var(--accent-pale);
 
 ```
 
+.pull-left[
+.middle2[
+![:scale 70%](pics/peacock-line-art.png)  
+.footnote[Image by Gordon Johnson ([source](https://pixabay.com/users/gdj-1086657/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=4220516))]
+]
+]
+
 # Thank you!
 
 #### Find me at...
 
-.smaller[
-[`r fontawesome::fa("github")` @rikudoukarthik](https://github.com/rikudoukarthik)  
-[`r fontawesome::fa("twitter")` @TrickDEerie](https://twitter.com/TrickDEerie)  
-[`r fontawesome::fa("link")` kartrick.rbind.io](https://kartrick.rbind.io)  
-[`r fontawesome::fa("paper-plane")` karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)
-]
+.small[`r fontawesome::fa("github")` [@rikudoukarthik](https://github.com/rikudoukarthik)]  
+.small[`r fontawesome::fa("twitter")` [@TrickDEerie](https://twitter.com/TrickDEerie)]  
+.small[`r fontawesome::fa("link")` [kartrick.rbind.io](https://kartrick.rbind.io)]  
+.small[`r fontawesome::fa("envelope")` [karthik.t@ncf-india.org](mailto:karthik.t@ncf-india.org)]
 
 .footnote[Slides made with &#10084;, `r fontawesome::fa("r-project")` and [![:scale 1.5%](pics/xaringan.png)](https://github.com/yihui/xaringan)]
 
