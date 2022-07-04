@@ -2101,8 +2101,8 @@ species <- data.frame(
 species_koch <- data.frame(
   COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", 
                   "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
-                  "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
-  SP.CATEGORY = c(rep("U", 11), rep("W", 3), rep("R", 10)))
+                  "Green Bee-eater", "Black Drongo", "Plain Prinia", "Indian Robin", "House Sparrow", "Coppersmith Barbet", "White-throated Kingfisher", "Black-rumped Flameback", "Rufous Treepie"),
+  SP.CATEGORY = c(rep("U", 11), rep("W", 3), rep("R", 9)))
 
 
 species_guwa <- data.frame(
@@ -2433,28 +2433,7 @@ Thus, there is no clear direction of change. Even the slight patterns seen in th
 
 ```{r b_bang_04_model, cache=TRUE, message=FALSE}
 
-library(lme4)
-
-data_b <- data0_MY_slice_G %>% 
-  filter(STATE == "Karnataka") %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID),
-            AV.LENGTH = mean(NO.SP),
-            MED.LENGTH = median(NO.SP)) %>% 
-  left_join(data0_MY) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(TOT.LISTS = min(TOT.LISTS),
-            AV.LENGTH = min(AV.LENGTH),
-            MED.LENGTH = min(MED.LENGTH),
-            NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
-  left_join(species) %>% 
-  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
-  ungroup()
+require(lme4)
 
 
 ### modelling directly with presence-absence data instead of relative abundance
@@ -2489,9 +2468,10 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
-
-
 
 
 # getting median list length for prediction later
@@ -2503,7 +2483,7 @@ median_length <- data_b2 %>%
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 bang0 <- data_b2 %>% 
-  expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
   left_join(species) %>% 
   mutate(REP.FREQ.PRED = NA)
 
@@ -2532,7 +2512,7 @@ for (i in 1:n_distinct(bang0$COMMON.NAME)) {
         type = "response")
     }
   }
-}
+} # 7 mins
 
 
 bang1 <- bang0 %>% 
@@ -2551,13 +2531,41 @@ bang2 <- bang0 %>%
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
 save(bang1, bang2, 
-     file = "data/birds_bang.RData")
+     file = "data/birds_bang.RData") # for presentation
+
+
+
+(ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(bang2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     geom_point(size = 3, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Karnataka state",
+                  subtitle = "Predicted reporting frequencies of 23 species") -> b_bang_04_model
+
+ggsave("03_wrap_figs/b_bang_04_model.png", b_bang_04_model,
+       width = 16, height = 6, units = "in", dpi = 300)
 
 ```
 
 - Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction. 
 - However, at the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding. 
 - The crucial months like April and May show higher urban species reporting frequency overall.
+- Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species. The slight suggestion (still insignificant) of a change in MY2019 during the peak period completely disappears at the larger temporal scale.
 
 ## Pune
 
@@ -2826,45 +2834,132 @@ At the larger spatial scale, pandemic effects are restricted to the "peak" perio
 
 require(lme4)
 
-data_b <- data0_MY_slice_G %>% 
+### modelling directly with presence-absence data instead of relative abundance
+
+# to join for presence-absence of various species
+temp1 <- data0_MY %>% 
   filter(STATE == "Maharashtra") %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(TOT.LISTS = min(TOT.LISTS),
-            NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+  group_by(GROUP.ID, COMMON.NAME) %>% 
+  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% ungroup()
+
+# to later join checklist metadata
+temp2 <- data0_MY %>% 
+  filter(STATE == "Maharashtra") %>% 
+  arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
+  slice(1) %>% ungroup() %>% 
+  select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+  
+data_b2 <- data0_MY_slice_G %>% 
+  filter(STATE == "Maharashtra") %>% 
+  group_by(GROUP.ID) %>% 
+  summarise(COMMON.NAME = species$COMMON.NAME) %>% 
+  left_join(temp1) %>% 
+  # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
+  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
+  select(-OBSERVATION.COUNT) %>% 
+  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+  # checklist metadata
+  left_join(temp2, by = "GROUP.ID") %>% 
+  arrange(GROUP.ID) %>% 
+  # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  mutate(M.YEAR = as.factor(M.YEAR),
-         MONTH = as.factor(MONTH)) %>% 
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 
-pune1 <- glm(REP.FREQ ~ M.YEAR + MONTH + SP.CATEGORY +
-                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = data_b, family = binomial(), weights = TOT.LISTS)
+# getting median list length for prediction later
+median_length <- data_b2 %>% 
+  distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+  group_by(MONTH) %>% 
+  summarise(NO.SP.MED = median(NO.SP))
 
-summary(pune1)
-exp(coef(pune1) + coef(pune1)[1])[-1]
-anova(bang1, test = "Chisq")
-plot(bang1)
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+pune0 <- data_b2 %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  left_join(species) %>% 
+  mutate(REP.FREQ.PRED = NA)
 
-pune2 <- glm(REP.FREQ ~ M.YEAR + 
-               # MONTH + SP.CATEGORY +
-                 M.YEAR:MONTH + M.YEAR:SP.CATEGORY + MONTH:SP.CATEGORY,
-               data = data_b, family = binomial(), weights = TOT.LISTS)
+count <- 0
+for (i in 1:n_distinct(pune0$COMMON.NAME)) {
+  
+  data_spec <- data_b2 %>% 
+    filter(COMMON.NAME == unique(pune0$COMMON.NAME)[i])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (j in 1:n_distinct(pune0$MONTH)) {
+    for (k in 1:n_distinct(pune0$M.YEAR)) {
+      count <- count + 1
+      
+      pune0$REP.FREQ.PRED[count] = predict(
+        model_spec,
+        data.frame(COMMON.NAME = pune0$COMMON.NAME[count],
+                   MONTH = pune0$MONTH[count],
+                   M.YEAR = pune0$M.YEAR[count],
+                   NO.SP = median_length$NO.SP.MED[pune0$MONTH[count]]),
+        re.form = NA, 
+        type = "response")
+    }
+  }
+}
 
-summary(pune2)
+
+ x <- data_b2 %>% filter(COMMON.NAME == "Indian Robin")
+ summary(as.factor(x$REPORT))
+
+pune1 <- pune0 %>% 
+  filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+pune2 <- pune0 %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+
+(ggplot(pune1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(pune2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     geom_point(size = 3, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Maharashtra state",
+                  subtitle = "Predicted reporting frequencies of 23 species") -> b_pune_04_model
+
+ggsave("03_wrap_figs/b_pune_04_model.png", b_pune_04_model,
+       width = 16, height = 6, units = "in", dpi = 300)
 
 ```
 
-- From pune1, it seems that at the level of the migratory year the higher reporting frequency of urban species during the 3-4 crucial months is not visible. 
-- Although RF of urban species increased (month:spcategory), that of non-urban species didn't change notably (month:MY). 
-- With years, reporting frequency of urban species has simply been increasing steadily.
+
 
 ## Kochi
 
@@ -3124,6 +3219,166 @@ ggsave("03_wrap_figs/b_koch_03_spatial_a.png", b_koch_03_spatial_a,
 ```
 
 3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the annual scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
+
+```{r b_koch_04_model, cache=TRUE, message=FALSE}
+
+require(lme4)
+
+### modelling directly with presence-absence data instead of relative abundance
+
+# to join for presence-absence of various species
+temp1 <- data0_MY %>% 
+  filter(STATE == "Kerala") %>% 
+  group_by(GROUP.ID, COMMON.NAME) %>% 
+  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% ungroup()
+
+# to later join checklist metadata
+temp2 <- data0_MY %>% 
+  filter(STATE == "Kerala") %>% 
+  arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
+  slice(1) %>% ungroup() %>% 
+  select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+  
+data_b2 <- data0_MY_slice_G %>% 
+  filter(STATE == "Kerala") %>% 
+  group_by(GROUP.ID) %>% 
+  summarise(COMMON.NAME = species_koch$COMMON.NAME) %>% 
+  left_join(temp1) %>% 
+  # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
+  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
+  select(-OBSERVATION.COUNT) %>% 
+  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+  # checklist metadata
+  left_join(temp2, by = "GROUP.ID") %>% 
+  arrange(GROUP.ID) %>% 
+  # species categories
+  left_join(species_koch) %>% 
+  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
+  ungroup()
+
+
+# getting median list length for prediction later
+median_length <- data_b2 %>% 
+  distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+  group_by(MONTH) %>% 
+  summarise(NO.SP.MED = median(NO.SP))
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+koch0 <- data_b2 %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  left_join(species_koch) %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+count <- 0
+for (i in 1:n_distinct(koch0$COMMON.NAME)) {
+  
+  data_spec <- data_b2 %>% 
+    filter(COMMON.NAME == unique(koch0$COMMON.NAME)[i])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (j in 1:n_distinct(koch0$MONTH)) {
+    for (k in 1:n_distinct(koch0$M.YEAR)) {
+      count <- count + 1
+      
+      koch0$REP.FREQ.PRED[count] = predict(
+        model_spec,
+        data.frame(COMMON.NAME = koch0$COMMON.NAME[count],
+                   MONTH = koch0$MONTH[count],
+                   M.YEAR = koch0$M.YEAR[count],
+                   NO.SP = median_length$NO.SP.MED[koch0$MONTH[count]]),
+        re.form = NA, 
+        type = "response")
+    }
+  }
+}
+
+
+
+data_spec <- data_b2 %>% 
+  filter(COMMON.NAME == unique(koch0$COMMON.NAME)[20])
+
+model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                      (1|CELL.ID),
+                    data = data_spec, family = binomial(link = "cloglog"),
+                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+
+koch00 <- data_spec %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  left_join(species_koch) %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+count <- 0
+for (j in 1:n_distinct(koch0$MONTH)) {
+  for (k in 1:n_distinct(koch0$M.YEAR)) {
+    count <- count + 1
+    
+    koch00$REP.FREQ.PRED[count] = predict(
+      model_spec,
+      data.frame(COMMON.NAME = koch00$COMMON.NAME[count],
+                 MONTH = koch00$MONTH[count],
+                 M.YEAR = koch00$M.YEAR[count],
+                 NO.SP = median_length$NO.SP.MED[koch00$MONTH[count]]),
+      re.form = NA, 
+      type = "response")
+  }
+}
+
+ summary(as.factor(x$REPORT))
+ summary(as.factor(data_spec$REPORT))
+
+koch1 <- koch0 %>% 
+  filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+koch2 <- koch0 %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+
+(ggplot(koch1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(koch2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     geom_point(size = 3, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Kerala state",
+                  subtitle = "Predicted reporting frequencies of 23 species") -> b_koch_04_model
+
+ggsave("03_wrap_figs/b_koch_04_model.png", b_koch_04_model,
+       width = 16, height = 6, units = "in", dpi = 300)
+
+```
+
 
 ## Guwahati
 
