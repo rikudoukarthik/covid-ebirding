@@ -1074,8 +1074,96 @@ ggsave("03_wrap_figs/10a_s_UNU.png",
 
 ##### Final analysis: GLMM of urban birding proportion ####
 
+require(lme4)
+load("data/data0_MY_slice.RData")
 
+# taking no more than 100 lists for every space-time combo 
+set.seed(420)
+data_urban <- data0_MY_slice_G %>% 
+  group_by(CELL.ID, M.YEAR, MONTH) %>% 
+  slice_sample(n = 100) %>% 
+  ungroup() %>% 
+  select(URBAN, M.YEAR, MONTH, CELL.ID) %>% 
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1)))
+
+# install.packages("tictoc")
+tictoc::tic("UNU GLMM fitting")
+model_urban <- glmer(URBAN ~ M.YEAR + MONTH + MONTH:M.YEAR + (1|CELL.ID),
+                     data = data_urban, family = binomial(link = "cloglog"),
+                     nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 244 sec
+tictoc::toc()
+
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+urban0 <- data_urban %>% 
+  tidyr::expand(MONTH, M.YEAR) %>% 
+  mutate(PROP.U = NA)
+
+count <- 0
+for (j in 1:n_distinct(urban0$MONTH)) {
+  for (k in 1:n_distinct(urban0$M.YEAR)) {
+    count <- count + 1
+    
+    urban0$PROP.U[count] = predict(
+      model_urban,
+      data.frame(MONTH = urban0$MONTH[count],
+                 M.YEAR = urban0$M.YEAR[count]),
+      re.form = NA, 
+      type = "response")
+  }
+}
+
+##### trying with proportion ####
+
+set.seed(420)
+data_urban2 <- data0_MY_slice_G %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  filter(URBAN == 1) %>% 
+  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
+  right_join(data0_MY_slice_G) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
+                   U.LISTS = replace_na(U.LISTS, 0),
+                   PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
+  # taking no more than 100 lists for every space-time combo 
+  group_by(CELL.ID, M.YEAR, MONTH) %>% 
+  slice_sample(n = 100) %>% 
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
+  ungroup()
   
+tictoc::tic("GLMM for UNU with weighted proportion response")
+model_urban2 <- glmer(PROP.U ~ M.YEAR + MONTH + M.YEAR:MONTH + (1|CELL.ID),
+                      weights = TOT.LISTS,
+                      data = data_urban2, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 657 sec
+tictoc::toc()
+  
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+urban2 <- data_urban2 %>% 
+  tidyr::expand(MONTH, M.YEAR) %>% 
+  mutate(PROP.U.PRED = NA)
+
+count <- 0
+for (j in 1:n_distinct(urban2$MONTH)) {
+  for (k in 1:n_distinct(urban2$M.YEAR)) {
+    count <- count + 1
+    
+    urban2$PROP.U.PRED[count] = predict(
+      model_urban2,
+      data.frame(MONTH = urban2$MONTH[count],
+                 M.YEAR = urban2$M.YEAR[count]),
+      re.form = NA, 
+      type = "response")
+  }
+}
+
 ```
 
 ```{r s_cover, cache=TRUE, message=FALSE}
