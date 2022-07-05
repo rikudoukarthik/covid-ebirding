@@ -2390,8 +2390,13 @@ save(bang1, bang2,
      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Karnataka state",
-                  subtitle = "Predicted reporting frequencies of 23 species") -> b_bang_04_model
+  plot_annotation(title = paste(unique(data_b2$STATE), "state"),
+                  subtitle = paste0(
+                    "Predicted reporting frequencies of ",
+                    n_distinct(bang0$COMMON.NAME), " species (",
+                    n_distinct(filter(bang0,SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                    n_distinct(filter(bang0,SP.CATEGORY == "R")$COMMON.NAME), " rural)")
+                  ) -> b_bang_04_model
 
 ggsave("03_wrap_figs/b_bang_04_model.png", b_bang_04_model,
        width = 16, height = 6, units = "in", dpi = 300)
@@ -2670,6 +2675,14 @@ At the larger spatial scale, pandemic effects are restricted to the "peak" perio
 
 require(lme4)
 
+# removing Black Drongo for models to run
+species <- data.frame(
+  COMMON.NAME = c("House Crow", "Common Myna", "Jungle Myna", "Rock Pigeon", "Black Kite", "Common Tailorbird", "Rose-ringed Parakeet", "Asian Koel", "Purple Sunbird", "Pale-billed Flowerpecker", "White-cheeked Barbet", 
+                  "Little Cormorant", "Gray-headed Swamphen", "Indian Pond-Heron",
+                  "Green Bee-eater", "Pied Bushchat", "Plain Prinia", "Indian Robin", "House Sparrow", "Spotted Dove", "Coppersmith Barbet", "Black-winged Kite", "Small Minivet", "Long-tailed Shrike", "Gray Francolin"),
+  SP.CATEGORY = c(rep("U", 11), rep("W", 3), rep("R", 11)))
+
+
 ### modelling directly with presence-absence data instead of relative abundance
 
 # to join for presence-absence of various species
@@ -2721,11 +2734,16 @@ pune0 <- data_b2 %>%
   left_join(species) %>% 
   mutate(REP.FREQ.PRED = NA)
 
+
 count <- 0
 for (i in 1:n_distinct(pune0$COMMON.NAME)) {
   
   data_spec <- data_b2 %>% 
-    filter(COMMON.NAME == unique(pune0$COMMON.NAME)[i])
+    filter(COMMON.NAME == unique(pune0$COMMON.NAME)[i]) %>% 
+    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    filter(REPORT == 1) %>% 
+    distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    left_join(data_b2)
   
   model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
                         (1|CELL.ID),
@@ -2747,10 +2765,6 @@ for (i in 1:n_distinct(pune0$COMMON.NAME)) {
     }
   }
 }
-
-
- x <- data_b2 %>% filter(COMMON.NAME == "Indian Robin")
- summary(as.factor(x$REPORT))
 
 pune1 <- pune0 %>% 
   filter(MONTH %in% 4:5) %>% 
@@ -2787,14 +2801,18 @@ pune2 <- pune0 %>%
      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Maharashtra state",
-                  subtitle = "Predicted reporting frequencies of 23 species") -> b_pune_04_model
+  plot_annotation(title = paste(unique(data_b2$STATE), "state"),
+                  subtitle = paste0(
+                    "Predicted reporting frequencies of ",
+                    n_distinct(pune0$COMMON.NAME), " species (",
+                    n_distinct(filter(pune0,SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                    n_distinct(filter(pune0,SP.CATEGORY == "R")$COMMON.NAME), " rural)")
+                  ) -> b_pune_04_model
 
 ggsave("03_wrap_figs/b_pune_04_model.png", b_pune_04_model,
        width = 16, height = 6, units = "in", dpi = 300)
 
 ```
-
 
 
 ## Kochi
@@ -3177,8 +3195,13 @@ koch2 <- koch0 %>%
      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Kerala state",
-                  subtitle = "Predicted reporting frequencies of 23 species") -> b_koch_04_model
+  plot_annotation(title = paste(unique(data_b2$STATE), "state"),
+                  subtitle = paste0(
+                    "Predicted reporting frequencies of ",
+                    n_distinct(koch0$COMMON.NAME), " species (",
+                    n_distinct(filter(koch0,SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                    n_distinct(filter(koch0,SP.CATEGORY == "R")$COMMON.NAME), " rural)")
+                  ) -> b_koch_04_model
 
 ggsave("03_wrap_figs/b_koch_04_model.png", b_koch_04_model,
        width = 16, height = 6, units = "in", dpi = 300)
@@ -3383,6 +3406,144 @@ ggsave("03_wrap_figs/b_guwa_03_spatial_a.png", b_guwa_03_spatial_a,
 ```
 
 Very minor suggestions of changes during the 2 month period in a few species, but overall no pattern. At the annual scale, wetland species show some differences, but others show no overall change in reporting frequency due to the pandemic.
+
+```{r b_guwa_04_model, cache=TRUE, message=FALSE}
+
+require(lme4)
+
+### modelling directly with presence-absence data instead of relative abundance
+
+# to join for presence-absence of various species
+temp1 <- data0_MY %>% 
+  filter(STATE == "Assam") %>% 
+  group_by(GROUP.ID, COMMON.NAME) %>% 
+  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% ungroup()
+
+# to later join checklist metadata
+temp2 <- data0_MY %>% 
+  filter(STATE == "Assam") %>% 
+  arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(GROUP.ID) %>% 
+  slice(1) %>% ungroup() %>% 
+  select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+  
+data_b2 <- data0_MY_slice_G %>% 
+  filter(STATE == "Assam") %>% 
+  group_by(GROUP.ID) %>% 
+  summarise(COMMON.NAME = species_guwa$COMMON.NAME) %>% 
+  left_join(temp1) %>% 
+  # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
+  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
+  select(-OBSERVATION.COUNT) %>% 
+  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+  # checklist metadata
+  left_join(temp2, by = "GROUP.ID") %>% 
+  arrange(GROUP.ID) %>% 
+  # species categories
+  left_join(species_guwa) %>% 
+  filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
+  ungroup()
+
+
+# getting median list length for prediction later
+median_length <- data_b2 %>% 
+  distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+  group_by(MONTH) %>% 
+  summarise(NO.SP.MED = median(NO.SP))
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+guwa0 <- data_b2 %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
+  left_join(species_guwa) %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+count <- 0
+for (i in 1:n_distinct(guwa0$COMMON.NAME)) {
+  
+  data_spec <- data_b2 %>% 
+    filter(COMMON.NAME == unique(guwa0$COMMON.NAME)[i]) %>% 
+    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    filter(REPORT == 1) %>% 
+    distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    left_join(data_b2)
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (j in 1:n_distinct(guwa0$MONTH)) {
+    for (k in 1:n_distinct(guwa0$M.YEAR)) {
+      count <- count + 1
+      
+      guwa0$REP.FREQ.PRED[count] = predict(
+        model_spec,
+        data.frame(COMMON.NAME = guwa0$COMMON.NAME[count],
+                   MONTH = guwa0$MONTH[count],
+                   M.YEAR = guwa0$M.YEAR[count],
+                   NO.SP = median_length$NO.SP.MED[guwa0$MONTH[count]]),
+        re.form = NA, 
+        type = "response")
+    }
+  }
+}
+
+guwa1 <- guwa0 %>% 
+  filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+guwa2 <- guwa0 %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+
+(ggplot(guwa1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(guwa2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+     labs(title = "For all twelve months",
+          x = "Migratory year", y = "Predicted reporting frequency") +
+     geom_point(size = 3, position = position_dodge(0.5)) +
+     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = paste(unique(data_b2$STATE), "state"),
+                  subtitle = paste0(
+                    "Predicted reporting frequencies of ",
+                    n_distinct(guwa0$COMMON.NAME), " species (",
+                    n_distinct(filter(guwa0,SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                    n_distinct(filter(guwa0,SP.CATEGORY == "R")$COMMON.NAME), " rural)")
+                  ) -> b_guwa_04_model
+
+ggsave("03_wrap_figs/b_guwa_04_model.png", b_guwa_04_model,
+       width = 16, height = 6, units = "in", dpi = 300)
+
+```
+
+- Unlike other states, Assam shows a bias in reporting towards urban species even at the annual and state-wide scale.  
+- The increase in urban birding proportion is only relative to MY2018, and not to MY2020, although the trend seems to be negative post-MY2019.  
+- How is this related to Bihu Bird Count (did it start in MY2019?), and to general rise in popularity of birding as well as skill of birders in Assam?
 
 # References
 
