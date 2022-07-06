@@ -1118,7 +1118,6 @@ for (j in 1:n_distinct(urban0$MONTH)) {
 
 ##### trying with proportion ####
 
-set.seed(420)
 data_urban2 <- data0_MY_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   filter(URBAN == 1) %>% 
@@ -1126,11 +1125,8 @@ data_urban2 <- data0_MY_slice_G %>%
   right_join(data0_MY_slice_G) %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
-                   U.LISTS = replace_na(U.LISTS, 0),
+                   U.LISTS = replace_na(min(U.LISTS), 0),
                    PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
-  # taking no more than 100 lists for every space-time combo 
-  group_by(CELL.ID, M.YEAR, MONTH) %>% 
-  slice_sample(n = 100) %>% 
   # we need year and month as categorical variables
   mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
          MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
@@ -1140,7 +1136,7 @@ tictoc::tic("GLMM for UNU with weighted proportion response")
 model_urban2 <- glmer(PROP.U ~ M.YEAR + MONTH + M.YEAR:MONTH + (1|CELL.ID),
                       weights = TOT.LISTS,
                       data = data_urban2, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 657 sec
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 23 sec
 tictoc::toc()
   
 
@@ -1163,6 +1159,15 @@ for (j in 1:n_distinct(urban2$MONTH)) {
       type = "response")
   }
 }
+
+# 
+# ggplot(urban2, aes(M.YEAR, PROP.U.PRED, col = M.YEAR)) +
+#     scale_color_manual(values = covid_palette, name = "Migratory year") +
+#     labs(title = "For the months of April and May",
+#          x = "Migratory year", y = "Predicted reporting frequency") +
+#     geom_point(size = 3, position = position_dodge(0.5)) +
+#     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+#                   size = 1.5, width = 0.2, position = position_dodge(0.5))
 
 ```
 
@@ -1989,6 +1994,57 @@ rm(list = c("new_obsr_nw","new_obsr_sw","new"))
 * While Kerala and Karnataka both have seen increases in monthly new eBirders with the pandemic, the increase is more striking in Karnataka than in Kerala. 
 
 
+
+## GLM(M)s for metrics of birder behaviour
+
+```{r group_model1}
+
+set.seed(420)
+data_group1 <- data0_MY_slice_G %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  filter(NUMBER.OBSERVERS > 1) %>% 
+  dplyr::summarise(S.LISTS = n_distinct(GROUP.ID)) %>% 
+  right_join(data0_MY_slice_G) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
+                   S.LISTS = replace_na(S.LISTS, 0),
+                   PROP.U = round(S.LISTS/TOT.LISTS, 4)) %>% 
+  # taking no more than 100 lists for every space-time combo 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  slice_sample(n = 100) %>% 
+  # we need year and month as categorical variables
+  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
+  ungroup()
+  
+tictoc::tic("GLMM for UNU with weighted proportion response")
+model_urban2 <- glmer(PROP.U ~ M.YEAR + MONTH + M.YEAR:MONTH + (1|CELL.ID),
+                      weights = TOT.LISTS,
+                      data = data_urban2, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 657 sec
+tictoc::toc()
+  
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+urban2 <- data_urban2 %>% 
+  tidyr::expand(MONTH, M.YEAR) %>% 
+  mutate(PROP.U.PRED = NA)
+
+count <- 0
+for (j in 1:n_distinct(urban2$MONTH)) {
+  for (k in 1:n_distinct(urban2$M.YEAR)) {
+    count <- count + 1
+    
+    urban2$PROP.U.PRED[count] = predict(
+      model_urban2,
+      data.frame(MONTH = urban2$MONTH[count],
+                 M.YEAR = urban2$M.YEAR[count]),
+      re.form = NA, 
+      type = "response")
+  }
+}
+```
 
 # Bird behaviour 
 
