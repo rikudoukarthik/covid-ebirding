@@ -1119,11 +1119,11 @@ for (j in 1:n_distinct(urban0$MONTH)) {
 ##### trying with proportion ####
 
 data_urban2 <- data0_MY_slice_G %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   right_join(data0_MY_slice_G) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
   dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
                    U.LISTS = replace_na(min(U.LISTS), 0),
                    PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
@@ -1132,13 +1132,13 @@ data_urban2 <- data0_MY_slice_G %>%
          MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
   
-tictoc::tic("GLMM for UNU with weighted proportion response")
-model_urban2 <- glmer(PROP.U ~ M.YEAR + MONTH + M.YEAR:MONTH + (1|CELL.ID),
+# removing MONTH main effect unlike in birds model
+tictoc::tic("UNU GLMM using proportions")
+model_urban2 <- glmer(PROP.U ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID), 
                       weights = TOT.LISTS,
                       data = data_urban2, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 23 sec
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
-  
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1159,6 +1159,10 @@ for (j in 1:n_distinct(urban2$MONTH)) {
       type = "response")
   }
 }
+
+# https://github.com/lme4/lme4/issues/281
+# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
+
 
 # 
 # ggplot(urban2, aes(M.YEAR, PROP.U.PRED, col = M.YEAR)) +
