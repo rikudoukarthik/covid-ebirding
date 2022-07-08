@@ -1072,53 +1072,16 @@ ggsave("03_wrap_figs/10a_s_UNU.png",
        width = 13, height = 7, units = "in")
 
 
-##### Final analysis: GLMM of urban birding proportion ####
+##### Final analysis: GLMM of urban birding using weighted proportions ####
+
+# https://github.com/lme4/lme4/issues/281
+# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
+# So, need to include random effects in prediction.
 
 require(lme4)
 load("data/data0_MY_slice.RData")
 
-# taking no more than 100 lists for every space-time combo 
-set.seed(420)
 data_urban <- data0_MY_slice_G %>% 
-  group_by(CELL.ID, M.YEAR, MONTH) %>% 
-  slice_sample(n = 100) %>% 
-  ungroup() %>% 
-  select(URBAN, M.YEAR, MONTH, CELL.ID) %>% 
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1)))
-
-# install.packages("tictoc")
-tictoc::tic("UNU GLMM fitting")
-model_urban <- glmer(URBAN ~ M.YEAR + MONTH + MONTH:M.YEAR + (1|CELL.ID),
-                     data = data_urban, family = binomial(link = "cloglog"),
-                     nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 244 sec
-tictoc::toc()
-
-
-# dataframe with empty column to populate with looped values
-# total rows: product of distinct values of predictors
-urban0 <- data_urban %>% 
-  tidyr::expand(MONTH, M.YEAR) %>% 
-  mutate(PROP.U = NA)
-
-count <- 0
-for (j in 1:n_distinct(urban0$MONTH)) {
-  for (k in 1:n_distinct(urban0$M.YEAR)) {
-    count <- count + 1
-    
-    urban0$PROP.U[count] = predict(
-      model_urban,
-      data.frame(MONTH = urban0$MONTH[count],
-                 M.YEAR = urban0$M.YEAR[count]),
-      re.form = NA, 
-      type = "response")
-  }
-}
-
-##### trying with proportion ####
-
-data_urban2 <- data0_MY_slice_G %>% 
   group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
@@ -1132,46 +1095,60 @@ data_urban2 <- data0_MY_slice_G %>%
          MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
   
-# removing MONTH main effect unlike in birds model
-tictoc::tic("UNU GLMM using proportions")
-model_urban2 <- glmer(PROP.U ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID), 
+counties <- data_urban %>% distinct(COUNTY, CELL.ID)
+
+# no MONTH main effect unlike in birds model
+tictoc::tic("UNU GLMM using weighted proportions")
+model_urban <- glmer(PROP.U ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID), 
                       weights = TOT.LISTS,
-                      data = data_urban2, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+                      data = data_urban, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 119 sec
 tictoc::toc()
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-urban2 <- data_urban2 %>% 
-  tidyr::expand(MONTH, M.YEAR) %>% 
-  mutate(PROP.U.PRED = NA)
+urban1 <- data_urban %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
+  filter(!is.na(COUNTY)) %>% 
+  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
+                               type = "response")) %>% 
+  group_by(M.YEAR, MONTH) %>% 
+  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
+            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
+  summarise(PROP.U.PRED = mean(PROP.U.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.U.PRED - 1.96*SE,
+            CI.U = PROP.U.PRED + 1.96*SE)
 
-count <- 0
-for (j in 1:n_distinct(urban2$MONTH)) {
-  for (k in 1:n_distinct(urban2$M.YEAR)) {
-    count <- count + 1
-    
-    urban2$PROP.U.PRED[count] = predict(
-      model_urban2,
-      data.frame(MONTH = urban2$MONTH[count],
-                 M.YEAR = urban2$M.YEAR[count]),
-      re.form = NA, 
-      type = "response")
-  }
-}
-
-# https://github.com/lme4/lme4/issues/281
-# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
+urban2 <- data_urban %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
+  filter(!is.na(COUNTY)) %>% 
+  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
+                               type = "response")) %>% 
+  filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, MONTH) %>% 
+  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
+            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
+  summarise(PROP.U.PRED = mean(PROP.U.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PROP.U.PRED - 1.96*SE,
+            CI.U = PROP.U.PRED + 1.96*SE)
 
 
-# 
-# ggplot(urban2, aes(M.YEAR, PROP.U.PRED, col = M.YEAR)) +
-#     scale_color_manual(values = covid_palette, name = "Migratory year") +
-#     labs(title = "For the months of April and May",
-#          x = "Migratory year", y = "Predicted reporting frequency") +
-#     geom_point(size = 3, position = position_dodge(0.5)) +
-#     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-#                   size = 1.5, width = 0.2, position = position_dodge(0.5))
+ggplot(urban2, aes(M.YEAR, PROP.U.PRED)) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted urban birding proportion") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+
+ggplot(urban1, aes(M.YEAR, PROP.U.PRED)) +
+    labs(title = "For all months",
+         x = "Migratory year", y = "Predicted urban birding proportion") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+
 
 ```
 
