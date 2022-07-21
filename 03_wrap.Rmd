@@ -21,12 +21,19 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 library(boot)
+library(lme4)
 
 theme_set(theme_bw())
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
+
+
+anal_states <- data.frame(a = "Karnataka",
+                          b = "Kerala",
+                          c = "Maharashtra",
+                          d = "Assam")
 
 
 # boundary of India 
@@ -194,7 +201,6 @@ nl_po_nw <- nl_po_sw %>%
 
 
 (ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -203,7 +209,6 @@ nl_po_nw <- nl_po_sw %>%
        x = "Month", y = "Group birding proportion")) /
 ((ggplot(filter(nl_po_sw, STATE == "Kerala"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -212,7 +217,6 @@ nl_po_nw <- nl_po_sw %>%
        x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_po_sw, STATE == "Karnataka"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -221,7 +225,6 @@ nl_po_nw <- nl_po_sw %>%
        x = "Month", y = "Group birding proportion"))) /
 ((ggplot(filter(nl_po_sw, STATE == "Maharashtra"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -230,7 +233,6 @@ nl_po_nw <- nl_po_sw %>%
        x = "Month", y = "Group birding proportion")) |
 (ggplot(filter(nl_po_sw, STATE == "Assam"), 
        aes(MONTH, PROP.SLISTS, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
@@ -248,13 +250,121 @@ ggsave("03_wrap_figs/01_no_lists_po.png", plot = no_lists_po,
 
 rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
-##### Final analysis: GLMM of group birding per observer using weighted proportions ####
+##### Final analysis: statewise GLMMs of group birding per observer ####
+
+### Karnataka
+
+data_a <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$a) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("Group birding GLMM")
+model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                       data = data_a, family = binomial(link = "cloglog"),
+                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_a <- data_a %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PROP.G.PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA))
+
+ggplot(pred_a, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+
+
+### Kerala
+
+data_b <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$b) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("Group birding GLMM")
+model_b <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                       data = data_b, family = binomial(link = "cloglog"),
+                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_b <- data_b %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PROP.G.PRED = predict(model_b, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA))
+
+ggplot(pred_b, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+
+
+### Maharashtra
+
+data_c <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$c) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("Group birding GLMM")
+model_c <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                       data = data_c, family = binomial(link = "cloglog"),
+                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_c <- data_c %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PROP.G.PRED = predict(model_c, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA))
+
+ggplot(pred_c, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+
+
+### Assam
+
+data_d <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$d) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("Group birding GLMM")
+model_d <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                       data = data_d, family = binomial(link = "cloglog"),
+                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_d <- data_d %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PROP.G.PRED = predict(model_d, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA))
+
+ggplot(pred_d, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+
 
 ```
-
-* At the observer level, group birding patterns are very similar to those at the level of lists, and are just more exaggerated version with much smaller confidence intervals.  
-* There is a suggestion that levels are returning to pre-COVID levels, but are not quite there yet.  
-* Only Kerala, among the four state compared here, seems to have seen a major impact of the pandemic on group birding *outside* of the months coinciding with the national lockdown and the second wave. i.e., only Kerala showed declines in group birding in the months in the second half of the year.  
 
 
 ### Site fidelity per observer  
