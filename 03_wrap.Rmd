@@ -53,7 +53,8 @@ source("scripts/functions.R")
 # # Getting MODIS data ###
 # getmodisdata()
 #
-# Getting EBD data + filtering and preparing for current use (16 mins on server) ###
+# Getting EBD data + filtering and preparing for current use (13 mins on server) ###
+# tictoc::tic("Preparing data for analyses")
 # datapath <- "data/ebd_IN_relMay-2022.RData"
 # groupaccspath <- "data/ebd_users_GA_relMay-2022.csv"
 # covidclasspath <- "data/covid_classification.csv"
@@ -63,7 +64,7 @@ source("scripts/functions.R")
 # data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
 #                    rast_UNU_path, rast_SoIB_path,
 #                    maxvel = 20, minsut = 2)
-
+# tictoc::toc()
 
 load("data/data0_MY_slice.RData")
 

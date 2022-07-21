@@ -173,10 +173,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   data <- data %>% 
     mutate(DAY.Y = yday(OBSERVATION.DATE),
            M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR), # from 1st June to 31st May
-           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) %>%  
-    mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-           MONTH = factor(MONTH, levels = seq(1, 12, by = 1)),
-           M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
+           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) 
     
   
   ### list of group accounts to be filtered
@@ -218,28 +215,30 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   
   
   ### new observer data (to calculate no. of new observers metric) #######
-  
-  new_obsr_data <- data %>% 
+
+  new_obsr_data <- data %>%
     select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
-             "LAST.EDITED.DATE", "OBSERVATION.DATE", "OBSERVER.ID")) %>% 
-    mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>% 
-    group_by(OBSERVER.ID) %>% 
-    arrange(LAST.EDITED.DATE) %>% 
-    ungroup() %>% 
+             "LAST.EDITED.DATE", "OBSERVATION.DATE", "OBSERVER.ID")) %>%
+    mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>%
+    group_by(OBSERVER.ID) %>%
+    arrange(LAST.EDITED.DATE) %>%
+    ungroup() %>%
     distinct(OBSERVER.ID, .keep_all = TRUE) %>%
     mutate(YEAR = year(LAST.EDITED.DATE),
-           MONTH = month(LAST.EDITED.DATE)) %>% 
-    filter(YEAR >= 2019) %>% 
-    left_join(covidclass) %>% 
+           MONTH = month(LAST.EDITED.DATE)) %>%
+    filter(YEAR >= 2019) %>%
+    left_join(covidclass) %>%
     mutate(COVID = factor(COVID,
-                          levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
+                          levels = c("BEF","DUR_20","DUR_21","AFT"))) %>%
     rename(LE.YEAR = YEAR,
-           LE.MONTH = MONTH) %>% 
-    mutate(YEAR = year(OBSERVATION.DATE), 
-           MONTH = month(OBSERVATION.DATE))
-  
+           LE.MONTH = MONTH) %>%
+    mutate(LE.YEAR = factor(LE.YEAR, levels = seq(2018, 2021, by = 1)),
+           LE.MONTH = factor(LE.MONTH, levels = seq(1, 12, by = 1)),
+           YEAR = factor(year(OBSERVATION.DATE), levels = seq(2018, 2021, by = 1)),
+           MONTH = factor(month(OBSERVATION.DATE), levels = seq(1, 12, by = 1)))
+
   # filtering
-  new_obsr_data <- new_obsr_data %>% anti_join(filtGA) 
+  new_obsr_data <- new_obsr_data %>% anti_join(filtGA)
   save(new_obsr_data, file = "data/new_obsr_data.RData")
   
   
@@ -321,6 +320,14 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
              # pelagic filter
              (GROUP.ID %in% temp2$GROUP.ID)) %>% 
     select(-BREEDING.CODE, -SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER)
+  
+  
+  # making month and year ordered factors
+  data0_MY <- data0_MY %>% 
+    mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+           MONTH = factor(MONTH, levels = seq(1, 12, by = 1)),
+           M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
+  
   
   # sliced data which is what is required for analyses
   data0_MY_slice_S <- data0_MY %>% 
