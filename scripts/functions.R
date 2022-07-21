@@ -332,27 +332,6 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   save(data0_MY_slice_S, data0_MY_slice_G, file = "data/data0_MY_slice.RData")
   
   
-
-  # retaining only data from 2019 onward (for birder behaviour section)
-  
-  data0 <- data0_MY %>% filter(YEAR >= 2019)
-  data0_slice_S <- data0_MY_slice_S %>% filter(YEAR >= 2019)
-  data0_slice_G <- data0_MY_slice_G %>% filter(YEAR >= 2019)
-  
-  # Getting list of months having data from all 3 COVID periods 
-  month_compar <- data0_slice_S %>% 
-    group_by(MONTH) %>% 
-    mutate(COVID = as.character(COVID)) %>% 
-    mutate(COVID = factor(case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
-                                    TRUE ~ COVID),
-                          levels = c("BEF","DUR","AFT"))) %>% 
-    dplyr::summarise(N = n_distinct(COVID)) %>% 
-    filter(N == 3) %>%  # all 3 COVID categories
-    dplyr::select(MONTH)
-  
-  save(data0, file = "data/data0.RData")
-  save(data0_slice_S, data0_slice_G, month_compar, file = "data/data0_slice.RData")
-
 }
 
 ### bootstrapping confidence -----------------

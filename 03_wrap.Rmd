@@ -53,9 +53,9 @@ source("scripts/functions.R")
 # # Getting MODIS data ###
 # getmodisdata()
 #
-# # Getting EBD data + filtering and preparing for current use (16 mins on server) ###
-# datapath <- "data/ebd_IN_relMar-2022.RData"
-# groupaccspath <- "data/ebd_users_GA_relDec-2021.csv"
+# Getting EBD data + filtering and preparing for current use (16 mins on server) ###
+# datapath <- "data/ebd_IN_relMay-2022.RData"
+# groupaccspath <- "data/ebd_users_GA_relMay-2022.csv"
 # covidclasspath <- "data/covid_classification.csv"
 # rast_UNU_path <- "data/rast_UNU.RData"
 # rast_SoIB_path <- "data/rast_SoIB.RData"
@@ -65,7 +65,6 @@ source("scripts/functions.R")
 #                    maxvel = 20, minsut = 2)
 
 
-load("data/data0_slice.RData")
 load("data/data0_MY_slice.RData")
 
 ```
