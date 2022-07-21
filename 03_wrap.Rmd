@@ -25,6 +25,9 @@ library(lme4)
 
 theme_set(theme_bw())
 
+
+timeline <- data0_MY_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
+
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
@@ -159,7 +162,7 @@ GLMMs for birder behaviour run only for the following metrics:
 - Spatial spread 
 - Temporal spread 
 
-### Group birding (>1 observer) per observer
+### Group birding (>2 observer) per observer
 
 ```{r no_lists_po, cache=TRUE, message=FALSE}
 
@@ -171,7 +174,7 @@ temp1 <- data0_MY_slice_S %>%
   ungroup() 
 
 temp2 <- data0_MY_slice_S %>% 
-  filter(NUMBER.OBSERVERS > 1) %>% 
+  filter(NUMBER.OBSERVERS > 2) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
@@ -189,8 +192,6 @@ nl_po_sw <- temp1 %>%
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
             CI.U = PROP.SLISTS + 1.96*SE)
-
-rm(list = c("temp1","temp2"))
 
 nl_po_nw <- nl_po_sw %>% 
   group_by(COVID, M.YEAR, MONTH) %>% 
@@ -257,7 +258,7 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 data_a <- data0_MY_slice_S %>% 
   filter(STATE == anal_states$a) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup() 
 
 tictoc::tic("Group birding GLMM")
@@ -266,18 +267,20 @@ model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
 
+
 pred_a <- data_a %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PROP.G.PRED = predict(model_a, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA))
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
 
-ggplot(pred_a, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+ggplot(pred_a, aes(MONTH, PROP.G.PRED, colour = COVID)) +
   labs(title = anal_states$a,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+  scale_colour_manual(values = covid_palette, name = "Period") 
 
 
 ### Kerala
@@ -285,7 +288,7 @@ ggplot(pred_a, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
 data_b <- data0_MY_slice_S %>% 
   filter(STATE == anal_states$b) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup() 
 
 tictoc::tic("Group birding GLMM")
@@ -297,15 +300,16 @@ tictoc::toc()
 pred_b <- data_b %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PROP.G.PRED = predict(model_b, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA))
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
 
-ggplot(pred_b, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+ggplot(pred_b, aes(MONTH, PROP.G.PRED, colour = COVID)) +
   labs(title = anal_states$b,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+  scale_colour_manual(values = covid_palette, name = "Period") 
 
 
 ### Maharashtra
@@ -313,7 +317,7 @@ ggplot(pred_b, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
 data_c <- data0_MY_slice_S %>% 
   filter(STATE == anal_states$c) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup() 
 
 tictoc::tic("Group birding GLMM")
@@ -325,15 +329,16 @@ tictoc::toc()
 pred_c <- data_c %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PROP.G.PRED = predict(model_c, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA))
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
 
-ggplot(pred_c, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+ggplot(pred_c, aes(MONTH, PROP.G.PRED, colour = COVID)) +
   labs(title = anal_states$c,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+  scale_colour_manual(values = covid_palette, name = "Period") 
 
 
 ### Assam
@@ -341,7 +346,7 @@ ggplot(pred_c, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
 data_d <- data0_MY_slice_S %>% 
   filter(STATE == anal_states$d) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 1, 1, 0)) %>%
+  dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup() 
 
 tictoc::tic("Group birding GLMM")
@@ -353,15 +358,16 @@ tictoc::toc()
 pred_d <- data_d %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PROP.G.PRED = predict(model_d, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA))
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
 
-ggplot(pred_d, aes(MONTH, PROP.G.PRED, colour = M.YEAR)) +
+ggplot(pred_d, aes(MONTH, PROP.G.PRED, colour = COVID)) +
   labs(title = anal_states$d,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") 
+  scale_colour_manual(values = covid_palette, name = "Period") 
 
 
 ```
