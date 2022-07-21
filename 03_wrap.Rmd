@@ -997,9 +997,6 @@ data_urban <- data0_MY_slice_G %>%
   dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
                    U.LISTS = replace_na(min(U.LISTS), 0),
                    PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
   
 counties <- data_urban %>% distinct(COUNTY, CELL.ID)
@@ -2280,9 +2277,6 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 
@@ -2684,9 +2678,6 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species_koch) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 
@@ -3090,9 +3081,6 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 
@@ -3424,9 +3412,6 @@ data_b2 <- data0_MY_slice_G %>%
   # species categories
   left_join(species_guwa) %>% 
   filter(SP.CATEGORY != "W") %>% # removing wetland spp. cos we want to compare UNU
-  # we need year and month as categorical variables
-  mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
-         MONTH = factor(MONTH, levels = seq(1, 12, by = 1))) %>% 
   ungroup()
 
 

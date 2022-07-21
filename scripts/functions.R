@@ -172,8 +172,10 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   # adding migratory year column
   data <- data %>% 
     mutate(DAY.Y = yday(OBSERVATION.DATE),
-           M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR)) # from 1st June to 31st May
-  
+           M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR)) %>%  # from 1st June to 31st May
+    mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+           MONTH = factor(MONTH, levels = seq(1, 12, by = 1)))
+    
   
   ### list of group accounts to be filtered
   groupaccs <- read_csv(groupaccspath) %>% 
