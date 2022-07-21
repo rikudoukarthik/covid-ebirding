@@ -1388,11 +1388,18 @@ library(RColorBrewer)
 in_bound <- rbind(india, states) %>% as("Spatial") # converting for sp::sp.polygons()
 
 # for graph legends
-plotfrom <- round(raster::cellStats(rast_SoIBmap, "min")[1], 2)
-plotto <- round(raster::cellStats(rast_SoIBmap, "max")[1], 2)
+plotfrom <- raster::cellStats(rast_SoIBmap, "min")[1]
+plotto <- raster::cellStats(rast_SoIBmap, "max")[1]
+plotlegend <- seq(round(plotfrom, 2), round(plotto, 2), 0.1)
+
+labellegend <- data.frame(NORMAL = round(seq(exp(plotfrom), 
+                                             exp(plotto),  
+                                             length.out = 10), 3)) %>% 
+  mutate(LOG = round(log(NORMAL), 2),
+         LABEL = NORMAL)
+
 
 mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
-                                  pch = 19, cex = 0.7,
                                   box.rectangle = list(col = "white", fill = "black"),
                                   box.umbrella = list(col = 'black', lty = 1),
                                   panel.background = list(col = "#F0F0F0"),
@@ -1402,14 +1409,21 @@ mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
 levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
           margin = F, 
-          at = seq(plotfrom, plotto, 0.1),
-          main = "Log prop. change in monthly (seven months) no. of lists per 24kmx24km cell") +
+          at = plotlegend,
+          main = list(label = "Proportional change in monthly (seven months) no. of lists per 24km \u00d7 24km cell",
+                      cex = 1.5),
+          xlab = list(label = "Longitude", cex = 1.3),
+          ylab = list(label = "Latitude", cex = 1.3),
+          scales = list(cex = 1),
+          names.attr = c("Before to During", "During to After"),
+          par.strip.text = list(cex = 1.2),
+          colorkey = list(labels = list(at = labellegend$LOG,
+                                        labels = labellegend$LABEL))) +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap
 
-s_spread_SoIBmap
 
-png(file = "03_wrap_figs/12a_s_spread_SoIBmap.png", 
-    width = 17, height = 8, units = "in", res = 300)
+png(file = "pics/03_presentation_IOC_map.png", 
+    width = 16, height = 9, units = "in", res = 300)
 print(s_spread_SoIBmap)
 dev.off()
 
