@@ -158,12 +158,12 @@ GLMMs for birder behaviour run only for the following metrics:
 
 ##### Change in group birding per observer ####
 
-temp1 <- data0_slice_S %>% 
+temp1 <- data0_MY_slice_S %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_S %>% 
+temp2 <- data0_MY_slice_S %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -264,7 +264,7 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 # here, doing 24km x 24km (SoIB and also more lenient and appropriate)
 
 set.seed(213) # for bootstrap
-fidel_sw <- data0_slice_S %>% 
+fidel_sw <- data0_MY_slice_S %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
   mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
@@ -355,7 +355,7 @@ rm(list = c("fidel_nw","fidel_sw","fidelity"))
 ```{r time, cache=TRUE, message=FALSE}
 
 set.seed(423) 
-time_sw <- data0_slice_S %>% 
+time_sw <- data0_MY_slice_S %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
   mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
@@ -441,12 +441,12 @@ Not "per observer", as this metric from data POV.
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_G %>% 
+temp1 <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_G %>% 
+temp2 <- data0_MY_slice_G %>% 
   filter(LOCALITY.TYPE == "H") %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -540,12 +540,12 @@ Not "per observer", as this metric from data POV.
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_G %>% 
+temp1 <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_G %>% 
+temp2 <- data0_MY_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -640,7 +640,7 @@ Not "per observer", as this metric from data POV. Only considers travelling list
 ```{r distance, cache=TRUE, message=FALSE}
 
 set.seed(192) 
-dist_sw <- data0_slice_G %>% 
+dist_sw <- data0_MY_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DIST = boot_conf(x = EFFORT.DISTANCE.KM)) %>% 
@@ -734,7 +734,7 @@ Not "per observer", as this metric from data POV.
 ```{r duration, cache=TRUE, message=FALSE}
 
 set.seed(834)
-dur_sw <- data0_slice_G %>% 
+dur_sw <- data0_MY_slice_G %>% 
   filter(!is.na(DURATION.MINUTES)) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DURATION = boot_conf(x = DURATION.MINUTES)) %>% 
@@ -832,7 +832,7 @@ Not "per observer", as this metric from data POV.
 # used mean here because it was proving extremely difficult to work with errors in the case of median
 
 set.seed(98)
-length_sw <- data0_slice_G %>% 
+length_sw <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
@@ -934,13 +934,13 @@ rm(length_nw, length_sw, length)
 
 ##### Proportion of urban lists per grid cell ####
 
-temp <- data0_slice_G %>% 
+temp <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% # state is meaningless cos CELL.ID
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup()
 
-urban_lists <- data0_slice_G %>% 
+urban_lists <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
   dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(temp) %>% 
@@ -1064,7 +1064,7 @@ ggplot(urban1, aes(M.YEAR, PROP.U.PRED)) +
 
 ##### Proportion of total grid cells covered ####
 
-cover_sw <- data0_slice_G %>% 
+cover_sw <- data0_MY_slice_G %>% 
   group_by(STATE) %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, CELL.ID) %>% 
@@ -1079,7 +1079,7 @@ cover_sw <- data0_slice_G %>%
                    CI.L = PROP.CELLS - 1.96*SE,
                    CI.U = PROP.CELLS + 1.96*SE)
 
-cover_nw <- data0_slice_G %>% 
+cover_nw <- data0_MY_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
@@ -1155,7 +1155,7 @@ rm(cover_sw, cover_nw, s_cover)
 
 ##### Proportion of total urban cells & non-urban cells covered ####
 
-temp1 <- data0_slice_G %>% 
+temp1 <- data0_MY_slice_G %>% 
   group_by(STATE, URBAN) %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE, URBAN, SUBCELL.ID) %>% 
@@ -1170,7 +1170,7 @@ temp1 <- data0_slice_G %>%
                    CI.L = PROP.SUBCELLS - 1.96*SE,
                    CI.U = PROP.SUBCELLS + 1.96*SE)
 
-temp2 <- data0_slice_G %>% 
+temp2 <- data0_MY_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
   group_by(COVID, M.YEAR, MONTH, URBAN, SUBCELL.ID) %>% 
@@ -1319,7 +1319,7 @@ load("data/rast_UNU.RData")
 
 ##### Change in birding effort (no. of lists) per grid cell (map)  ####
 
-data_SoIBmap0 <- data0_slice_G %>% 
+data_SoIBmap0 <- data0_MY_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
          CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
@@ -1420,7 +1420,7 @@ dev.off()
 
 ##### Final analysis: net change across grids with SEs ####
 
-temp <- data0_slice_G %>% 
+temp <- data0_MY_slice_G %>% 
   ungroup() %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, CELL.ID, MONTH) %>% 
@@ -1504,7 +1504,7 @@ ggsave("03_wrap_figs/12d_s_spread_netchange.png",
 
 rm(list = setdiff(ls(), 
                   c("covid_palette", "covid_palette3", "india", "states",
-                    "data0_slice_G", "data0_slice_S", "month_compar",
+                    "data0_MY_slice_G", "data0_MY_slice_S", "month_compar",
                     "boot_conf", "rast_agg_fn", "rast_logpropchange",
                     "rast_propchange")))
 
@@ -1535,7 +1535,7 @@ Since month is not considered here (and instead data from multiple months are av
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
-t_dow_sw <- data0_slice_G %>% 
+t_dow_sw <- data0_MY_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
@@ -1624,7 +1624,7 @@ rm(t_dow_sw, t_dow_nw, t_spread_dow)
 
 ```{r t_spread_2, cache=TRUE, message=FALSE}
 
-t_tod_sw <- data0_slice_G %>% 
+t_tod_sw <- data0_MY_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, STATE, M.YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -1713,12 +1713,12 @@ Not "per observer", as this metric from data POV.
 
 ```{r media, cache=TRUE, message=FALSE}
 
-temp1 <- data0_slice_G %>% 
+temp1 <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
-temp2 <- data0_slice_G %>% 
+temp2 <- data0_MY_slice_G %>% 
   filter(HAS.MEDIA == 1) %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -1983,14 +1983,14 @@ city_guwa <- c(11648, 11824, 11825)
 
 ```{r b_bang_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -2115,14 +2115,14 @@ What happens when these patterns in urban areas are averaged across space?
 
 ```{r b_bang_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(STATE == "Karnataka") %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -2264,7 +2264,7 @@ temp2 <- data0_MY %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+         M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
 data_b2 <- data0_MY_slice_G %>% 
   filter(STATE == "Karnataka") %>% 
@@ -2394,14 +2394,14 @@ ggsave("03_wrap_figs/b_bang_04_model.png", b_bang_04_model,
 
 ```{r b_koch_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>%
-  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -2522,14 +2522,14 @@ No prominent effects directly attributable to the pandemic. Most patterns even o
 
 ```{r b_koch_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(STATE == "Kerala") %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_koch$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -2668,7 +2668,7 @@ temp2 <- data0_MY %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+         M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
 data_b2 <- data0_MY_slice_G %>% 
   filter(STATE == "Kerala") %>% 
@@ -2788,15 +2788,15 @@ ggsave("03_wrap_figs/b_koch_04_model.png", b_koch_04_model,
 
 ```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
          COMMON.NAME != "White-cheeked Barbet") %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -2918,15 +2918,15 @@ There is no clear direction of change with the pandemic in Pune city. What happe
 
 ```{r b_pune_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(STATE == "Maharashtra") %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species$COMMON.NAME, 
          COMMON.NAME != "White-cheeked Barbet") %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -3074,7 +3074,7 @@ temp2 <- data0_MY %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+         M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
 data_b2 <- data0_MY_slice_G %>% 
   filter(STATE == "Maharashtra") %>% 
@@ -3262,14 +3262,14 @@ Non-urban and wetland species do not show an impact, while some urban species di
 
 ```{r b_guwa_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_slice_G %>% 
+birds_monthly <- data0_MY_slice_G %>% 
   filter(STATE == "Assam") %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
             TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(data0) %>% 
   filter(COMMON.NAME %in% species_guwa$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COMMON.NAME, COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(TOT.LISTS = min(TOT.LISTS),
             NO.LISTS = n_distinct(GROUP.ID),
             REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
@@ -3408,7 +3408,7 @@ temp2 <- data0_MY %>%
   group_by(GROUP.ID) %>% 
   slice(1) %>% ungroup() %>% 
   select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-         YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+         M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
 data_b2 <- data0_MY_slice_G %>% 
   filter(STATE == "Assam") %>% 
