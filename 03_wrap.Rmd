@@ -1392,11 +1392,9 @@ plotfrom <- raster::cellStats(rast_SoIBmap, "min")[1]
 plotto <- raster::cellStats(rast_SoIBmap, "max")[1]
 plotlegend <- seq(round(plotfrom, 2), round(plotto, 2), 0.1)
 
-labellegend <- data.frame(NORMAL = round(seq(exp(plotfrom), 
-                                             exp(plotto),  
-                                             length.out = 10), 3)) %>% 
-  mutate(LOG = round(log(NORMAL), 2),
-         LABEL = NORMAL)
+labellegend <- data.frame(NORMAL = seq(exp(plotfrom), exp(plotto), length.out = 10)) %>% 
+  mutate(LOG = log(NORMAL),
+         LABEL = round(NORMAL, 1))
 
 
 mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
