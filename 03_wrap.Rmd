@@ -66,6 +66,7 @@ source("scripts/functions.R")
 
 
 load("data/data0_slice.RData")
+load("data/data0_MY_slice.RData")
 
 ```
 
@@ -158,13 +159,13 @@ GLMMs for birder behaviour run only for the following metrics:
 ##### Change in group birding per observer ####
 
 temp1 <- data0_slice_S %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_S %>% 
   filter(NUMBER.OBSERVERS > 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
@@ -176,7 +177,7 @@ nl_po_sw <- temp1 %>%
   mutate(NO.SLISTS = replace_na(NO.SLISTS, 0)) %>% 
   mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
          SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
@@ -185,7 +186,7 @@ nl_po_sw <- temp1 %>%
 rm(list = c("temp1","temp2"))
 
 nl_po_nw <- nl_po_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
@@ -264,12 +265,12 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
 set.seed(213) # for bootstrap
 fidel_sw <- data0_slice_S %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
   mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(NO.SITES),
                    NO.SITES = mean(NO.SITES),
                    CI.L = NO.SITES - 1.96*SE,
@@ -277,7 +278,7 @@ fidel_sw <- data0_slice_S %>%
 
 fidel_nw <- fidel_sw %>% 
   ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(NO.SITES = mean(NO.SITES),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = NO.SITES - 1.96*SE,
@@ -355,19 +356,19 @@ rm(list = c("fidel_nw","fidel_sw","fidelity"))
 
 set.seed(423) 
 time_sw <- data0_slice_S %>% 
-  group_by(COVID, YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
   mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(B.TIME = boot_conf(x = B.TIME)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(B.TIME),
                    B.TIME = mean(B.TIME),
                    CI.L = B.TIME - 1.96*SE,
                    CI.U = B.TIME + 1.96*SE)
 
 time_nw <- time_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(B.TIME = mean(B.TIME),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = B.TIME - 1.96*SE,
@@ -441,20 +442,20 @@ Not "per observer", as this metric from data POV.
 ```{r hotspot, cache=TRUE, message=FALSE}
 
 temp1 <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_G %>% 
   filter(LOCALITY.TYPE == "H") %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.HLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 hot_sw <- temp1 %>% 
   left_join(temp2) %>% 
   mutate(NO.HLISTS = replace_na(NO.HLISTS, 0)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   mutate(PROP.HLISTS = NO.HLISTS/NO.LISTS,
          SE = sqrt((PROP.HLISTS)*(1 - PROP.HLISTS)/NO.LISTS),
          CI.L = PROP.HLISTS - 1.96*SE,
@@ -464,7 +465,7 @@ rm(list = c("temp1","temp2"))
 
 hot_nw <- hot_sw %>%
   filter(NO.LISTS != 0) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.HLISTS = mean(PROP.HLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.HLISTS - 1.96*SE,
@@ -540,20 +541,20 @@ Not "per observer", as this metric from data POV.
 ```{r protocol, cache=TRUE, message=FALSE}
 
 temp1 <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
 prot_sw <- temp1 %>% 
   left_join(temp2) %>% 
   mutate(NO.TLISTS = replace_na(NO.TLISTS, 0)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   mutate(PROP.TLISTS = NO.TLISTS/NO.LISTS,
          SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
          CI.L = PROP.TLISTS - 1.96*SE,
@@ -563,7 +564,7 @@ rm(list = c("temp1","temp2"))
 
 prot_nw <- prot_sw %>%
   filter(NO.LISTS != 0) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.TLISTS = mean(PROP.TLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.TLISTS - 1.96*SE,
@@ -641,16 +642,16 @@ Not "per observer", as this metric from data POV. Only considers travelling list
 set.seed(192) 
 dist_sw <- data0_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DIST = boot_conf(x = EFFORT.DISTANCE.KM)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(DIST),
                    DIST = mean(DIST),
                    CI.L = DIST - 1.96*SE,
                    CI.U = DIST + 1.96*SE)
 
 dist_nw <- dist_sw %>% ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(DIST = mean(DIST),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = DIST - 1.96*SE,
@@ -735,9 +736,9 @@ Not "per observer", as this metric from data POV.
 set.seed(834)
 dur_sw <- data0_slice_G %>% 
   filter(!is.na(DURATION.MINUTES)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(DURATION = boot_conf(x = DURATION.MINUTES)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(DURATION),
                    DURATION = mean(DURATION),
                    CI.L = DURATION - 1.96*SE,
@@ -745,7 +746,7 @@ dur_sw <- data0_slice_G %>%
 
 dur_nw <- dur_sw %>% 
   ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(DURATION = mean(DURATION),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = DURATION - 1.96*SE,
@@ -832,9 +833,9 @@ Not "per observer", as this metric from data POV.
 
 set.seed(98)
 length_sw <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(LENGTH = boot_conf(x = NO.SP)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(SE = sd(LENGTH),
                    LENGTH = mean(LENGTH),
                    CI.L = LENGTH - 1.96*SE,
@@ -842,7 +843,7 @@ length_sw <- data0_slice_G %>%
 
 length_nw <- length_sw %>% 
   ungroup() %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(LENGTH = mean(LENGTH),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = LENGTH - 1.96*SE,
@@ -924,7 +925,7 @@ rm(length_nw, length_sw, length)
     - Proportion of total cells in country/state covered across months
     - Proportions of total urban and non-urban cells in country/state covered across months
 3. Spatial spread/evenness (24kmx24km cells; across 7 months)
-    Large spatial and temporal scale---no STATE or MONTH/YEAR in question.
+    Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
     - Averaged monthly proportional change in no. of lists per 24x24 cell 
     - Averaged monthly proportional change in no. of lists per 2x2 UNU cell averaged across 24x24 cell, for urban and non-urban separately.
     - Averaged monthly urban:non-urban ratio in no. of lists per 24x24 cell 
@@ -934,20 +935,20 @@ rm(length_nw, length_sw, length)
 ##### Proportion of urban lists per grid cell ####
 
 temp <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% # state is meaningless cos CELL.ID
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% # state is meaningless cos CELL.ID
   filter(URBAN == 1) %>% 
   dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup()
 
 urban_lists <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>%
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
   dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
   left_join(temp) %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>%
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
   dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
                    PROP.U = U.LISTS/TOT.LISTS,
                    SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS)) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.U = mean(PROP.U),
                    SE = sqrt(sum((SE)^2))/n(),
                    CI.L = PROP.U - 1.96*SE,
@@ -1066,11 +1067,11 @@ ggplot(urban1, aes(M.YEAR, PROP.U.PRED)) +
 cover_sw <- data0_slice_G %>% 
   group_by(STATE) %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, CELL.ID) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    N.LISTS = n_distinct(GROUP.ID)) %>% 
   filter(N.LISTS >= 10) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    NO.CELLS = n_distinct(CELL.ID),
                    PROP.CELLS = NO.CELLS/TOT.CELLS,
@@ -1081,11 +1082,11 @@ cover_sw <- data0_slice_G %>%
 cover_nw <- data0_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
-  group_by(COVID, YEAR, MONTH, CELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    N.LISTS = n_distinct(GROUP.ID)) %>% 
   filter(N.LISTS >= 10) %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
                    NO.CELLS = n_distinct(CELL.ID),
                    PROP.CELLS = NO.CELLS/TOT.CELLS,
@@ -1157,11 +1158,11 @@ rm(cover_sw, cover_nw, s_cover)
 temp1 <- data0_slice_G %>% 
   group_by(STATE, URBAN) %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, URBAN, SUBCELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, URBAN, SUBCELL.ID) %>% 
   dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
                    N.LISTS = n_distinct(GROUP.ID)) %>% 
   filter(N.LISTS >= 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE, URBAN) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE, URBAN) %>% 
   dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
                    NO.SUBCELLS = n_distinct(SUBCELL.ID),
                    PROP.SUBCELLS = NO.SUBCELLS/TOT.SUBCELLS,
@@ -1172,11 +1173,11 @@ temp1 <- data0_slice_G %>%
 temp2 <- data0_slice_G %>% 
   ungroup() %>% 
   mutate(TOT.SUBCELLS = n_distinct(SUBCELL.ID)) %>% 
-  group_by(COVID, YEAR, MONTH, URBAN, SUBCELL.ID) %>% 
+  group_by(COVID, M.YEAR, MONTH, URBAN, SUBCELL.ID) %>% 
   dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
                    N.LISTS = n_distinct(GROUP.ID)) %>% 
   filter(N.LISTS >= 1) %>% 
-  group_by(COVID, YEAR, MONTH, URBAN) %>% 
+  group_by(COVID, M.YEAR, MONTH, URBAN) %>% 
   dplyr::summarise(TOT.SUBCELLS = min(TOT.SUBCELLS),
                    NO.SUBCELLS = n_distinct(SUBCELL.ID),
                    PROP.SUBCELLS = NO.SUBCELLS/TOT.SUBCELLS,
@@ -1538,9 +1539,9 @@ t_dow_sw <- data0_slice_G %>%
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, STATE, YEAR, MONTH) %>% 
+  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, DAY.W, STATE, YEAR, MONTH) %>% 
+  group_by(COVID, DAY.W, STATE, M.YEAR, MONTH) %>% 
   dplyr::summarise(NO.LISTS = min(NO.LISTS),
                    DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
                    PROP.LISTS = DAY.LISTS/NO.LISTS,
@@ -1625,9 +1626,9 @@ rm(t_dow_sw, t_dow_nw, t_spread_dow)
 
 t_tod_sw <- data0_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, STATE, YEAR, MONTH) %>% 
+  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, STATE, HOUR, YEAR, MONTH) %>% 
+  group_by(COVID, STATE, HOUR, M.YEAR, MONTH) %>% 
   dplyr::summarise(NO.LISTS = min(NO.LISTS),
                    TIME.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
                    PROP.LISTS = TIME.LISTS/NO.LISTS,
@@ -1713,13 +1714,13 @@ Not "per observer", as this metric from data POV.
 ```{r media, cache=TRUE, message=FALSE}
 
 temp1 <- data0_slice_G %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_slice_G %>% 
   filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, YEAR, MONTH, STATE) %>% 
+  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
@@ -1734,7 +1735,7 @@ media_sw <- temp1 %>%
 rm(list = c("temp1","temp2"))
 
 media_nw <- media_sw %>% 
-  group_by(COVID, YEAR, MONTH) %>% 
+  group_by(COVID, M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.MLISTS = mean(PROP.MLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.MLISTS - 1.96*SE,
