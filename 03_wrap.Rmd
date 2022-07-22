@@ -76,7 +76,22 @@ source("scripts/functions.R")
 
 load("data/data0_MY_slice.RData")
 
+```
+
+```{r setup2, include=FALSE}
+
+# timeline metadata
 timeline <- data0_MY_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
+
+# finding main state of birders (mainly for observer-level metrics)
+obs_mainstates <- data0_MY_slice_S %>% 
+  group_by(OBSERVER.ID, STATE) %>% 
+  summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  arrange(desc(LISTS)) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  rename(MAIN.STATE = STATE) %>% 
+  select(-LISTS)
 
 ```
 
@@ -465,20 +480,8 @@ ggsave("03_wrap_figs/02_fidelity.png", plot = fidelity,
 
 ##### Final analysis: statewise GLMMs ####
 
-# finding main state of birders
-mainstates <- data0_MY_slice_S %>% 
-  group_by(OBSERVER.ID, STATE) %>% 
-  summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  arrange(desc(LISTS)) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  rename(MAIN.STATE = STATE) %>% 
-  select(-LISTS)
-
-
-
 data_a <- data0_MY_slice_S %>% 
-  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
   filter(MAIN.STATE == anal_states$a) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
@@ -507,7 +510,7 @@ ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
 
 
 data_b <- data0_MY_slice_S %>% 
-  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
   filter(MAIN.STATE == anal_states$b) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
@@ -536,7 +539,7 @@ ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
 
 
 data_c <- data0_MY_slice_S %>% 
-  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
   filter(MAIN.STATE == anal_states$c) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
@@ -565,7 +568,7 @@ ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
 
 
 data_d <- data0_MY_slice_S %>% 
-  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
   filter(MAIN.STATE == anal_states$d) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
@@ -599,6 +602,8 @@ ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
 ### Birding time per observer
 
 ```{r time, cache=TRUE, message=FALSE}
+
+##### Change in birding time per observer ####
 
 set.seed(423) 
 time_sw <- data0_MY_slice_S %>% 
@@ -676,10 +681,130 @@ ggsave("03_wrap_figs/04_time.png", plot = time,
 
 rm(time_nw, time_sw, time)
 
+
+##### Final analysis: statewise GLMMs ####
+
+data_a <- data0_MY_slice_S %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$a) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_a <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_a <- data_a %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted birding time of an observer") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_b <- data0_MY_slice_S %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$b) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_b <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_b, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_b <- data_b %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted birding time of an observer") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_c <- data0_MY_slice_S %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$c) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_c <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_c, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_c <- data_c %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted birding time of an observer") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_d <- data0_MY_slice_S %>% 
+  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$d) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
+  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_d <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_d, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_d <- data_d %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted birding time of an observer") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
 ```
 
 * At the national level, birding times were and are lowest during monsoon. There was no noticeable negative impact of the pandemic on monthly birding times, except in March 2020 when the pandemic was a novelty. In fact, in the monsoon months of July and August, birding times even increased slightly during the pandemic.  
-* The only other major pattern visible at the state level is in Karnataka, where birding times have increased in the months of August--October.   
+* The only other major pattern visible at the state level is in Karnataka, where birding times have increased in the months of August--October. 
+* Karnataka and Assam showed a lowered birding duration around the peak months, while Kerala and Maharashtra showed no difference.
 
 ### Hotspot birding  
 
