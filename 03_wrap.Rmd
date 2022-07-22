@@ -676,7 +676,7 @@ plot_annotation(title = "Change in birding time per observer with the pandemic",
 
 time # plot
 
-ggsave("03_wrap_figs/04_time.png", plot = time,
+ggsave("03_wrap_figs/03_time.png", plot = time,
        width = 9, height = 9, units = "in")
 
 rm(time_nw, time_sw, time)
@@ -812,6 +812,8 @@ Not "per observer", as this metric from data POV.
 
 ```{r hotspot, cache=TRUE, message=FALSE}
 
+##### Change in hotspot birding ####
+
 temp1 <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -893,17 +895,126 @@ plot_annotation(title = "Change in proportion of hotspot birding with the pandem
 
 hotspot # plot
 
-ggsave("03_wrap_figs/05_hotspot.png", plot = hotspot,
+ggsave("03_wrap_figs/04_hotspot.png", plot = hotspot,
        width = 9, height = 9, units = "in")
 
 rm(list = c("hot_nw","hot_sw", "hotspot"))
 
+
+##### Final analysis: statewise GLMMs ####
+
+data_a <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$a) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("GLMM")
+model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_a <- data_a %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted hotspot birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_b <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$b) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("GLMM")
+model_b <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_b, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_b <- data_b %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted hotspot birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_c <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$c) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("GLMM")
+model_c <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_c, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_c <- data_c %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted hotspot birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_d <- data0_MY_slice_S %>% 
+  filter(STATE == anal_states$d) %>% 
+  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
+  ungroup() 
+
+tictoc::tic("GLMM")
+model_d <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_d, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_d <- data_d %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted hotspot birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
 ```
 
 * The national level saw lower hotspot birding during the lockdown/second wave months, with some spillover into the months of June and July.  
-* Kerala mirrored the national level pattern with slightly higher month-to-month variability.  
-* In Karnataka, this impact surprisingly lasted through all of 2020 but returned almost exactly to pre-COVID levels in 2021.  
-* Gujarat and Maharashtra basically mirror the national pattern.   
+* In Karnataka, this impact surprisingly lasted through all of 2020 but returned almost exactly to pre-COVID levels in 2021. The same to an extent in Kerala, though the difference was much less. 
+* Maharashtra recovered after the peak period, while there was no effect on Assam.
 
 ### Birding protocol  
 
