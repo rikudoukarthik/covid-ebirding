@@ -26,8 +26,6 @@ library(lme4)
 theme_set(theme_bw())
 
 
-timeline <- data0_MY_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
-
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
@@ -77,6 +75,8 @@ source("scripts/functions.R")
 # tictoc::toc()
 
 load("data/data0_MY_slice.RData")
+
+timeline <- data0_MY_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
 
 ```
 
@@ -161,6 +161,8 @@ GLMMs for birder behaviour run only for the following metrics:
 - Spatial coverage 
 - Spatial spread 
 - Temporal spread 
+
+These are usually driven by decision at the state level, so since the models are being run for the states individually, no need to consider district.
 
 ### Group birding (>2 observer) per observer
 
@@ -251,7 +253,7 @@ ggsave("03_wrap_figs/01_no_lists_po.png", plot = no_lists_po,
 
 rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 
-##### Final analysis: statewise GLMMs of group birding per observer ####
+##### Final analysis: statewise GLMMs ####
 
 ### Karnataka
 
@@ -261,20 +263,19 @@ data_a <- data0_MY_slice_S %>%
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup() 
 
-tictoc::tic("Group birding GLMM")
+tictoc::tic("GLMM")
 model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                        data = data_a, family = binomial(link = "cloglog"),
                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
 
-
 pred_a <- data_a %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PROP.G.PRED = predict(model_a, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA)) %>% 
+  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
   left_join(timeline)
 
-ggplot(pred_a, aes(MONTH, PROP.G.PRED, colour = COVID)) +
+ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$a,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
@@ -299,11 +300,11 @@ tictoc::toc()
 
 pred_b <- data_b %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PROP.G.PRED = predict(model_b, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA)) %>% 
+  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
   left_join(timeline)
 
-ggplot(pred_b, aes(MONTH, PROP.G.PRED, colour = COVID)) +
+ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$b,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
@@ -328,11 +329,11 @@ tictoc::toc()
 
 pred_c <- data_c %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PROP.G.PRED = predict(model_c, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA)) %>% 
+  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
   left_join(timeline)
 
-ggplot(pred_c, aes(MONTH, PROP.G.PRED, colour = COVID)) +
+ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$c,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
@@ -357,11 +358,11 @@ tictoc::toc()
 
 pred_d <- data_d %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PROP.G.PRED = predict(model_d, data.frame(MONTH, M.YEAR),
-                               type = "response", re.form = NA)) %>% 
+  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
+                        type = "response", re.form = NA)) %>% 
   left_join(timeline)
 
-ggplot(pred_d, aes(MONTH, PROP.G.PRED, colour = COVID)) +
+ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$d,
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
@@ -376,6 +377,8 @@ ggplot(pred_d, aes(MONTH, PROP.G.PRED, colour = COVID)) +
 ### Site fidelity per observer  
 
 ```{r fidelity, cache=TRUE, message=FALSE}
+
+##### Change in site fidelity per observer ####
 
 # here, doing 24km x 24km (SoIB and also more lenient and appropriate)
 
@@ -456,15 +459,142 @@ subtitle = "Y-axis shows average number of unique sites (25kmx25km cells) visite
 
 fidelity # plot
 
-ggsave("03_wrap_figs/03_fidelity.png", plot = fidelity,
+ggsave("03_wrap_figs/02_fidelity.png", plot = fidelity,
        width = 9, height = 9, units = "in")
-  
-rm(list = c("fidel_nw","fidel_sw","fidelity"))
+
+
+##### Final analysis: statewise GLMMs ####
+
+# finding main state of birders
+mainstates <- data0_MY_slice_S %>% 
+  group_by(OBSERVER.ID, STATE) %>% 
+  summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  arrange(desc(LISTS)) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  rename(MAIN.STATE = STATE) %>% 
+  select(-LISTS)
+
+
+
+data_a <- data0_MY_slice_S %>% 
+  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$a) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_a <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_a <- data_a %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted number of sites an observer visits") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_b <- data0_MY_slice_S %>% 
+  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$b) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_b <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_b, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_b <- data_b %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted number of sites an observer visits") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_c <- data0_MY_slice_S %>% 
+  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$c) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_c <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_c, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_c <- data_c %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted number of sites an observer visits") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
+
+
+data_d <- data0_MY_slice_S %>% 
+  left_join(mainstates, by = "OBSERVER.ID") %>% 
+  filter(MAIN.STATE == anal_states$d) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
+  ungroup()
+
+tictoc::tic("GLMM")
+model_d <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_d, family = poisson,
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+
+pred_d <- data_d %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
+                               type = "response", re.form = NA)) %>% 
+  left_join(timeline)
+
+ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted number of sites an observer visits") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period") 
 
 ```
 
-* At the national level, site fidelity was generally higher during the pandemic than before but mostly only during lockdown/second wave. In other months there was no noticeable difference.    
-* Among the four states compared, only Kerala and Karnataka showed this pattern, while in Gujarat and Maharashtra there seemed to be no difference with the pandemic at all.  
+* At the national level, site fidelity was generally higher during the pandemic than before but mostly only around lockdown/second wave. In other months patterns closely followed pre-pandemic ones.    
 
 ### Birding time per observer
 
