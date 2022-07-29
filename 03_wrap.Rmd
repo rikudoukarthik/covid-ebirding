@@ -2243,8 +2243,6 @@ Not "per observer", as this metric from data POV.
 
 Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
 
-#### Day-of-week
-
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
 ##### Change in DoW spread ####
@@ -2328,15 +2326,16 @@ ggsave("03_wrap_figs/13_t_spread_dow.png",
 rm(t_dow_sw, t_dow_nw, t_spread_dow)
 
 
-##### Final analysis: statewise GLMMs ####
+##### Final analysis: statewise GLMMs (but for number not proportion) ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      label = T,
                       week_start = getOption("lubridate.week.start", 1))) %>% 
-  tidyr::expand(nesting(STATE, MONTH, M.YEAR, DAY.W)) %>% 
+  tidyr::expand(nesting(STATE, M.YEAR, DAY.W)) %>% 
   mutate(PRED = NA,
          STATE = factor(STATE, levels = anal_states[1,])) %>% 
   arrange(STATE)
@@ -2344,84 +2343,66 @@ data0 <- data0_MY_slice_G %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
-    filter(STATE == anal_states[, i])
-  
-  
-  
-  
-t_dow_sw <- data0_MY_slice_G %>% 
-  mutate(DAY.W = wday(OBSERVATION.DATE, 
-                      week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
-  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, DAY.W, STATE, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = min(NO.LISTS),
-                   DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
-                   PROP.LISTS = DAY.LISTS/NO.LISTS,
-                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
-  group_by(COVID, DAY.W, STATE) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.LISTS - 1.96*SE,
-                   CI.U = PROP.LISTS + 1.96*SE)
-
+  data_a <- data0_MY_slice_G %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    mutate(DAY.W = wday(OBSERVATION.DATE, 
+                        label = T,
+                        week_start = getOption("lubridate.week.start", 1))) %>% 
+    group_by(STATE, M.YEAR, MONTH, DAY.W) %>% 
+    dplyr::summarise(LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)))
   
   tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
-  model_a <- glmer(NO.SP ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_a <- glmer(LISTS ~ M.YEAR + M.YEAR:DAY.W + (1|MONTH),
                    data = data_a, family = poisson,
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))  
   tictoc::toc()
   
 
-  for (j in 1:n_distinct(data0$MONTH)) {
-    for (k in 1:n_distinct(data0$M.YEAR)) {
+  for (j in 1:n_distinct(data0$M.YEAR)) {
+    for (k in 1:n_distinct(data0$DAY.W)) {
       count <- count + 1
       
       data0$PRED[count] = predict(model_a,
-                                  data.frame(MONTH = data0$MONTH[count],
+                                  data.frame(DAY.W = data0$DAY.W[count],
                                              M.YEAR = data0$M.YEAR[count]),
                                   re.form = NA, type = "response")
     }
   }
 } 
 
-data0 <- data0 %>% 
-  left_join(timeline)
-
 
 (ggplot(filter(data0, STATE == anal_states$a), 
-       aes(MONTH, PRED, colour = COVID)) +
+       aes(DAY.W, PRED, colour = M.YEAR)) +
   labs(title = anal_states$a,
-       x = "Month", y = "Predicted average checklist length") +
+       x = "Day of week", y = "Predicted number of checklists") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
 (ggplot(filter(data0, STATE == anal_states$b), 
-       aes(MONTH, PRED, colour = COVID)) +
+       aes(DAY.W, PRED, colour = M.YEAR)) +
   labs(title = anal_states$b,
-       x = "Month", y = "Predicted average checklist length") +
+       x = "Day of week", y = "Predicted number of checklists") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
 (ggplot(filter(data0, STATE == anal_states$c), 
-       aes(MONTH, PRED, colour = COVID)) +
+       aes(DAY.W, PRED, colour = M.YEAR)) +
   labs(title = anal_states$c,
-       x = "Month", y = "Predicted average checklist length") +
+       x = "Day of week", y = "Predicted number of checklists") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
 (ggplot(filter(data0, STATE == anal_states$d), 
-       aes(MONTH, PRED, colour = COVID)) +
+       aes(DAY.W, PRED, colour = M.YEAR)) +
   labs(title = anal_states$d,
-       x = "Month", y = "Predicted average checklist length") +
+       x = "Day of week", y = "Predicted number of checklists") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period"))
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) 
 
 ```
 
@@ -2431,9 +2412,9 @@ data0 <- data0 %>%
 * In Gujarat and Maharashtra, Sundays see more birding than Saturdays, but there has been no major impact of the pandemic.  
 * This might mean that the national level patterns might be driven by changes in states with generally low birding activity.  
 
-#### Time-of-day
-
 ```{r t_spread_2, cache=TRUE, message=FALSE}
+
+##### Change in ToD spread ####
 
 t_tod_sw <- data0_MY_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
@@ -2510,6 +2491,82 @@ ggsave("03_wrap_figs/14_t_spread_tod.png",
 
 
 rm(t_tod_nw, t_tod_sw, t_spread_tod)
+
+
+##### Final analysis: statewise GLMMs (but for number not proportion) ####
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(HOUR = factor(HOUR)) %>% 
+  tidyr::expand(nesting(STATE, M.YEAR, HOUR)) %>% 
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_G %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    mutate(HOUR = factor(HOUR)) %>% 
+    group_by(STATE, M.YEAR, MONTH, HOUR) %>% 
+    dplyr::summarise(LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)))
+  
+  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
+  model_a <- glmer(LISTS ~ M.YEAR + M.YEAR:HOUR + (1|MONTH),
+                   data = data_a, family = poisson,
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))  
+  tictoc::toc()
+  
+
+  for (j in 1:n_distinct(data0$M.YEAR)) {
+    for (k in 1:n_distinct(data0$HOUR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = predict(model_a,
+                                  data.frame(HOUR = data0$HOUR[count],
+                                             M.YEAR = data0$M.YEAR[count]),
+                                  re.form = NA, type = "response")
+    }
+  }
+} 
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(HOUR, PRED, colour = M.YEAR)) +
+  labs(title = anal_states$a,
+       x = "Time of day", y = "Predicted number of checklists") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(HOUR, PRED, colour = M.YEAR)) +
+  labs(title = anal_states$b,
+       x = "Time of day", y = "Predicted number of checklists") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(HOUR, PRED, colour = M.YEAR)) +
+  labs(title = anal_states$c,
+       x = "Time of day", y = "Predicted number of checklists") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(HOUR, PRED, colour = M.YEAR)) +
+  labs(title = anal_states$d,
+       x = "Time of day", y = "Predicted number of checklists") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")) 
+
 
 ```
 
