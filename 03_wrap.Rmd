@@ -1702,11 +1702,12 @@ data0 <- data0 %>%
 ### Spatial spread and coverage 
 
 1. Urban:non-urban ratio in birding effort 
-    - Proportion of lists urban
-    - Proportion of birded cells urban
-2. Spatial coverage
+    - Proportion of lists that are urban per grid cell  
+    - Proportion of lists that are urban per grid cell GLMM  
+2. Spatial coverage (min. 10 lists per grid cell)
     - Proportion of total cells in country/state covered across months
     - Proportions of total urban and non-urban cells in country/state covered across months
+    - Proportion of total cells in country/state covered across months GLMM  
 3. Spatial spread/evenness (24kmx24km cells; across 7 months)
     Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
     - Averaged monthly proportional change in no. of lists per 24x24 cell 
@@ -1768,9 +1769,6 @@ ggsave("03_wrap_figs/10a_s_UNU.png",
 # https://github.com/lme4/lme4/issues/281
 # Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
 # So, need to include random effects in prediction.
-
-require(lme4)
-load("data/data0_MY_slice.RData")
 
 data_urban <- data0_MY_slice_G %>% 
   group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
@@ -2086,6 +2084,80 @@ ggsave("03_wrap_figs/11b_s_cover_NU.png",
 rm(temp1, temp2, cover_U_sw, cover_U_nw, cover_NU_sw, cover_NU_nw, s_cover_U, s_cover_NU)
 
 
+##### Final analysis: statewise GLMMs ####
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_S %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
+  mutate(PRED = NA)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_S %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    select(M.YEAR, MONTH, CELL.ID, GROUP.ID) %>% 
+    tidyr::complete(M.YEAR, MONTH, CELL.ID) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID) %>% 
+    dplyr::summarise(COVERED = if_else(n_distinct(GROUP.ID) >= 10, 1, 0))
+  
+  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
+  model_a <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_a, family = binomial(link = "cloglog"),
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))  
+  tictoc::toc()
+  
+  for (j in 1:n_distinct(data0$MONTH)) {
+    for (k in 1:n_distinct(data0$M.YEAR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = predict(model_a,
+                                  data.frame(MONTH = data0$MONTH[count],
+                                             M.YEAR = data0$M.YEAR[count]),
+                                  re.form = NA, type = "response")
+    }
+  }
+} 
+
+data0 <- data0 %>% 
+  left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted grid cell coverage") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted grid cell coverage") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted grid cell coverage") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted grid cell coverage") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period"))
+
 ```
 
 ```{r s_spread, cache=TRUE, message=FALSE}
@@ -2312,9 +2384,8 @@ detach("package:luna", unload=T)
 ```
 
 
-* Both the maps and the graphs show that there were overall more cells covered during the pandemic, and even more after. This can be attributed to general growth in eBirding.  
-* Proportion of grid cells covered was impacted in both 2020 and 2021 in May, while in 2020 only in April.  
-* SD of number of lists per cell was higher during the lockdown/second wave months, but otherwise not very different between the three periods.
+* The maps and the graphs all show that there was an overall growth in eBirding.  
+* Spatial coverage was entirely unaffected by the pandemic!
 
 
 ### Temporal spread
