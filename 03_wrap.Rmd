@@ -93,6 +93,16 @@ obs_mainstates <- data0_MY_slice_S %>%
   rename(MAIN.STATE = STATE) %>% 
   select(-LISTS)
 
+# choosing only months with data from all 3 COVID categories
+month_compar <- data0_MY_slice_G %>% 
+  group_by(MONTH) %>% 
+  mutate(COVID = factor(case_when(as.character(COVID) %in% c("DUR_20","DUR_21") ~ "DUR",
+                                  TRUE ~ as.character(COVID)),
+                        levels = c("BEF","DUR","AFT"))) %>% 
+  dplyr::summarise(N = n_distinct(COVID)) %>% 
+  filter(N == 3) %>%  # all 3 COVID categories
+  dplyr::select(MONTH)
+
 ```
 
 
@@ -781,7 +791,7 @@ rm(list = c("hot_nw","hot_sw", "hotspot"))
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -791,7 +801,7 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
@@ -956,7 +966,7 @@ rm(list = c("prot_nw","prot_sw","protocol"))
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -967,7 +977,7 @@ count <- 0
 for (i in 1:4) { # for each state
   
   # using 300m as threshold to define travelling birding
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
@@ -1125,7 +1135,7 @@ rm(dist_sw, dist_nw, distance)
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -1135,7 +1145,7 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(PROTOCOL.TYPE == "Traveling", 
            !is.na(EFFORT.DISTANCE.KM),
            EFFORT.DISTANCE.KM > 0.3,
@@ -1297,7 +1307,7 @@ rm(dur_sw, dur_nw, duration)
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -1307,7 +1317,7 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     # because no other family fits
     mutate(DURATION = log(DURATION.MINUTES))
@@ -1470,7 +1480,7 @@ rm(length_nw, length_sw, length)
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -1480,7 +1490,7 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i])
   
   tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
@@ -1934,7 +1944,7 @@ rm(temp1, temp2, cover_U_sw, cover_U_nw, cover_NU_sw, cover_NU_nw, s_cover_U, s_
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0 <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -1944,7 +1954,7 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_a <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     select(M.YEAR, MONTH, CELL.ID, GROUP.ID) %>% 
     tidyr::complete(M.YEAR, MONTH, CELL.ID) %>% 
@@ -2237,9 +2247,12 @@ Since month is not considered here (and instead data from multiple months are av
 
 ```{r t_spread_1, cache=TRUE, message=FALSE}
 
+##### Change in DoW spread ####
+
 t_dow_sw <- data0_MY_slice_G %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      # start week from Monday
                       week_start = getOption("lubridate.week.start", 1))) %>% 
   group_by(COVID, STATE, M.YEAR, MONTH) %>% 
   mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -2313,6 +2326,102 @@ ggsave("03_wrap_figs/13_t_spread_dow.png",
 
 
 rm(t_dow_sw, t_dow_nw, t_spread_dow)
+
+
+##### Final analysis: statewise GLMMs ####
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      week_start = getOption("lubridate.week.start", 1))) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR, DAY.W)) %>% 
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_S %>% 
+    filter(STATE == anal_states[, i])
+  
+  
+  
+  
+t_dow_sw <- data0_MY_slice_G %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      week_start = getOption("lubridate.week.start", 1))) %>% 
+  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
+  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(COVID, DAY.W, STATE, M.YEAR, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = min(NO.LISTS),
+                   DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = DAY.LISTS/NO.LISTS,
+                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
+  group_by(COVID, DAY.W, STATE) %>% 
+  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PROP.LISTS - 1.96*SE,
+                   CI.U = PROP.LISTS + 1.96*SE)
+
+  
+  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
+  model_a <- glmer(NO.SP ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_a, family = poisson,
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))  
+  tictoc::toc()
+  
+
+  for (j in 1:n_distinct(data0$MONTH)) {
+    for (k in 1:n_distinct(data0$M.YEAR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = predict(model_a,
+                                  data.frame(MONTH = data0$MONTH[count],
+                                             M.YEAR = data0$M.YEAR[count]),
+                                  re.form = NA, type = "response")
+    }
+  }
+} 
+
+data0 <- data0 %>% 
+  left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted average checklist length") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted average checklist length") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted average checklist length") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted average checklist length") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period"))
 
 ```
 
