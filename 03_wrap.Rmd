@@ -275,7 +275,9 @@ rm(list = c("nl_po_sw","nl_po_nw","no_lists_po"))
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -440,7 +442,9 @@ ggsave("03_wrap_figs/02_fidelity.png", plot = fidelity,
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -602,7 +606,9 @@ rm(time_nw, time_sw, time)
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -610,7 +616,7 @@ for (i in 1:4) { # for each state
   data_a <- data0_MY_slice_S %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
-    group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
+    group_by(MONTH, M.YEAR, OBSERVER.ID) %>% 
     dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
     mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
     ungroup()
@@ -669,126 +675,6 @@ data0 <- data0 %>%
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Period"))
-
-
-
-
-
-data_a <- data0_MY_slice_S %>% 
-  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-  filter(MAIN.STATE == anal_states$a) %>% 
-  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
-  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
-  ungroup()
-
-tictoc::tic("GLMM")
-model_a <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_a <- data_a %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$a,
-       x = "Month", y = "Predicted birding time of an observer") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_b <- data0_MY_slice_S %>% 
-  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-  filter(MAIN.STATE == anal_states$b) %>% 
-  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
-  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
-  ungroup()
-
-tictoc::tic("GLMM")
-model_b <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_b, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_b <- data_b %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$b,
-       x = "Month", y = "Predicted birding time of an observer") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_c <- data0_MY_slice_S %>% 
-  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-  filter(MAIN.STATE == anal_states$c) %>% 
-  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
-  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
-  ungroup()
-
-tictoc::tic("GLMM")
-model_c <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_c, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_c <- data_c %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$c,
-       x = "Month", y = "Predicted birding time of an observer") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_d <- data0_MY_slice_S %>% 
-  left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-  filter(MAIN.STATE == anal_states$d) %>% 
-  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(B.TIME = sum(DURATION.MINUTES)) %>% 
-  mutate(B.TIME = replace_na(B.TIME, 0)) %>% 
-  ungroup()
-
-tictoc::tic("GLMM")
-model_d <- glmer(B.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_d, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_d <- data_d %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$d,
-       x = "Month", y = "Predicted birding time of an observer") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
 
 ```
 
@@ -893,112 +779,78 @@ rm(list = c("hot_nw","hot_sw", "hotspot"))
 
 ##### Final analysis: statewise GLMMs ####
 
-data_a <- data0_MY_slice_S %>% 
-  filter(STATE == anal_states$a) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
-  ungroup() 
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_S %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
-tictoc::tic("GLMM")
-model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                 data = data_a, family = binomial(link = "cloglog"),
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_S %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
+    ungroup() 
+  
+  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
+  model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_a, family = binomial(link = "cloglog"),
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::toc()
 
-pred_a <- data_a %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
+  for (j in 1:12) {
+    for (k in 1:4) {
+      count <- count + 1
+      
+      data0$PRED[count] = predict(model_a,
+                                  data.frame(MONTH = data0$MONTH[count],
+                                             M.YEAR = data0$M.YEAR[count]),
+                                  re.form = NA, type = "response")
+    }
+  }
+} 
 
-ggplot(pred_a, aes(MONTH, PRED, colour = COVID)) +
+data0 <- data0 %>% 
+    left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$a,
        x = "Month", y = "Predicted hotspot birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_b <- data0_MY_slice_S %>% 
-  filter(STATE == anal_states$b) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
-  ungroup() 
-
-tictoc::tic("GLMM")
-model_b <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                 data = data_b, family = binomial(link = "cloglog"),
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_b <- data_b %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_b, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_b, aes(MONTH, PRED, colour = COVID)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$b,
        x = "Month", y = "Predicted hotspot birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_c <- data0_MY_slice_S %>% 
-  filter(STATE == anal_states$c) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
-  ungroup() 
-
-tictoc::tic("GLMM")
-model_c <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                 data = data_c, family = binomial(link = "cloglog"),
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_c <- data_c %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_c, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_c, aes(MONTH, PRED, colour = COVID)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$c,
        x = "Month", y = "Predicted hotspot birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
-
-
-data_d <- data0_MY_slice_S %>% 
-  filter(STATE == anal_states$d) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
-  ungroup() 
-
-tictoc::tic("GLMM")
-model_d <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                 data = data_d, family = binomial(link = "cloglog"),
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc()
-
-pred_d <- data_d %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = predict(model_d, data.frame(MONTH, M.YEAR),
-                        type = "response", re.form = NA)) %>% 
-  left_join(timeline)
-
-ggplot(pred_d, aes(MONTH, PRED, colour = COVID)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
   labs(title = anal_states$d,
        x = "Month", y = "Predicted hotspot birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period") 
+  scale_colour_manual(values = covid_palette, name = "Period"))
 
 ```
 
@@ -1107,7 +959,9 @@ rm(list = c("prot_nw","prot_sw","protocol"))
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -1269,13 +1123,14 @@ rm(dist_sw, dist_nw, distance)
 
 ##### Final analysis: statewise GLMMs ####
 
-
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -1344,12 +1199,10 @@ data0 <- data0 %>%
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Period"))
 
-
 ```
 
 * At the national level, checklist distances were highest during summer and winter before the pandemic. During the pandemic, distances remained fairly similar for the winter months of October--December, but were drastically lower during the summer months of April and May, which coincided with the lockdown/second wave.  
-* Overall, this metric was not affected as much as others. Karnataka and Assam showed some brief declines, but overall patterns are rather irregular, so nothing major.
-
+* Overall, this metric was not affected as much as others. Karnataka and Kerala showed some brief declines, but overall patterns are rather irregular, so nothing major. Maharashtra has shown a consistent decline since the start of the pandemic till now.
 
 ### List duration
 
@@ -1447,7 +1300,9 @@ rm(dur_sw, dur_nw, duration)
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -1517,7 +1372,7 @@ data0 <- data0 %>%
 
 * In normal circumstances, checklists become longer in the winter, and shorter in the monsoon. The only notable change during the pandemic at the national level was low checklist duration in April--June, due to the national lockdown/second wave.  
 * A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Maharashtra.  
-* Patterns somewhat similar to those of birding distance.
+* Patterns somewhat similar to those of birding distance. Generally, briefly reduced during the peak months. 
 
 ### List length
 
@@ -1618,7 +1473,9 @@ rm(length_nw, length_sw, length)
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
@@ -1685,7 +1542,8 @@ data0 <- data0 %>%
 ```
 
 * Overall, slight decrease during the peak period.  
-* Karnataka didn't show any change at all.  
+* Kerala didn't show any change at all.  
+* The peak months brought average list length in other states to around 10-11 species, which in Kerala's case already used to be the case (shorter lists).
 
 ### Spatial spread and coverage 
 
@@ -2079,7 +1937,9 @@ rm(temp1, temp2, cover_U_sw, cover_U_nw, cover_NU_sw, cover_NU_nw, s_cover_U, s_
 data0 <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA)
+  mutate(PRED = NA,
+         STATE = factor(STATE, levels = anal_states[1,])) %>% 
+  arrange(STATE)
 
 count <- 0
 for (i in 1:4) { # for each state
