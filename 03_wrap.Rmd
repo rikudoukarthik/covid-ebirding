@@ -1131,17 +1131,11 @@ for (i in 1:4) { # for each state
                                              EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
     ungroup() 
   
-  tictoc::tic("GLMM")
+  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
   model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
                    data = data_a, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
-  
-  pred_a <- data_a %>% 
-    tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-    mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
-                          type = "response", re.form = NA))
-  
 
   for (j in 1:n_distinct(data0$MONTH)) {
     for (k in 1:n_distinct(data0$M.YEAR)) {
@@ -1202,6 +1196,8 @@ data0 <- data0 %>%
 Not "per observer", as this metric from data POV. Only considers travelling lists.
 
 ```{r distance, cache=TRUE, message=FALSE}
+
+##### Changing in average birding distance ####
 
 set.seed(192) 
 dist_sw <- data0_MY_slice_G %>% 
@@ -1282,13 +1278,89 @@ ggsave("03_wrap_figs/07_distance.png", plot = distance,
 
 rm(dist_sw, dist_nw, distance)
 
+
+##### Final analysis: statewise GLMMs ####
+
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_S %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
+  mutate(PRED = NA)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_S %>% 
+    filter(PROTOCOL.TYPE == "Traveling", 
+           !is.na(EFFORT.DISTANCE.KM),
+           EFFORT.DISTANCE.KM > 0.3,
+           STATE == anal_states[, i]) %>% 
+    # because no other family fits for distance
+    mutate(DISTANCE = log(EFFORT.DISTANCE.KM))
+  
+  tictoc::tic(glue::glue("LMM for {anal_states[, i]}"))
+  model_a <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                  data = data_a, 
+                  control = lmerControl(optimizer = "bobyqa"))  
+  tictoc::toc()
+  
+
+  for (j in 1:n_distinct(data0$MONTH)) {
+    for (k in 1:n_distinct(data0$M.YEAR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = exp(predict(model_a,
+                                      data.frame(MONTH = data0$MONTH[count],
+                                                 M.YEAR = data0$M.YEAR[count]),
+                                      re.form = NA, type = "response"))
+    }
+  }
+} 
+
+data0 <- data0 %>% 
+  left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted average birding distance") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted average birding distance") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted average birding distance") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted average birding distance") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period"))
+
+
 ```
 
 * At the national level, checklist distances were highest during summer and winter before the pandemic. During the pandemic, distances remained fairly similar for the winter months of October--December, but were drastically lower during the summer months of April and May, which coincided with the lockdown/second wave.  
-* In Kerala, before the pandemic, birders travelled longest in checklists during late summer and early winter and shortest in late winter and peak monsoon. This contrasts with the pattern seen in proportion of stationary lists (more stationary in early winter and less in late winter). This means that in early winter the lists were either stationary or travelling larger distances, while in late winter lists converged to shorter distances. With the pandemic, effort distances reduced in late summer and early monsoon, coinciding with the lockdown/second wave.  
-* Karnataka showed small decreases in the months of April--June.  
-* In Gujarat, interestingly, there is no difference with the pandemic except in the month of April.  
-* Maharashtra seemed to very marginally affected by the pandemic, in terms of birding mobility. 
+* Overall, this metric was not affected as much as others. Karnataka and Assam showed some brief declines, but overall patterns are rather irregular, so nothing major.
 
 
 ### List duration
