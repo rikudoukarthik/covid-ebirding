@@ -1022,6 +1022,8 @@ Not "per observer", as this metric from data POV.
 
 ```{r protocol, cache=TRUE, message=FALSE}
 
+##### Change in travelling birding ####
+
 temp1 <- data0_MY_slice_G %>% 
   group_by(COVID, M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
@@ -1103,17 +1105,97 @@ plot_annotation(title = "Change in birding mobility with the pandemic",
 
 protocol 
 
-ggsave("03_wrap_figs/06_protocol.png", plot = protocol,
+ggsave("03_wrap_figs/05_protocol.png", plot = protocol,
        width = 9, height = 9, units = "in")
 
 rm(list = c("prot_nw","prot_sw","protocol"))
 
+##### Final analysis: statewise GLMMs ####
+
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_S %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
+  mutate(PRED = NA)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  # using 300m as threshold to define travelling birding
+  data_a <- data0_MY_slice_S %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
+                                             EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
+    ungroup() 
+  
+  tictoc::tic("GLMM")
+  model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_a, family = binomial(link = "cloglog"),
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::toc()
+  
+  pred_a <- data_a %>% 
+    tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+    mutate(PRED = predict(model_a, data.frame(MONTH, M.YEAR),
+                          type = "response", re.form = NA))
+  
+
+  for (j in 1:n_distinct(data0$MONTH)) {
+    for (k in 1:n_distinct(data0$M.YEAR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = predict(model_a,
+                                  data.frame(MONTH = data0$MONTH[count],
+                                             M.YEAR = data0$M.YEAR[count]),
+                                  re.form = NA, type = "response")
+    }
+  }
+} 
+
+data0 <- data0 %>% 
+    left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period"))
+
+
 ```
 
-* At the national level, mobility of birders, in terms of proportion of travelling lists submitted, decreased sharply during April--May as expected, and had some spillover into June and July, but matched pre-COVID levels well in the other months of the year.  
-* In Kerala the pandemic has impacted all months of the year, except January and February which continue to have high proportions of travelling lists, possibly due mass birding events such as GBBC and AWC. Otherwise, even "after" the pandemic, mobility is much lower than before the pandemic.  
-* Karnataka was mostly only affected during the months of March--May, with spillover into June and July. Moreover, this impact was only in 2020 and not 2021.  
-* Gujarat and Maharashtra show high month-to-month variability but suggest somewhat similar patterns as at the national level.  
+* At the national level, mobility of birders, in terms of proportion of travelling lists submitted, decreased sharply during April--May as expected, and had some spillover into June and July, but matched pre-COVID levels well in the other months of the year. 
 
 ### Birding distance
 
