@@ -171,8 +171,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   load(datapath) 
   # adding migratory year column
   data <- data %>% 
-    mutate(DAY.Y = yday(OBSERVATION.DATE),
-           M.YEAR = if_else(DAY.Y <= 151, YEAR-1, YEAR), # from 1st June to 31st May
+    mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
            M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) 
     
   
