@@ -1369,6 +1369,8 @@ Not "per observer", as this metric from data POV.
 
 ```{r duration, cache=TRUE, message=FALSE}
 
+##### Change in average list duration ####
+
 set.seed(834)
 dur_sw <- data0_MY_slice_G %>% 
   filter(!is.na(DURATION.MINUTES)) %>% 
@@ -1449,13 +1451,85 @@ ggsave("03_wrap_figs/08_duration.png", plot = duration,
 
 rm(dur_sw, dur_nw, duration)
 
+
+##### Final analysis: statewise GLMMs ####
+
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+data0 <- data0_MY_slice_S %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
+  mutate(PRED = NA)
+
+count <- 0
+for (i in 1:4) { # for each state
+  
+  data_a <- data0_MY_slice_S %>% 
+    filter(STATE == anal_states[, i]) %>% 
+    # because no other family fits
+    mutate(DURATION = log(DURATION.MINUTES))
+  
+  tictoc::tic(glue::glue("LMM for {anal_states[, i]}"))
+  model_a <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                  data = data_a, 
+                  control = lmerControl(optimizer = "bobyqa"))  
+  tictoc::toc()
+  
+
+  for (j in 1:n_distinct(data0$MONTH)) {
+    for (k in 1:n_distinct(data0$M.YEAR)) {
+      count <- count + 1
+      
+      data0$PRED[count] = exp(predict(model_a,
+                                      data.frame(MONTH = data0$MONTH[count],
+                                                 M.YEAR = data0$M.YEAR[count]),
+                                      re.form = NA, type = "response"))
+    }
+  }
+} 
+
+data0 <- data0 %>% 
+  left_join(timeline)
+
+
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted average checklist duration") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$b), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$b,
+       x = "Month", y = "Predicted average checklist duration") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$c), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$c,
+       x = "Month", y = "Predicted average checklist duration") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) /
+(ggplot(filter(data0, STATE == anal_states$d), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$d,
+       x = "Month", y = "Predicted average checklist duration") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period"))
+
 ```
 
 * In normal circumstances, checklists become longer in the winter, and shorter in the monsoon. The only notable change during the pandemic at the national level was low checklist duration in April--June, due to the national lockdown/second wave.  
-* In Kerala, while most of the pattern remains similar before and during the pandemic, the strong dip in checklist duration during the national lockdown is still present. Moreover, the winter month of January during the pandemic saw longer checklists than before.   
-* Karnataka doesn't show very clear patterns apart from a possibly lower participation in the February GBBC (leading to higher average duration) during the pandemic, and shorter lists in April--May.  
-* Gujarat and Maharashtra were mostly affected only in the March--May period.  
 * A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Maharashtra.  
+* Patterns somewhat similar to those of birding distance.
 
 ### List length
 
