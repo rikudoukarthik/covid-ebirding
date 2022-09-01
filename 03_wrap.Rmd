@@ -4351,10 +4351,18 @@ temp <- data_prolific %>%
   filter(PROP.LISTS >= 10) %>% 
   distinct(LOCALITY.ID, COMMON.NAME)
 
-# filtering for patch-species combos present in >= 10% of lists
+# # for removing species only present in one locality (because cannot use random effect in model)
+# temp4 <- data_prolific %>% 
+#   group_by(COMMON.NAME) %>% 
+#   summarise(N.LOC = n_distinct(LOCALITY.ID)) %>% 
+#   filter(N.LOC < 2)
+
 data_prolific <- data_prolific %>% 
+  # filtering for patch-species combos present in >= 10% of lists
   right_join(temp) %>% 
   arrange(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
+  # # removing species only present in one locality
+  # filter(!(COMMON.NAME %in% temp4$COMMON.NAME)) %>% 
   # joining length, year and month metadata
   left_join(data0_MY_slice_S %>% distinct(SAMPLING.EVENT.IDENTIFIER, NO.SP, M.YEAR, MONTH))
 
@@ -4367,46 +4375,62 @@ median_length <- temp2 %>%
   summarise(NO.SP.MED = median(NO.SP))
 
 
+# # dataframe with empty column to populate with looped values
+# # total rows: product of distinct values of predictors
+# prolific0 <- data_prolific %>%
+#   tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>%
+#   left_join(species_prolific) %>%
+#   mutate(REP.FREQ.PRED = NA)
+
+
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-prolific0 <- data_prolific %>% 
-  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>% 
-  left_join(species_prolific) %>% 
+prolific00 <- data_prolific %>%
+  group_by(LOCALITY.ID) %>% 
+  tidyr::expand(COMMON.NAME, MONTH, M.YEAR) %>%
+  ungroup() %>% 
+  left_join(species_prolific) %>%
   mutate(REP.FREQ.PRED = NA)
 
+
 count <- 0
-for (i in 1:n_distinct(prolific0$COMMON.NAME)) {
+for (l in 1:n_distinct(prolific00$LOCALITY.ID)) {
   
-  data_spec <- data_prolific %>% 
-    filter(COMMON.NAME == unique(prolific0$COMMON.NAME)[7]) %>% 
-    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
-    filter(REPORT == 1) %>% 
-    distinct(COMMON.NAME, LOCALITY.ID, MONTH) %>% 
-    left_join(data_prolific)
+  prolific0 <- prolific00 %>%
+    filter(LOCALITY.ID == unique(prolific00$LOCALITY.ID)[l])
   
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
-                        (1|LOCALITY.ID),
-                      data = data_spec, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  data_loc <- data_prolific %>% 
+    filter(LOCALITY.ID == unique(prolific00$LOCALITY.ID)[l])
   
-  for (j in 1:n_distinct(prolific0$MONTH)) {
-    for (k in 1:n_distinct(prolific0$M.YEAR)) {
-      count <- count + 1
+  for (i in 1:n_distinct(prolific0$COMMON.NAME)) {
+    
+    data_spec <- data_loc %>% 
+      filter(COMMON.NAME == unique(prolific0$COMMON.NAME)[i])
+    
+    model_spec <- glm(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR,
+                        data = data_spec, family = binomial(link = "cloglog"))
+    
+    for (j in 1:n_distinct(prolific0$MONTH)) {
       
-      prolific0$REP.FREQ.PRED[count] = predict(
-        model_spec,
-        data.frame(COMMON.NAME = prolific0$COMMON.NAME[count],
-                   MONTH = prolific0$MONTH[count],
-                   M.YEAR = prolific0$M.YEAR[count],
-                   NO.SP = median_length$NO.SP.MED[prolific0$MONTH[count]]),
-        re.form = NA, 
-        type = "response")
-      
-      print(glue::glue("Completed predictions for {unique(data_spec$COMMON.NAME)}, month {prolific0$MONTH[count]}, migratory year {prolific0$M.YEAR[count]}"))
+      for (k in 1:n_distinct(prolific0$M.YEAR)) {
+        
+        count <- count + 1
+        
+        prolific00$REP.FREQ.PRED[count] = predict(
+          model_spec,
+          data.frame(COMMON.NAME = prolific00$COMMON.NAME[count],
+                     MONTH = prolific00$MONTH[count],
+                     M.YEAR = prolific00$M.YEAR[count],
+                     NO.SP = median_length$NO.SP.MED[prolific00$MONTH[count]]),
+          re.form = NA, 
+          type = "response")
+        
+        print(glue::glue("Predicted for loc. {l}, sp. {i} {unique(data_spec$COMMON.NAME)}, month {j}, migratory year {prolific0$M.YEAR[count]}"))
+        
+      }
     }
   }
 }
-
 
 prolific1 <- prolific0 %>% 
   filter(MONTH %in% 4:5) %>% 
