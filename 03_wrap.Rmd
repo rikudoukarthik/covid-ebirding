@@ -4483,7 +4483,13 @@ temp5 <- data_prolific %>%
 data_prolific <- data_prolific %>% 
   left_join(species_prolific) %>% 
   filter(!(LOCALITY.ID %in% temp5$LOCALITY.ID))
+
+data_prolific1 <- data_prolific %>% filter(MONTH %in% 4:5) 
+data_prolific2 <- data_prolific %>% filter(!(MONTH %in% 4:5))
+data_prolific3 <- data_prolific
   
+
+##### modelling full data ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -4499,7 +4505,7 @@ for (l in 1:n_distinct(prolific0$LOCALITY.ID)) {
   
   data_loc <- data_prolific %>% 
     left_join(species_prolific) %>% 
-    filter(LOCALITY.ID == unique(prolific0$LOCALITY.ID)[5])
+    filter(LOCALITY.ID == unique(prolific0$LOCALITY.ID)[l])
   
   model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
                         (1|COMMON.NAME),
@@ -4531,8 +4537,7 @@ for (l in 1:n_distinct(prolific0$LOCALITY.ID)) {
   }
 }
 
-# COVID months
-prolific1 <- prolific0 %>% 
+prolific01 <- prolific0 %>% 
   filter(MONTH %in% 4:5) %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
   summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
@@ -4540,8 +4545,7 @@ prolific1 <- prolific0 %>%
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-# other months
-prolific2 <- prolific0 %>% 
+prolific02 <- prolific0 %>% 
   filter(!(MONTH %in% 4:5)) %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
   summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
@@ -4549,8 +4553,7 @@ prolific2 <- prolific0 %>%
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-# all months
-prolific3 <- prolific0 %>% 
+prolific03 <- prolific0 %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
   summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
             REP.FREQ.PRED = mean(REP.FREQ.PRED),
@@ -4558,31 +4561,31 @@ prolific3 <- prolific0 %>%
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
 
-(ggplot(prolific1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+(ggplot(prolific01, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.2, 0.6)) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
     labs(title = "For the months of April and May",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(prolific2, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+  ggplot(prolific02, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.2, 0.6)) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
     labs(title = "For other ten months",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(prolific3, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+  ggplot(prolific03, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.2, 0.6)) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
     labs(title = "For all twelve months",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -4590,9 +4593,168 @@ prolific3 <- prolific0 %>%
                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
   plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
-                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort.") -> b_prolific_loc
+                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (One model, visual comparison of months.)") -> b_prolific_loc0
 
-ggsave("03_wrap_figs/b_prolific_loc.png", b_prolific_loc,
+ggsave("03_wrap_figs/b_prolific_loc0.png", b_prolific_loc0,
+       width = 21, height = 6, units = "in", dpi = 300)
+
+##### modelling different months separately ####
+
+prolific1 <- data_prolific1 %>% 
+  left_join(species_prolific) %>% 
+  group_by(LOCALITY.ID) %>% 
+  tidyr::expand(nesting(MONTH), SP.CATEGORY, M.YEAR) %>% 
+  ungroup() %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+prolific2 <- data_prolific2 %>% 
+  left_join(species_prolific) %>% 
+  group_by(LOCALITY.ID) %>% 
+  tidyr::expand(nesting(MONTH), SP.CATEGORY, M.YEAR) %>% 
+  ungroup() %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+prolific3 <- data_prolific3 %>% 
+  left_join(species_prolific) %>% 
+  group_by(LOCALITY.ID) %>% 
+  tidyr::expand(nesting(MONTH), SP.CATEGORY, M.YEAR) %>% 
+  ungroup() %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+
+count <- 0
+for (l in 1:n_distinct(prolific1$LOCALITY.ID)) {
+  
+  data_loc <- data_prolific1 %>% 
+    left_join(species_prolific) %>% 
+    filter(LOCALITY.ID == unique(prolific1$LOCALITY.ID)[l])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
+                        (1|COMMON.NAME),
+                      data = data_loc, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (i in 1:n_distinct(prolific1$MONTH)) {
+    
+    for (j in 1:n_distinct(prolific1$M.YEAR)) {
+      
+      for (k in 1:n_distinct(prolific1$SP.CATEGORY)) {
+        
+        count <- count + 1
+        
+        prolific1$REP.FREQ.PRED[count] = predict(
+          model_spec,
+          data.frame(LOCALITY.ID = prolific1$LOCALITY.ID[count],
+                     MONTH = prolific1$MONTH[count],
+                     M.YEAR = prolific1$M.YEAR[count],
+                     NO.SP = median_length$NO.SP.MED[prolific1$MONTH[count]],
+                     SP.CATEGORY = prolific1$SP.CATEGORY[count]),
+          re.form = NA, 
+          type = "response")
+        
+        print(glue::glue("Completed predictions for loc. {l}, month {prolific1$MONTH[count]}, migratory year {prolific1$M.YEAR[count]}"))
+        
+      }
+    }
+  }
+}
+
+
+count <- 0
+for (l in 1:n_distinct(prolific2$LOCALITY.ID)) {
+  
+  data_loc <- data_prolific2 %>% 
+    left_join(species_prolific) %>% 
+    filter(LOCALITY.ID == unique(prolific2$LOCALITY.ID)[l])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
+                        (1|COMMON.NAME),
+                      data = data_loc, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (i in 1:n_distinct(prolific2$MONTH)) {
+    
+    for (j in 1:n_distinct(prolific2$M.YEAR)) {
+      
+      for (k in 1:n_distinct(prolific2$SP.CATEGORY)) {
+        
+        count <- count + 1
+        
+        prolific2$REP.FREQ.PRED[count] = predict(
+          model_spec,
+          data.frame(LOCALITY.ID = prolific2$LOCALITY.ID[count],
+                     MONTH = prolific2$MONTH[count],
+                     M.YEAR = prolific2$M.YEAR[count],
+                     NO.SP = median_length$NO.SP.MED[prolific2$MONTH[count]],
+                     SP.CATEGORY = prolific2$SP.CATEGORY[count]),
+          re.form = NA, 
+          type = "response")
+        
+        print(glue::glue("Completed predictions for loc. {l}, month {prolific2$MONTH[count]}, migratory year {prolific2$M.YEAR[count]}"))
+        
+      }
+    }
+  }
+} # Janardhan Uppada's patch not converging
+
+
+# lockdown months
+prolific11 <- prolific1 %>% 
+  filter(!is.na(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+# other months
+prolific22 <- prolific2 %>% 
+  filter(!is.na(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+# all months
+prolific33 <- prolific03
+
+
+(ggplot(prolific11, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(prolific22, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
+    labs(title = "For other ten months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(prolific33, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.7)) +
+    labs(title = "For all twelve months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
+                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (Individual models for comparison of months.)") -> b_prolific_loc1
+
+ggsave("03_wrap_figs/b_prolific_loc1.png", b_prolific_loc1,
        width = 21, height = 6, units = "in", dpi = 300)
 
 ```
