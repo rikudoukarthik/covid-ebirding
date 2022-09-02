@@ -4378,6 +4378,9 @@ median_length <- temp2 %>%
   group_by(LOCALITY.ID, MONTH) %>% 
   summarise(NO.SP.MED = median(NO.SP))
 
+
+### run per species, location var in model ####
+
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 prolific0 <- data_prolific %>% 
@@ -4528,6 +4531,7 @@ for (l in 1:n_distinct(prolific0$LOCALITY.ID)) {
   }
 }
 
+# COVID months
 prolific1 <- prolific0 %>% 
   filter(MONTH %in% 4:5) %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
@@ -4536,7 +4540,17 @@ prolific1 <- prolific0 %>%
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
+# other months
 prolific2 <- prolific0 %>% 
+  filter(!(MONTH %in% 4:5)) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+# all months
+prolific3 <- prolific0 %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
   summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
             REP.FREQ.PRED = mean(REP.FREQ.PRED),
@@ -4548,6 +4562,7 @@ prolific2 <- prolific0 %>%
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.2, 0.6)) +
     labs(title = "For the months of April and May",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -4557,21 +4572,42 @@ prolific2 <- prolific0 %>%
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-     labs(title = "For all twelve months",
-          x = "Migratory year", y = "Predicted reporting frequency") +
-     geom_point(size = 3, position = position_dodge(0.5)) +
-     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+    scale_y_continuous(limits = c(0.2, 0.6)) +
+    labs(title = "For other ten months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(prolific3, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.2, 0.6)) +
+    labs(title = "For all twelve months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
   plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
                   subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort.") -> b_prolific_loc
 
 ggsave("03_wrap_figs/b_prolific_loc.png", b_prolific_loc,
-       width = 16, height = 6, units = "in", dpi = 300)
+       width = 21, height = 6, units = "in", dpi = 300)
 
 ```
 
 The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area.
+
+When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so is the big spike we see in 2019 just due to those months? Then does that mean 2020 was more normal despite the second wave? Or should we be considering the spike in 2019 as a pre-COVID spike and the pattern in 2020 as the COVID effect?
+
+On including a third graph of all ten months other than the COVID months, it seems like this corroborates what we found from the initial metrics: that most changes were only in 2020, and despite the second wave in 2021 a lot of things were pretty much back to normal. This also answers my above question---we can safely consider the spike in MY 2019 as the effect of COVID. 
+
+The months of April and May seem to generally (in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. This was more pronounced in the pandemic year, and negligible in MY 2020.
+
+Spike in MY 2019: 
+My first thought was much more birding + improved skill of birders (because there is a slight increase even in the non-lockdown months). But it's also coming back down...
+I don't think it's more birds coming to human areas, because both urban and rural birds show similar increases. Then, could it really be better detection due to lower noise levels? Lower noise levels could have leaked into some of the non-lockdown months as well, explaining the presence of slight increase there.
 
 # References
 
