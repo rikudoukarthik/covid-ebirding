@@ -22,6 +22,7 @@ library(lubridate)
 library(patchwork)
 library(boot)
 library(lme4)
+library(glue)
 
 theme_set(theme_bw())
 
@@ -4632,7 +4633,7 @@ prolific2c <- prolific1c
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
     labs(title = "For the months of April and May",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -4642,7 +4643,7 @@ prolific2c <- prolific1c
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
     labs(title = "For other ten months",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -4652,7 +4653,7 @@ prolific2c <- prolific1c
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
     labs(title = "For all twelve months",
          x = "Migratory year", y = "Predicted reporting frequency") +
     geom_point(size = 3, position = position_dodge(0.5)) +
@@ -4664,6 +4665,145 @@ prolific2c <- prolific1c
 
 ggsave("03_wrap_figs/b_prolific2.png", b_prolific2,
        width = 21, height = 6, units = "in", dpi = 300)
+
+
+#######
+
+prolific2x <- data_prolific2a %>% 
+  group_by(LOCALITY.ID) %>% 
+  tidyr::expand(nesting(MONTH), M.YEAR, SP.CATEGORY) %>% 
+  ungroup() %>% 
+  mutate(REP.FREQ.PRED = NA)
+
+
+count <- 0
+for (l in 1:n_distinct(prolific2x$LOCALITY.ID)) {
+  
+  data_loc <- data_prolific2a %>% 
+    filter(LOCALITY.ID == unique(prolific2x$LOCALITY.ID)[l])
+  
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
+                        (1|COMMON.NAME),
+                      data = data_loc, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  for (i in 1:n_distinct(prolific2x$SP.CATEGORY)) {
+    
+    for (j in 1:n_distinct(prolific2x$M.YEAR)) {
+      
+      for (k in 1:n_distinct(prolific2x$MONTH)) {
+        
+        count <- count + 1
+        
+        prolific2x$REP.FREQ.PRED[count] = predict(
+          model_spec,
+          data.frame(LOCALITY.ID = prolific2x$LOCALITY.ID[count],
+                     MONTH = prolific2x$MONTH[count],
+                     M.YEAR = prolific2x$M.YEAR[count],
+                     NO.SP = median_length2a$NO.SP.MED[prolific2x$MONTH[count]],
+                     SP.CATEGORY = prolific2x$SP.CATEGORY[count]),
+          re.form = NA, 
+          type = "response")
+        
+        print(glue::glue("Completed predictions for loc. {l}, month {prolific2x$MONTH[count]}, migratory year {prolific2x$M.YEAR[count]}"))
+        
+      }
+    }
+  }
+}
+
+# lockdown months
+prolific2x <- prolific2x %>% 
+  filter(!is.na(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY) %>% 
+  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            CI.L = REP.FREQ.PRED - 1.96*SE,
+            CI.U = REP.FREQ.PRED + 1.96*SE)
+
+
+(ggplot(prolific2x, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
+    labs(title = "For the months of April and May",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(prolific2b, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
+    labs(title = "For other ten months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+  ggplot(prolific2c, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+    scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                       name = "Species category",
+                       labels = c("Rural", "Urban")) +
+    scale_y_continuous(limits = c(0.1, 0.8)) +
+    labs(title = "For all twelve months",
+         x = "Migratory year", y = "Predicted reporting frequency") +
+    geom_point(size = 3, position = position_dodge(0.5)) +
+    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                  size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
+                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (Individual models for comparison of months.)") -> b_prolific2x
+
+ggsave("03_wrap_figs/b_prolific2x.png", b_prolific2x,
+       width = 21, height = 6, units = "in", dpi = 300)
+
+
+
+
+x <- data.frame(A = factor(c("head")),
+                B = factor(c("abc", "def")),
+                C = factor(1:10)) %>% 
+  tidyr::expand(A, B, C)
+
+
+count <- 0
+for (i in 1:n_distinct(x$A)) {
+
+  for (j in 1:n_distinct(x$B)) {
+
+    for (k in 1:n_distinct(x$C)) {
+      
+      count <- count + 1
+      
+      print(glue("Level {i} of A ({x$A[count]}), {j} of B ({x$B[count]}), {k} of C ({x$C[count]})"))
+      
+    }
+    
+  }
+  
+}
+
+
+
+count <- 0
+for (i in 1:n_distinct(x$C)) {
+
+  for (j in 1:n_distinct(x$A)) {
+
+    for (k in 1:n_distinct(x$B)) {
+      
+      count <- count + 1
+      
+      print(glue("Level {j} of A ({x$A[count]}), {k} of B ({x$B[count]}), {i} of C ({x$C[count]})"))
+      
+    }
+    
+  }
+  
+}
+
 
 ```
 
