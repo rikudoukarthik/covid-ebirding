@@ -2606,9 +2606,7 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 ```{r b_setup, cache=TRUE, message=FALSE}
 
-load("data/data0_MY_slice.RData")
 load("data/data0_MY.RData")
-
 
 ### bird species to analyse/compare ####
 
@@ -4443,26 +4441,61 @@ for (l in 1:n_distinct(prolific1$LOCALITY.ID)) {
   }
 }
 
-prolific1a <- prolific1 %>% 
+# for plotting raw data with alpha
+prolific1a_points <- prolific1 %>% 
   filter(MONTH %in% 4:5) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(REP.FREQ.PRED = boot_conf(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(SE = sd(REP.FREQ.PRED),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED)) %>% 
+  # to make lines connect per location
+  group_by(LOCALITY.ID, SP.CATEGORY) %>% 
+  arrange(LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
+  mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
+
+# main points to be plotted
+prolific1a <- prolific1a_points %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+  summarise(REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-prolific1b <- prolific1 %>% 
+prolific1b_points <- prolific1 %>% 
   filter(!(MONTH %in% 4:5)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(REP.FREQ.PRED = boot_conf(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(SE = sd(REP.FREQ.PRED),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED)) %>% 
+  # to make lines connect per location
+  group_by(LOCALITY.ID, SP.CATEGORY) %>% 
+  arrange(LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
+  mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
+
+prolific1b <- prolific1b_points %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+  summarise(REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-prolific1c <- prolific1 %>% 
+prolific1c_points <- prolific1 %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(REP.FREQ.PRED = boot_conf(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(SE = sd(REP.FREQ.PRED),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED)) %>% 
+  # to make lines connect per location
+  group_by(LOCALITY.ID, SP.CATEGORY) %>% 
+  arrange(LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
+  mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
+
+prolific1c <- prolific1c_points %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+  summarise(REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
@@ -4471,9 +4504,17 @@ prolific1c <- prolific1 %>%
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For the months of April and May",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific1a_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific1a_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
@@ -4481,9 +4522,17 @@ prolific1c <- prolific1 %>%
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For other ten months",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific1b_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific1b_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
@@ -4491,15 +4540,23 @@ prolific1c <- prolific1 %>%
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.7)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For all twelve months",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific1c_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific1c_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
-                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (One model, visual comparison of months.)") -> b_prolific1
+  plot_annotation(title = "Change in bird species reporting from one model of all months",
+                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort.") -> b_prolific1
 
 ggsave("03_wrap_figs/b_prolific1.png", b_prolific1,
        width = 21, height = 6, units = "in", dpi = 300)
@@ -4606,36 +4663,65 @@ for (l in 1:n_distinct(prolific2b$LOCALITY.ID)) {
 } # Janardhan Uppada's patch not converging
 
 
-# lockdown months
-prolific2a <- prolific2a %>% 
+# for data points
+prolific2a_points <- prolific2a %>% 
   filter(!is.na(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(REP.FREQ.PRED = boot_conf(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(SE = sd(REP.FREQ.PRED),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED)) %>% 
+  # to make lines connect per location
+  group_by(LOCALITY.ID, SP.CATEGORY) %>% 
+  arrange(LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
+  mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
+
+prolific2a <- prolific2a_points %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+  summarise(REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-# other months
-prolific2b <- prolific2b %>% 
+# for data points
+prolific2b_points <- prolific2b %>% 
   filter(!is.na(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(REP.FREQ.PRED = boot_conf(REP.FREQ.PRED)) %>% 
+  group_by(M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(SE = sd(REP.FREQ.PRED),
+            REP.FREQ.PRED = mean(REP.FREQ.PRED)) %>% 
+  # to make lines connect per location
+  group_by(LOCALITY.ID, SP.CATEGORY) %>% 
+  arrange(LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
+  mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
+
+prolific2b <- prolific2b_points %>% 
   group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
+  summarise(REP.FREQ.PRED = mean(REP.FREQ.PRED),
+            SE = sqrt(sum((SE)^2))/n(),
             CI.L = REP.FREQ.PRED - 1.96*SE,
             CI.U = REP.FREQ.PRED + 1.96*SE)
 
-# all months
+prolific2c_points <- prolific1c_points
 prolific2c <- prolific1c
-
 
 
 (ggplot(prolific2a, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For the months of April and May",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific2a_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific2a_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
@@ -4643,9 +4729,17 @@ prolific2c <- prolific1c
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For other ten months",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific2b_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific2b_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
@@ -4653,171 +4747,39 @@ prolific2c <- prolific1c
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
                        name = "Species category",
                        labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
+    scale_y_continuous(limits = c(0.1, 1.0)) +
     labs(title = "For all twelve months",
          x = "Migratory year", y = "Predicted reporting frequency") +
+    # data points
+    geom_point(data = prolific2c_points, aes(group = PATH.GROUP),
+               size = 3, alpha = 0.25,
+               position = position_dodge(0.25)) + 
+    geom_path(data = prolific2c_points, 
+              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
+              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+    # main points
     geom_point(size = 3, position = position_dodge(0.5)) +
     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
-                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (Individual models for comparison of months.)") -> b_prolific2
+  plot_annotation(title = "Change in bird species reporting from three separate monthwise models",
+                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort.") -> b_prolific2
 
 ggsave("03_wrap_figs/b_prolific2.png", b_prolific2,
        width = 21, height = 6, units = "in", dpi = 300)
-
-
-#######
-
-prolific2x <- data_prolific2a %>% 
-  group_by(LOCALITY.ID) %>% 
-  tidyr::expand(nesting(MONTH), M.YEAR, SP.CATEGORY) %>% 
-  ungroup() %>% 
-  mutate(REP.FREQ.PRED = NA)
-
-
-count <- 0
-for (l in 1:n_distinct(prolific2x$LOCALITY.ID)) {
-  
-  data_loc <- data_prolific2a %>% 
-    filter(LOCALITY.ID == unique(prolific2x$LOCALITY.ID)[l])
-  
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
-                        (1|COMMON.NAME),
-                      data = data_loc, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-  
-  for (i in 1:n_distinct(prolific2x$SP.CATEGORY)) {
-    
-    for (j in 1:n_distinct(prolific2x$M.YEAR)) {
-      
-      for (k in 1:n_distinct(prolific2x$MONTH)) {
-        
-        count <- count + 1
-        
-        prolific2x$REP.FREQ.PRED[count] = predict(
-          model_spec,
-          data.frame(LOCALITY.ID = prolific2x$LOCALITY.ID[count],
-                     MONTH = prolific2x$MONTH[count],
-                     M.YEAR = prolific2x$M.YEAR[count],
-                     NO.SP = median_length2a$NO.SP.MED[prolific2x$MONTH[count]],
-                     SP.CATEGORY = prolific2x$SP.CATEGORY[count]),
-          re.form = NA, 
-          type = "response")
-        
-        print(glue::glue("Completed predictions for loc. {l}, month {prolific2x$MONTH[count]}, migratory year {prolific2x$M.YEAR[count]}"))
-        
-      }
-    }
-  }
-}
-
-# lockdown months
-prolific2x <- prolific2x %>% 
-  filter(!is.na(REP.FREQ.PRED)) %>% 
-  group_by(M.YEAR, SP.CATEGORY) %>% 
-  summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-            REP.FREQ.PRED = mean(REP.FREQ.PRED),
-            CI.L = REP.FREQ.PRED - 1.96*SE,
-            CI.U = REP.FREQ.PRED + 1.96*SE)
-
-
-(ggplot(prolific2x, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
-    labs(title = "For the months of April and May",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(prolific2b, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
-    labs(title = "For other ten months",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(prolific2c, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 0.8)) +
-    labs(title = "For all twelve months",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))) +
-  plot_layout(guides = "collect") +
-  plot_annotation(title = "Bird species reporting in the pandemic, with constant effort",
-                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort. (Individual models for comparison of months.)") -> b_prolific2x
-
-ggsave("03_wrap_figs/b_prolific2x.png", b_prolific2x,
-       width = 21, height = 6, units = "in", dpi = 300)
-
-
-
-
-x <- data.frame(A = factor(c("head")),
-                B = factor(c("abc", "def")),
-                C = factor(1:10)) %>% 
-  tidyr::expand(A, B, C)
-
-
-count <- 0
-for (i in 1:n_distinct(x$A)) {
-
-  for (j in 1:n_distinct(x$B)) {
-
-    for (k in 1:n_distinct(x$C)) {
-      
-      count <- count + 1
-      
-      print(glue("Level {i} of A ({x$A[count]}), {j} of B ({x$B[count]}), {k} of C ({x$C[count]})"))
-      
-    }
-    
-  }
-  
-}
-
-
-
-count <- 0
-for (i in 1:n_distinct(x$C)) {
-
-  for (j in 1:n_distinct(x$A)) {
-
-    for (k in 1:n_distinct(x$B)) {
-      
-      count <- count + 1
-      
-      print(glue("Level {j} of A ({x$A[count]}), {k} of B ({x$B[count]}), {i} of C ({x$C[count]})"))
-      
-    }
-    
-  }
-  
-}
-
 
 ```
 
 The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area.
 
-When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so is the big spike we see in 2019 just due to those months? Then does that mean 2020 was more normal despite the second wave? Or should we be considering the spike in 2019 as a pre-COVID spike and the pattern in 2020 as the COVID effect?
+When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain. 
 
-On including a third graph of all ten months other than the COVID months, it seems like this corroborates what we found from the initial metrics: that most changes were only in 2020, and despite the second wave in 2021 a lot of things were pretty much back to normal. This also answers my above question---we can safely consider the spike in MY 2019 as the effect of COVID. 
+The months of April and May seem to generally (even in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. The different patches under consideration all show considerably more variation (inferred from CIs) during these months than other times of the year. There is slightly more variability in rural species than in urban ones. There is also considerable variation between the patches in how reporting changed from year to year. While some increased in MY 2019, others decreased. 
 
-The months of April and May seem to generally (in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. This was more pronounced in the pandemic year, and negligible in MY 2020.
+In the other ten months of the year, nothing changed with the pandemic at all. In conclusion, it seems that the pandemic-induced changes were restricted to the lockdown months, but also there is no clear directionality in the changes over different locations and regions across the country.
 
-Spike in MY 2019: 
-My first thought was much more birding + improved skill of birders (because there is a slight increase even in the non-lockdown months). But it's also coming back down...
-I don't think it's more birds coming to human areas, because both urban and rural birds show similar increases. Then, could it really be better detection due to lower noise levels? Lower noise levels could have leaked into some of the non-lockdown months as well, explaining the presence of slight increase there.
+In some patches where reporting frequencies increased in MY 2019 then went back to normal, it could be due to lower noise levels inducing better detection.
+
 
 # References
 
