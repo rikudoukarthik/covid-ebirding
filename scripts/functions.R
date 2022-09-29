@@ -260,6 +260,9 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
                                rast_UNU_path,
                                maxvel = 20, minsut = 2){
   
+  require(tictoc)
+  tic("Completed data quality filtering and preparation in")
+  
   ### importing from usual modified ebd RData
   load(datapath) 
   # adding migratory year column
@@ -303,6 +306,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   
   save(lists_UNU, file = "data/lists_UNU.RData")
   
+  print("added UNU information")
   
   ### new observer data (to calculate no. of new observers metric) #######
 
@@ -315,23 +319,27 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
     ungroup() %>%
     distinct(OBSERVER.ID, .keep_all = TRUE) %>%
     mutate(YEAR = year(LAST.EDITED.DATE),
-           MONTH = month(LAST.EDITED.DATE)) %>%
-    filter(YEAR >= 2019) %>%
+           MONTH = month(LAST.EDITED.DATE),
+           M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
+           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) %>%
+    filter(M.YEAR >= 2018) %>%
     left_join(covidclass) %>%
     mutate(COVID = factor(COVID,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>%
-    rename(LE.YEAR = YEAR,
-           LE.MONTH = MONTH) %>%
+    rename(LE.YEAR = M.YEAR,
+           LE.MONTH = M.MONTH) %>%
     mutate(LE.YEAR = factor(LE.YEAR, levels = seq(2018, 2021, by = 1)),
            LE.MONTH = factor(LE.MONTH, levels = seq(1, 12, by = 1)),
-           YEAR = factor(year(OBSERVATION.DATE), levels = seq(2018, 2021, by = 1)),
-           MONTH = factor(month(OBSERVATION.DATE), levels = seq(1, 12, by = 1)))
+           YEAR = factor(year(OBSERVATION.DATE), levels = seq(2018, 2022, by = 1)),
+           MONTH = factor(month(OBSERVATION.DATE), levels = seq(1, 12, by = 1))) %>% 
+    mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
+           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH)))
 
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA)
   save(new_obsr_data, file = "data/new_obsr_data.RData")
   
-  
+  print("obtained new observer data")
   
   ### main data filtering ######
   
@@ -445,6 +453,11 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   save(data0_MY, file = "data/data0_MY.RData")
   save(data0_MY_slice_S, data0_MY_slice_G, file = "data/data0_MY_slice.RData")
   
+  print("completed main data filtering")
+  
+  
+  
+  toc()
   
 }
 
