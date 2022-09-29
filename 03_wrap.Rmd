@@ -25,6 +25,7 @@ library(lme4)
 library(glue)
 library(rasterVis)
 library(spdep)
+library(sf)
 
 theme_set(theme_bw())
 
@@ -104,6 +105,9 @@ month_compar <- data0_MY_slice_G %>%
   dplyr::summarise(N = n_distinct(COVID)) %>% 
   filter(N == 3) %>%  # all 3 COVID categories
   dplyr::select(MONTH)
+
+# removing unnecessary objects from maps.RData
+rm(areag1, areag2, areag3, areag4, districtmap, statemap)
 
 ```
 
@@ -1867,82 +1871,102 @@ require(rasterVis)
 
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
 
-load("data/rast_SoIB.RData")
 load("data/rast_UNU.RData")
+
+# tidy version of 25*25 grid to which values of interest can be joined (for spatial object)
+gridmapg1_sf <- gridmapg1 %>% 
+  st_as_sf() %>% 
+  rename(CELL.ID = id)
+
 
 ##### Change in birding effort (no. of lists) per grid cell (map)  ####
 
-data_SoIBmap0 <- data0_MY_slice_G %>% 
+data_SoIBmap0 <- gridmapg1_sf %>% 
+  left_join(data0_MY_slice_G) %>% 
   filter(MONTH %in% month_compar$MONTH) %>% 
-  mutate(CELL.LONG = raster::xyFromCell(rast_SoIB, CELL.ID)[,"x"],
-         CELL.LAT = raster::xyFromCell(rast_SoIB, CELL.ID)[,"y"]) %>%
-  group_by(COVID, CELL.ID, CELL.LONG, CELL.LAT, MONTH) %>% 
+  group_by(COVID, CELL.ID, MONTH) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
   ungroup()
 
-
-temp0 <- data_SoIBmap0 %>% distinct(CELL.ID, CELL.LONG, CELL.LAT)
+# all grid cells covered in whole time period (four years) 
+# (not all grids in India)
+# this is enough to show difference/change; other grids will be blank
+foc_grids <- data_SoIBmap0 %>% distinct(CELL.ID)
 
 
 data_SoIBmap1 <- data_SoIBmap0 %>% 
-  filter(COVID == "BEF") %>% 
-  # to include all grid cells and not just those with birding in BEF
-  right_join(temp0) %>% 
-  mutate(COVID = "BEF", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
+                              TRUE ~ 0),
+         COVID = "BEF") %>% 
+  arrange(desc(NO.LISTS)) %>% 
+  group_by(COVID, CELL.ID) %>% 
+  slice(1) %>% 
+  ungroup()
 
-rast_SoIBmap1 <- raster::rasterFromXYZ(xyz = data_SoIBmap1,
-                                       crs = raster::crs(rast_SoIB))
-
+# # to plot and check
+# data_SoIBmap1 %>% 
+#   ggplot() +
+#   geom_polygon(data = indiamap,
+#                aes(long, lat, group = group),
+#                colour = "black", fill = NA, size = 0.2) +
+#   geom_sf(aes(fill = NO.LISTS))
 
 data_SoIBmap2 <- data_SoIBmap0 %>% 
-  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
-  group_by(CELL.ID, CELL.LONG, CELL.LAT) %>% 
-  # averages cells with lists from both years, and returns single year value for others (n/1)
+  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
+                              TRUE ~ 0),
+         COVID = "DUR") %>% 
+  # averages for cells with lists both years, but returns single year value for others (n/1)
+  group_by(COVID, CELL.ID) %>% 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
-  ungroup() %>% 
-  right_join(temp0) %>% 
-  mutate(COVID = "DUR", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
-
-rast_SoIBmap2 <- raster::rasterFromXYZ(xyz = data_SoIBmap2,
-                                       crs = raster::crs(rast_SoIB))
-
+  arrange(desc(NO.LISTS)) %>% 
+  group_by(COVID, CELL.ID) %>% 
+  slice(1) %>% 
+  ungroup()
 
 data_SoIBmap3 <- data_SoIBmap0 %>% 
-  filter(COVID == "AFT") %>% 
-  right_join(temp0) %>% 
-  mutate(COVID = "AFT", 
-         NO.LISTS = replace_na(NO.LISTS, replace = 0)) %>% 
-  dplyr::select(CELL.LONG, CELL.LAT, NO.LISTS)
+  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
+                              TRUE ~ 0),
+         COVID = "AFT") %>% 
+  arrange(desc(NO.LISTS)) %>% 
+  group_by(COVID, CELL.ID) %>% 
+  slice(1) %>% 
+  ungroup()
 
-rast_SoIBmap3 <- raster::rasterFromXYZ(xyz = data_SoIBmap3,
-                                       crs = raster::crs(rast_SoIB))
+################
+
+transition_names <- data.frame(T.CODE = c("T1", "T2", "T3"),
+                               T.LABEL = c("Before to During", "During to After", 
+                                         "Before to After"))
+
+data_SoIBmap <- data_SoIBmap1 %>% 
+  bind_rows(data_SoIBmap2) %>% 
+  bind_rows(data_SoIBmap3) %>% 
+  pivot_wider(names_from = "COVID", values_from = "NO.LISTS") %>% 
+  mutate(T1 = rast_logpropchange(BEF, DUR),
+         T2 = rast_logpropchange(DUR, AFT),
+         T3 = rast_logpropchange(BEF, AFT)) %>% 
+  pivot_longer(cols = c(T1, T2, T3), names_to = "T.CODE", values_to = "T.CHANGE") %>% 
+  left_join(transition_names) %>% 
+  mutate(T.LABEL = factor(T.LABEL, levels = c("Before to During", "During to After", 
+                                              "Before to After")))
+
+
+ggplot(data_SoIBmap) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = "#E6E9F1", size = 0.2) +
+  geom_sf(aes(fill = T.CHANGE), col = NA) +
+  facet_wrap(~ T.LABEL) +
+  scale_fill_viridis_c(option = "cividis") + 
+  labs(x = "Longitude", y = "Latitude",
+       title = "Proportional change in monthly (seven months) no. of lists per 24km \u00d7 24km cell")
+  
 
 
 
-rast_SoIBmap <- raster::stack(
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap2, 
-                  k = 1, # constant to prevent NAs
-                  fun = rast_logpropchange),
-  raster::overlay(x = rast_SoIBmap2, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_logpropchange),
-  raster::overlay(x = rast_SoIBmap1, y = rast_SoIBmap3, 
-                  k = 1, 
-                  fun = rast_logpropchange))
-names(rast_SoIBmap) <- c("BeforeDuring", "DuringAfter", "BeforeAfter")
 
-
-
-library(RColorBrewer)
-
-
-in_bound <- rbind(india, states) %>% as("Spatial") # converting for sp::sp.polygons()
 
 # for graph legends
 plotfrom <- raster::cellStats(rast_SoIBmap, "min")[1]
@@ -1952,14 +1976,6 @@ plotlegend <- seq(round(plotfrom, 2), round(plotto, 2), 0.1)
 labellegend <- data.frame(NORMAL = seq(exp(plotfrom), exp(plotto), length.out = 10)) %>% 
   mutate(LOG = log(NORMAL),
          LABEL = round(NORMAL, 1))
-
-
-mytheme <- rasterVis::rasterTheme(region = viridis::viridis(100),
-                                  box.rectangle = list(col = "white", fill = "black"),
-                                  box.umbrella = list(col = 'black', lty = 1),
-                                  panel.background = list(col = "#F0F0F0"),
-                                  strip.background = list(col = "transparent"),
-                                  strip.border = list(col = "transparent"))
 
 levelplot(rast_SoIBmap, 
           par.settings = mytheme, 
@@ -2068,8 +2084,11 @@ ggsave("03_wrap_figs/12d_s_spread_netchange.png",
 
 require(spdep)
 
+data_SoIBmap1
 
 
+
+#
 
 ##### Removing packages ####
 
