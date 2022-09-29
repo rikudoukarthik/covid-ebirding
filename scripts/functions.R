@@ -1,9 +1,109 @@
+### joinmapvars ########################################
+
+# adapted from Ashwin's "addmapvars" function to allow use within data preparation steps
+# i.e., inputs and outputs are data objects in the environment, no writing of files involved
+
+# data: main data object to which map vars will be added (needs to be sliced already!)
+# admin = T if DISTRICT and ST_NM from shapefile required, else F
+# grids = T if grid cells (four resolutions) from shapefile required, else F
+
+
+#### maps.RData must already be loaded
+#### column names here are all uppercase, unlike in Ashwin's function
+
+
+joinmapvars = function(data, admin = T, grids = T){
+  
+  require(tidyverse)
+  require(sp)
+  require(rgeos)
+  
+  # single object at group ID level (same group ID, same grid/district/state)
+  temp0 <- data 
+  
+  
+  ### add columns with DISTRICT and ST_NM to main data 
+  
+  if (admin == T) {
+    
+    temp = temp0 # separate object to prevent repeated slicing (intensive step)
+    
+    rownames(temp) = temp$GROUP.ID # only to setup adding the group.id column for the future left_join
+    coordinates(temp) = ~LONGITUDE + LATITUDE # convert to SPDF
+    proj4string(temp) = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    
+    temp = sp::over(temp, districtmap) %>% # returns only ATTRIBUTES of districtmap (DISTRICT and ST_NM)
+      dplyr::select(1, 2) %>% 
+      rename(DISTRICT = dtname,
+             ST_NM = stname) %>% 
+      rownames_to_column("GROUP.ID") 
+    
+    data = left_join(temp, data)
+    
+  }
+  
+  ### add grid cell info (at four resolutions) to main data
+  
+  if (grids == T) {
+    
+    temp = temp0
+    
+    rownames(temp) = temp$GROUP.ID
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    
+    temp = sp::over(temp, gridmapg1) %>% 
+      rownames_to_column("GROUP.ID") %>% 
+      rename(GRIDG1 = id)
+    
+    data = left_join(temp, data)
+    
+    
+    temp = temp0
+    
+    rownames(temp) = temp$GROUP.ID
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    
+    temp = sp::over(temp, gridmapg2) %>% 
+      rownames_to_column("GROUP.ID") %>% 
+      rename(GRIDG2 = id)
+    
+    data = left_join(temp, data)
+    
+    
+    temp = temp0
+    
+    rownames(temp) = temp$GROUP.ID
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    
+    temp = sp::over(temp, gridmapg3) %>% 
+      rownames_to_column("GROUP.ID") %>% 
+      rename(GRIDG3 = id)
+    
+    data = left_join(temp, data)
+    
+    
+    temp = temp0
+    
+    rownames(temp) = temp$GROUP.ID
+    coordinates(temp) = ~LONGITUDE + LATITUDE
+    
+    temp = sp::over(temp, gridmapg4) %>% 
+      rownames_to_column("GROUP.ID") %>% 
+      rename(GRIDG4 = id)
+    
+    data = left_join(temp, data)
+    
+  }
+  
+  return(data)
+  
+}
+
 ### MODIS land-use map to get urban-non-urban information -----------------
 
 getmodisdata <- function(){
   
-# MCD12Q1 LULC data from December 2019, being aggregated to 2kmx2km ("UNU") and 
-# 24kmx24km (SoIB) scales.
+# MCD12Q1 LULC data from December 2019, being aggregated to 2kmx2km ("UNU")
 # this will be retained as a raster and also joined to the EBD data
 
 require(raster) # masks dplyr functions, so have used package::function()
@@ -120,14 +220,6 @@ rast_UNU <- rast_UNU %>%
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 
-# aggregating to 24km*24km for SoIB inference
-# (here, priority is getting grid cell information, not so much the UNU classification, as that is not directly going to be used; instead will use birding values from them which will be averaged to the SoIB scale)
-rast_SoIB <- rast_UNU %>% 
-  raster::aggregate(fact = 12, fun = rast_agg_fn)
-
-save(rast_SoIB, file = "data/rast_SoIB.RData")
-
-
 # 
 # below needed only when finalising the correct code for this whole process. no need to repeat. 
 # ### Leaflet overlay to verify urban/non- classification #######
@@ -158,13 +250,14 @@ save(rast_SoIB, file = "data/rast_SoIB.RData")
 ### data quality filters and preparation -----------------
 
 # data file path
+# latest Ashwin's maps.RData file (having areas)
 # path to list of group accounts to be filtered out
 # path to classification of year-month as COVID categories
-# path to raster data at 2x2 and 24x24 scales
+# path to raster data at 2x2 scale
 
 
 data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
-                               rast_UNU_path, rast_SoIB_path,
+                               rast_UNU_path,
                                maxvel = 20, minsut = 2){
   
   ### importing from usual modified ebd RData
@@ -186,17 +279,17 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   ### COVID classification
   covidclass <- read_csv(covidclasspath)
   
-
-  ### adding UNU information ######
   
   require(tidyverse)
   require(lubridate)
   require(terra)
   require(sp)
   
-  load(rast_UNU_path)
-  load(rast_SoIB_path)
   
+  ### adding UNU information ######
+  
+  load(rast_UNU_path)
+
   # adding extracted land cover values at eBird data points with grid cell information at both scales
   # Pakistan-administered Kashmir lists produce NA for URBAN
   lists_UNU <- data %>% 
@@ -204,9 +297,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
     mutate(URBAN = raster::extract(rast_UNU, cbind(LONGITUDE, LATITUDE)),
            NONURBAN = if_else(URBAN == 1, 0, 1),
            # 2km*2km
-           SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE)), 
-           # 24km*24km
-           CELL.ID = raster::cellFromXY(rast_SoIB, cbind(LONGITUDE, LATITUDE))) %>% 
+           SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE))) %>% 
     filter(!is.na(URBAN)) %>% 
     select(-LONGITUDE, -LATITUDE)
   
@@ -337,6 +428,19 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
     group_by(GROUP.ID) %>% 
     slice(1) %>%
     ungroup()
+  
+  # adding map variables (CELL.ID) to main data
+  load("data/maps.RData") # Ashwin's maps data
+  
+  lists_grids <- data0_MY_slice_G %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
+    joinmapvars() %>% 
+    # 25x25 grid cells
+    rename(CELL.ID = GRIDG1)
+
+  data0_MY <- data0_MY %>% left_join(lists_grids)
+  data0_MY_slice_S <- data0_MY_slice_S %>% left_join(lists_grids)
+  data0_MY_slice_G <- data0_MY_slice_G %>% left_join(lists_grids)
   
   save(data0_MY, file = "data/data0_MY.RData")
   save(data0_MY_slice_S, data0_MY_slice_G, file = "data/data0_MY_slice.RData")

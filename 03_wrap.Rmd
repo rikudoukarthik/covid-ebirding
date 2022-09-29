@@ -23,6 +23,8 @@ library(patchwork)
 library(boot)
 library(lme4)
 library(glue)
+library(rasterVis)
+library(spdep)
 
 theme_set(theme_bw())
 
@@ -68,10 +70,9 @@ source("scripts/functions.R")
 # groupaccspath <- "data/ebd_users_GA_relMay-2022.csv"
 # covidclasspath <- "data/covid_classification.csv"
 # rast_UNU_path <- "data/rast_UNU.RData"
-# rast_SoIB_path <- "data/rast_SoIB.RData"
 # 
 # data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
-#                    rast_UNU_path, rast_SoIB_path,
+#                    rast_UNU_path, 
 #                    maxvel = 20, minsut = 2)
 # tictoc::toc()
 
@@ -1862,7 +1863,7 @@ data0 <- data0 %>%
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
-library(rasterVis)
+require(rasterVis)
 
 # using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
 
@@ -2061,6 +2062,13 @@ s_spread_netchange
 ggsave("03_wrap_figs/12d_s_spread_netchange.png", 
        plot = s_spread_netchange,
        dpi = 300, width = 6, height = 9, units = "in")
+
+
+##### Final analysis: spatial autocorrelation with Moran's I ####
+
+require(spdep)
+
+
 
 
 ##### Removing packages ####
