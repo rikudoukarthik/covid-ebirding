@@ -1957,10 +1957,12 @@ s_spread_map <- ggplot(data_SoIBmap) +
                colour = "black", fill = "#E6E9F1", size = 0.2) +
   geom_sf(aes(fill = T.CHANGE), col = NA, na.rm = T) +
   facet_wrap(~ T.LABEL) +
-  scale_fill_viridis_c(option = "cividis") + 
+  scale_fill_viridis_c(option = "cividis", 
+                       labels = ~ glue::glue("{10^(.x)}\u00d7"),
+                       name = "Proportional\nchange") +
   labs(x = "Longitude", y = "Latitude",
-       title = "Proportional change in monthly no. of lists per 24km \u00d7 24km cell")
-  
+       title = "Proportional change in monthly no. of lists per 24km \u00d7 24km cell") +
+  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
 
 ggsave("03_wrap_figs/10c_s_spread_map.png", s_spread_map,
        width = 24, height = 9, units = "in", dpi = 300)
