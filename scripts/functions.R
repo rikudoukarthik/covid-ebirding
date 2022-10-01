@@ -514,22 +514,25 @@ rast_agg_fn <- function(x, ...){
 
 ### raster calc: log proportional change in number of lists -----------------
 
-rast_logpropchange <- function(x, y, k = 1)  {
+rast_logpropchange <- function(x, y, k = 1, emptycheck = F)  {
   
+  # To return NA if both values being compared are zero 
+  # (mainly useful for maps of proportional change to visualise empty grid cells)
   # x is first, y is second, so change from x to y
   
-  # # when no. of lists has been log transformed
+  # # when no. of lists has been log transformed (this not vectorised)
   # # log(n2) - log(n1) = log(n2/n1)
   # return(y-x)
   
   # when value has not been transformed to prevent NA
-  x <- x + k
-  y <- y + k
+
+  case_when(emptycheck == T & (x == 0 & y == 0) ~ NA_real_, 
+            TRUE ~ log10((y + k)/(x + k)))
   
   # proportion of urban birding in the cell changed by y/x [0,+n] times.
-  return(log10(y/x))
   
 }
+
 
 ### raster calc: proportional change in number of lists -----------------
 
