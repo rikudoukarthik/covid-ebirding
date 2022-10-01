@@ -527,7 +527,7 @@ rast_logpropchange <- function(x, y, k = 1, emptycheck = F)  {
   # when value has not been transformed to prevent NA
 
   case_when(emptycheck == T & (x == 0 & y == 0) ~ NA_real_, 
-            TRUE ~ log((y + k)/(x + k)))
+            TRUE ~ log10((y + k)/(x + k)))
   
   # proportion of urban birding in the cell changed by y/x [0,+n] times.
   
@@ -539,7 +539,7 @@ rast_logpropchange <- function(x, y, k = 1, emptycheck = F)  {
 rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
   
   case_when(emptycheck == T & (x == 0 & y == 0) ~ NA_real_, 
-            TRUE ~ 100*(y + k)/(x + k)) # percentage
+            TRUE ~ (y + k)/(x + k)) # percentage
   
   # proportion of urban birding in the cell changed by y/x [0,+n] times.
 
