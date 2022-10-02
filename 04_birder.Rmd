@@ -1,3 +1,9 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
 # Birder behaviour (focus level: checklists)
 
 Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
@@ -1722,17 +1728,10 @@ data0 <- data0 %>%
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
-# using 24kmx24km for better compatibility with the 2x2 UNU resolution (facilitating whole number aggregation/averaging)
-
-load("data/rast_UNU.RData")
-
 # tidy version of 25*25 grid to which values of interest can be joined (for spatial object)
 gridmapg1_sf <- gridmapg1 %>% 
   st_as_sf() %>% 
   rename(CELL.ID = id)
-
-
-##### Change in birding effort (no. of lists) per grid cell (map)  ####
 
 data_SoIBmap0 <- gridmapg1_sf %>% 
   left_join(data0_MY_slice_G) %>% 
@@ -1760,12 +1759,12 @@ data_SoIBmap1 <- data_SoIBmap0 %>%
   ungroup()
 
 # # to plot and check
-# data_SoIBmap1 %>% 
+# data_SoIBmap1 %>%
 #   ggplot() +
 #   geom_polygon(data = indiamap,
 #                aes(long, lat, group = group),
 #                colour = "black", fill = NA, size = 0.2) +
-#   geom_sf(aes(fill = NO.LISTS))
+#   geom_sf(aes(fill = NO.LISTS), col = NA)
 
 data_SoIBmap2 <- data_SoIBmap0 %>% 
   mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
@@ -1788,6 +1787,8 @@ data_SoIBmap3 <- data_SoIBmap0 %>%
   slice(1) %>% 
   ungroup()
 
+
+##### Change in birding effort (no. of lists) per grid cell (map)  ####
 
 transition_names <- data.frame(T.CODE = c("T1", "T2", "T3"),
                                T.LABEL = c("Before to During", "During to After", 
@@ -1829,7 +1830,7 @@ ggsave("03_wrap_figs/10c_s_spread_map.png", s_spread_map,
        width = 24, height = 9, units = "in", dpi = 300)
 
 
-##### Final analysis: net change across grids with SEs ####
+##### Net change across grids with SEs ####
 
 set.seed(23) # for bootstrap
 
@@ -1876,8 +1877,108 @@ ggsave("03_wrap_figs/10c_s_spread_netchange.png",
 
 require(spdep)
 
-data_SoIBmap1
+clust_data <- data_SoIBmap1 %>% 
+  bind_rows(data_SoIBmap2) %>% 
+  bind_rows(data_SoIBmap3) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT")))
 
+clust_w <- clust_data %>% 
+  poly2nb() %>% # neighbours object
+  nb2listw() # weights
+
+clust_data$MORAN <- localmoran(clust_data$NO.LISTS, clust_w)[,1]
+
+clust_map <- tmap::tm_shape(clust_data) +
+  tmap::tm_polygons("MORAN", 
+                    palette = "cividis", border.col = NULL, midpoint = 0) +
+  tmap::tm_facets(by = "COVID") +
+  tmap::tm_layout(legend.outside.size = 0.05)
+
+tmap::tmap_save(clust_map, filename = "03_wrap_figs/10c_s_spread_clust_map.png",
+                width = 24, height = 9, units = "in", dpi = 300)
+
+
+ggplot(clust_data) +
+  geom_sf(aes(fill = MORAN), col = NA) +
+  facet_wrap(~ COVID) +
+  scale_fill_gradient(option = "cividis")
+
+
+#### analysing three periods separately
+
+islands <- data0_MY_slice_S %>% 
+  # distinct(STATE, CELL.ID) %>% 
+  # filter(STATE %in% c("Lakshadweep", "Andaman and Nicobar Islands"))
+  distinct(ST_NM, CELL.ID) %>% 
+  filter(ST_NM %in% c("LAKSHADWEEP", "ANDAMAN & NICOBAR") |
+           is.na(ST_NM))
+
+clust_data1 <- data_SoIBmap1 %>% 
+  anti_join(islands) %>%
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+clust_data2 <- data_SoIBmap2 %>% 
+  anti_join(islands) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+clust_data3 <- data_SoIBmap3 %>% 
+  anti_join(islands) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+
+(clust_data1 %>%
+  ggplot() +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = NA, size = 0.2) +
+  geom_sf(aes(fill = NO.LISTS), col = NA)) |
+(clust_data %>%
+  ggplot() +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = NA, size = 0.2) +
+  geom_sf(aes(fill = NO.LISTS), col = NA))
+
+# islands end up with zero neighbours when the three periods split, so zero.policy = T
+clust_w1 <- clust_data1 %>% poly2nb() %>% nb2listw() 
+clust_w2 <- clust_data2 %>% poly2nb() %>% nb2listw(zero.policy = TRUE) 
+clust_w3 <- clust_data3 %>% poly2nb() %>% nb2listw(zero.policy = TRUE) 
+
+clust_data1$MORAN <- localmoran(clust_data1$NO.LISTS, clust_w1)[,1]
+clust_data2$MORAN <- localmoran(clust_data2$NO.LISTS, clust_w2)[,1]
+clust_data3$MORAN <- localmoran(clust_data3$NO.LISTS, clust_w3)[,1]
+
+
+
+
+clust_map <- tmap::tm_shape(clust_data) +
+  tmap::tm_polygons("MORAN", 
+                    palette = "cividis", border.col = NULL, midpoint = 0) +
+  tmap::tm_facets(by = "COVID") +
+  tmap::tm_layout(legend.outside.size = 0.05)
+
+tmap::tmap_save(clust_map, filename = "03_wrap_figs/10c_s_spread_clust_map.png",
+                width = 24, height = 9, units = "in", dpi = 300)
+
+
+##### Final analysis: testing change in clustering ####
+
+clust_data0 <- clust_data %>% st_drop_geometry()
+
+lmer(MORAN ~ COVID + (1|CELL.ID), data = clust_data0)
+
+# # removing outliers not a good idea because +ve values MUCH higher than -ve values
+# # by order of magnitude, so no point
+# summary(clust_data0$MORAN)
+# Removing the 9-10 highest values of Moran, reduced the difference in estimates
+# (approx. intercept 0.2, DUR -0.09, AFT -.009)
+
+# can maybe try with log instead, but are there zero values?
+clust_data0 %>% filter(MORAN == 0) # no!
+# but negative values cannot be log or sqrt transformed
+summary(log(clust_data0$MORAN))
+
+
+### trying global Moran instead
+
+moran.test(clust_data1$NO.LISTS, clust_w)
 
 
 #
