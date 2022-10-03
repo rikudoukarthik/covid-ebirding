@@ -1906,46 +1906,21 @@ ggplot(clust_data) +
 
 #### analysing three periods separately
 
-islands <- data0_MY_slice_S %>% 
-  # distinct(STATE, CELL.ID) %>% 
-  # filter(STATE %in% c("Lakshadweep", "Andaman and Nicobar Islands"))
-  distinct(ST_NM, CELL.ID) %>% 
-  filter(ST_NM %in% c("LAKSHADWEEP", "ANDAMAN & NICOBAR") |
-           is.na(ST_NM))
+# need to identify grid cells with no neighbours in order to remove them
 
 clust_data1 <- data_SoIBmap1 %>% 
-  anti_join(islands) %>%
-  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
-clust_data2 <- data_SoIBmap2 %>% 
-  anti_join(islands) %>% 
-  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
-clust_data3 <- data_SoIBmap3 %>% 
-  anti_join(islands) %>% 
   mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
 
-(clust_data1 %>%
+clust_data1 %>%
   ggplot() +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
                colour = "black", fill = NA, size = 0.2) +
-  geom_sf(aes(fill = NO.LISTS), col = NA)) |
-(clust_data %>%
-  ggplot() +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               colour = "black", fill = NA, size = 0.2) +
-  geom_sf(aes(fill = NO.LISTS), col = NA))
+  geom_sf(aes(fill = NO.LISTS), col = NA)
 
-# islands end up with zero neighbours when the three periods split, so zero.policy = T
 clust_w1 <- clust_data1 %>% poly2nb() %>% nb2listw() 
-clust_w2 <- clust_data2 %>% poly2nb() %>% nb2listw(zero.policy = TRUE) 
-clust_w3 <- clust_data3 %>% poly2nb() %>% nb2listw(zero.policy = TRUE) 
 
 clust_data1$MORAN <- localmoran(clust_data1$NO.LISTS, clust_w1)[,1]
-clust_data2$MORAN <- localmoran(clust_data2$NO.LISTS, clust_w2)[,1]
-clust_data3$MORAN <- localmoran(clust_data3$NO.LISTS, clust_w3)[,1]
-
-
 
 
 clust_map <- tmap::tm_shape(clust_data) +

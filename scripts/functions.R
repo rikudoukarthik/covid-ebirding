@@ -544,3 +544,34 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
   # proportion of urban birding in the cell changed by y/x [0,+n] times.
 
 }
+
+### create nb object but omit grid cells having no neighbours -----------------
+
+# these need to be removed when calculating weights for the Moran analyses
+# also creates data object "nb_zero" in environment: list of cells with no neighbours
+# BUT needs there to be CELL.ID column in input data object
+
+# ref: https://stackoverflow.com/a/57378930/13000254
+
+poly2omit0nb <- function(data) {
+  
+  nbobj <- data %>% poly2nb()
+  
+  # getting number of neighbours for each cell
+  nbcount <- card(nbobj)
+  
+  # list of cells with no neighbours
+  nb_zero <- which(nbcount == 0)
+  # list of cells with neighbours
+  nb_true <- which(nbcount != 0)
+  
+  
+  # actual CELL.IDs of cells with zero neighbours
+  cell_zero <- data.frame(CELL.ID = data$CELL.ID[nb_zero])
+  assign("cell_zero", cell_zero, envir = .GlobalEnv)
+
+
+  # only return the cell if it has neighbours
+  return(subset.nb(nbobj, (1:length(nbobj) %in% nb_true)))
+  
+}
