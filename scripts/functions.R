@@ -553,6 +553,8 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
 
 # ref: https://stackoverflow.com/a/57378930/13000254
 
+require(spdep)
+
 poly2omit0nb <- function(data) {
   
   nbobj <- data %>% poly2nb()
@@ -573,5 +575,65 @@ poly2omit0nb <- function(data) {
 
   # only return the cell if it has neighbours
   return(subset.nb(nbobj, (1:length(nbobj) %in% nb_true)))
+  
+}
+
+
+### period-wise local moran -----------------
+
+# need to input three different data objects corresponding to three periods
+
+localmoran_pw <- function(data_p1, data_p2, data_p3) {
+  
+  require(spdep)
+
+  
+  {
+    clust_data1 <- data_p1 %>% 
+      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+    
+    clust_w1 <- clust_data1 %>% poly2omit0nb() %>% nb2listw()
+    
+    # removing 0nb cells from main data obj also
+    clust_data1 <- clust_data1 %>% anti_join(cell_zero)
+    
+    clust_data1$MORAN <- localmoran(clust_data1$NO.LISTS, clust_w1)[,1]
+  }
+  
+  {
+    clust_data2 <- data_p2 %>% 
+      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+    
+    clust_w2 <- clust_data2 %>% poly2omit0nb() %>% nb2listw()
+    
+    # removing 0nb cells from main data obj also
+    clust_data2 <- clust_data2 %>% anti_join(cell_zero)
+    
+    clust_data2$MORAN <- localmoran(clust_data2$NO.LISTS, clust_w2)[,1]
+  }
+  
+  {
+    clust_data3 <- data_p3 %>% 
+      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
+    
+    clust_w3 <- clust_data3 %>% poly2omit0nb() %>% nb2listw()
+    
+    # removing 0nb cells from main data obj also
+    clust_data3 <- clust_data3 %>% anti_join(cell_zero)
+    
+    clust_data3$MORAN <- localmoran(clust_data3$NO.LISTS, clust_w3)[,1]
+  }
+  
+  
+  clust_data <- clust_data1 %>% 
+    bind_rows(clust_data2) %>% 
+    bind_rows(clust_data3)
+  
+  
+  # should the weights objects be saved in environment? don't think so
+  
+  
+  # returning overall data with moran values
+  return(clust_data)
   
 }

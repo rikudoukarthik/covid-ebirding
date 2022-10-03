@@ -25,6 +25,7 @@ library(lme4)
 library(glue)
 library(spdep)
 library(sf)
+library(tmap)
 
 theme_set(theme_bw())
 
