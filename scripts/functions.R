@@ -592,7 +592,18 @@ poly2omit0nb <- function(data) {
 # sig.lvl <- 0.05 # 95% confidence
 # correction <- "fdr" # False Discovery Rate, performs better in COA; other options in p.adjust()
 
-localmoran_coa <- function(data, data_weights, sig.lvl = 0.05, correction = "fdr"){
+localmoran_coa <- function(data, data_weights, 
+                           sig.lvl = 0.05, correction = "fdr", highlight = "outlier"){
+  
+  if (highlight == "outlier") {
+    CO_levels <- c("HL", "HH", "NS", "LL", "LH")
+    } else if (highlight == "cluster") {
+      CO_levels <- c("HH", "HL", "NS", "LH", "LL")
+    }
+  
+  # log-transforming the number of lists (+1) in order to allow analysis to be more sensitive,
+  # and to not let the high values overwhelm
+  data <- data %>% mutate(NO.LISTS = log(NO.LISTS + 1))
   
   # calculating mean value because in cluster and outlier analysis, the reference to 
   # high and low is relative to the mean of the variable, and should not be interpreted 
@@ -614,10 +625,11 @@ localmoran_coa <- function(data, data_weights, sig.lvl = 0.05, correction = "fdr
                 P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS >= mean.ref ~ "HH",
                 P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS < mean.ref ~ "LL",
                 P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS >= mean.ref ~ "HL",
-                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS < mean.ref ~ "LH")
+                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS < mean.ref ~ "LH"),
+      levels = CO_levels
     )) %>% 
-    # setting insignificant values to NA to map separately
-    mutate(NO.LISTS = if_else(CO.TYPE == "NS", NA_real_, NO.LISTS)) %>% 
+    # # setting insignificant values to NA to map separately
+    # mutate(NO.LISTS = if_else(CO.TYPE == "NS", NA_real_, NO.LISTS)) %>% 
     # renaming Ii to MORAN for easy reference
     rename(MORAN = Ii) %>% 
     # reclassifying from "localmoran" type to double
