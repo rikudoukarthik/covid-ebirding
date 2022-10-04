@@ -579,11 +579,60 @@ poly2omit0nb <- function(data) {
 }
 
 
-### period-wise local moran -----------------
+### local moran cluster and outlier analysis (COA) -----------------
+
+# Deriving the cluster/outlier types (COType in ArcGIS term) for each spatial feature 
+
+# manual implementation of COA using local Moran's I (Anselin), because no function 
+# exists for this
+
+# ARGUMENTS:
+# data is the input spatial object (sf dataframe)
+# data_weights is the list of weights
+# sig.lvl <- 0.05 # 95% confidence
+# correction <- "fdr" # False Discovery Rate, performs better in COA; other options in p.adjust()
+
+localmoran_coa <- function(data, data_weights, sig.lvl = 0.05, correction = "fdr"){
+  
+  # calculating mean value because in cluster and outlier analysis, the reference to 
+  # high and low is relative to the mean of the variable, and should not be interpreted 
+  # in an absolute sense.
+  mean.ref <- mean(data$NO.LISTS)
+  
+  data_COA <- localmoran(data$NO.LISTS, data_weights) %>% 
+    as_tibble() %>% 
+    magrittr::set_colnames(c("Ii","E.Ii","Var.Ii","Z.Ii","Pr(z > 0)")) # for easy reference
+  
+  # adjusting the p-value based on correction method
+  data_COA$P.ADJ <- p.adjust(data_COA$`Pr(z > 0)`, method = correction)
+  
+  data_COA <- data_COA %>% 
+    # joining to main data
+    bind_cols(data) %>% 
+    mutate(CO.TYPE = factor(
+      case_when(P.ADJ > sig.lvl ~ "NS",
+                P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS >= mean.ref ~ "HH",
+                P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS < mean.ref ~ "LL",
+                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS >= mean.ref ~ "HL",
+                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS < mean.ref ~ "LH")
+    )) %>% 
+    # setting insignificant values to NA to map separately
+    mutate(NO.LISTS = if_else(CO.TYPE == "NS", NA_real_, NO.LISTS)) %>% 
+    # renaming Ii to MORAN for easy reference
+    rename(MORAN = Ii) %>% 
+    # reclassifying from "localmoran" type to double
+    mutate(across(c("MORAN","E.Ii","Var.Ii","Z.Ii","Pr(z > 0)"), ~ as.double(.x)))
+  
+  return(data_COA)
+  
+}
+
+
+### period-wise spatial spread analysis (local Moran cluster and outlier analysis) -------
 
 # need to input three different data objects corresponding to three periods
 
-localmoran_pw <- function(data_p1, data_p2, data_p3) {
+pw_spread_LMCOA <- function(data_p1, data_p2, data_p3) {
   
   require(spdep)
 
@@ -597,7 +646,8 @@ localmoran_pw <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data1 <- clust_data1 %>% anti_join(cell_zero)
     
-    clust_data1$MORAN <- localmoran(clust_data1$NO.LISTS, clust_w1)[,1]
+    clust_data1 <- localmoran_coa(clust_data1, clust_w1, sig.lvl = 0.05, correction = "fdr")
+
   }
   
   {
@@ -609,7 +659,7 @@ localmoran_pw <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data2 <- clust_data2 %>% anti_join(cell_zero)
     
-    clust_data2$MORAN <- localmoran(clust_data2$NO.LISTS, clust_w2)[,1]
+    clust_data2 <- localmoran_coa(clust_data2, clust_w2, sig.lvl = 0.05, correction = "fdr")
   }
   
   {
@@ -621,13 +671,15 @@ localmoran_pw <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data3 <- clust_data3 %>% anti_join(cell_zero)
     
-    clust_data3$MORAN <- localmoran(clust_data3$NO.LISTS, clust_w3)[,1]
+    clust_data3 <- localmoran_coa(clust_data3, clust_w3, sig.lvl = 0.05, correction = "fdr")
   }
   
   
   clust_data <- clust_data1 %>% 
     bind_rows(clust_data2) %>% 
-    bind_rows(clust_data3)
+    bind_rows(clust_data3) %>% 
+    # making it sf object
+    st_as_sf()
   
   
   # should the weights objects be saved in environment? don't think so

@@ -1873,13 +1873,15 @@ ggsave("03_wrap_figs/10c_s_spread_netchange.png",
        dpi = 300, width = 6, height = 9, units = "in")
 
 
-##### Final analysis: spatial autocorrelation with Moran's I ####
+##### Final analysis (map): cluster and outlier analysis with local Moran's I ####
 
 require(spdep)
 
 #### analysing three periods separately
 
-clust_data <- localmoran_pw(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3)
+clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3)
+# only realised after creating this function that there was no need to do this as
+# localmoran() has zero.policy argument as well like poly2nb()
 
 
 clust_map <- tmap::tm_shape(clust_data) +
