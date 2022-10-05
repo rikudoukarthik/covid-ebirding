@@ -1728,6 +1728,8 @@ data0 <- data0 %>%
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
+load("data/maps_gridmapg1_IN.RData") # all cells in India
+
 # tidy version of 25*25 grid to which values of interest can be joined (for spatial object)
 gridmapg1_sf <- gridmapg1 %>% 
   st_as_sf() %>% 
@@ -1879,9 +1881,28 @@ require(spdep)
 
 #### analysing three periods separately
 
-clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3)
+clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3,
+                              countrywide = T, trans.resp = T)
 # only realised after creating this function that there was no need to do this as
 # localmoran() has zero.policy argument as well like poly2nb()
+
+clust_map_all <- ggplot(clust_data) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = "#E6E9F1", size = 0.2) +
+  facet_wrap(~ COVID, nrow = 1) +
+  geom_sf(aes(fill = CO.TYPE), color = NA) +
+  scale_fill_viridis_d(option = "cividis", direction = -1,
+                       name = 'Clusters & \nOutliers') +
+  labs(x = "Longitude", y = "Latitude",
+       title = "") +
+  # making the colourbar bigger
+  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+
+ggsave("03_wrap_figs/10c_s_spread_clust_map_all.png", clust_map_all,
+       width = 24, height = 9, units = "in", dpi = 300)
+
+
 
 clust_map <- ggplot(clust_data) +
   geom_polygon(data = indiamap,
@@ -1898,7 +1919,6 @@ clust_map <- ggplot(clust_data) +
 
 ggsave("03_wrap_figs/10c_s_spread_clust_map.png", clust_map,
        width = 24, height = 9, units = "in", dpi = 300)
-
 
 ##### Final analysis: testing change in clustering ####
 

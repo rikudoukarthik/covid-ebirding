@@ -593,7 +593,8 @@ poly2omit0nb <- function(data) {
 # correction <- "fdr" # False Discovery Rate, performs better in COA; other options in p.adjust()
 
 localmoran_coa <- function(data, data_weights, 
-                           sig.lvl = 0.05, correction = "fdr", highlight = "outlier"){
+                           sig.lvl = 0.05, correction = "fdr", 
+                           highlight = "outlier", trans.resp = F){
   
   if (highlight == "outlier") {
     CO_levels <- c("HL", "HH", "NS", "LL", "LH")
@@ -601,14 +602,16 @@ localmoran_coa <- function(data, data_weights,
       CO_levels <- c("HH", "HL", "NS", "LH", "LL")
     }
   
-  # log-transforming the number of lists (+1) in order to allow analysis to be more sensitive,
-  # and to not let the high values overwhelm
-  data <- data %>% mutate(NO.LISTS = log(NO.LISTS + 1))
+  if (trans.resp == T) {
+    # log-transforming the number of lists (+1) in order to allow analysis to be more sensitive,
+    # and to not let the high values overwhelm
+    data <- data %>% mutate(NO.LISTS = log(NO.LISTS + 1))
+  }
   
   # calculating mean value because in cluster and outlier analysis, the reference to 
   # high and low is relative to the mean of the variable, and should not be interpreted 
   # in an absolute sense.
-  mean.ref <- mean(data$NO.LISTS)
+  mean.ref <- median(data$NO.LISTS)
   
   data_COA <- localmoran(data$NO.LISTS, data_weights) %>% 
     as_tibble() %>% 
@@ -644,9 +647,36 @@ localmoran_coa <- function(data, data_weights,
 
 # need to input three different data objects corresponding to three periods
 
-pw_spread_LMCOA <- function(data_p1, data_p2, data_p3) {
+pw_spread_LMCOA <- function(data_p1, data_p2, data_p3, trans.resp = F, countrywide = F) {
   
   require(spdep)
+  
+  # filling in missing values (0 lists) for grid cells within India 
+  # that were not sampled in any period
+  if (countrywide == T) {
+    
+    data_p1 <- data_p1 %>% 
+      st_drop_geometry() %>% 
+      right_join(gridmapg1_IN) %>% 
+      mutate(COVID = "BEF",
+             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
+      st_as_sf()
+    
+    data_p2 <- data_p2 %>% 
+      st_drop_geometry() %>% 
+      right_join(gridmapg1_IN) %>% 
+      mutate(COVID = "DUR",
+             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
+      st_as_sf()
+
+    data_p3 <- data_p3 %>% 
+      st_drop_geometry() %>% 
+      right_join(gridmapg1_IN) %>% 
+      mutate(COVID = "AFT",
+             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
+      st_as_sf()
+    
+  }
 
   
   {
@@ -658,7 +688,8 @@ pw_spread_LMCOA <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data1 <- clust_data1 %>% anti_join(cell_zero)
     
-    clust_data1 <- localmoran_coa(clust_data1, clust_w1, sig.lvl = 0.05, correction = "fdr")
+    clust_data1 <- localmoran_coa(clust_data1, clust_w1, 
+                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
 
   }
   
@@ -671,7 +702,8 @@ pw_spread_LMCOA <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data2 <- clust_data2 %>% anti_join(cell_zero)
     
-    clust_data2 <- localmoran_coa(clust_data2, clust_w2, sig.lvl = 0.05, correction = "fdr")
+    clust_data2 <- localmoran_coa(clust_data2, clust_w2, 
+                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
   }
   
   {
@@ -683,7 +715,8 @@ pw_spread_LMCOA <- function(data_p1, data_p2, data_p3) {
     # removing 0nb cells from main data obj also
     clust_data3 <- clust_data3 %>% anti_join(cell_zero)
     
-    clust_data3 <- localmoran_coa(clust_data3, clust_w3, sig.lvl = 0.05, correction = "fdr")
+    clust_data3 <- localmoran_coa(clust_data3, clust_w3, 
+                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
   }
   
   
