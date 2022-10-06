@@ -553,6 +553,11 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
 
 # ref: https://stackoverflow.com/a/57378930/13000254
 
+
+# only realised after creating this function that there was no need to do this as
+# localmoran() has zero.policy argument as well like poly2nb()
+
+
 require(spdep)
 
 poly2omit0nb <- function(data) {
@@ -606,12 +611,21 @@ localmoran_coa <- function(data, data_weights,
     # log-transforming the number of lists (+1) in order to allow analysis to be more sensitive,
     # and to not let the high values overwhelm
     data <- data %>% mutate(NO.LISTS = log(NO.LISTS + 1))
+    
+    print("Response variable transformed:")
+    print(summary(data$NO.LISTS))
+  } else {
+    print("Response variable not transformed.")
   }
+  # is response variable normally distributed?
+  hist(data$NO.LISTS)
+  
   
   # calculating mean value because in cluster and outlier analysis, the reference to 
   # high and low is relative to the mean of the variable, and should not be interpreted 
   # in an absolute sense.
-  mean.ref <- median(data$NO.LISTS)
+  mean.ref <- mean(data$NO.LISTS)
+  print(paste("Mean reference value:", mean.ref))
   
   data_COA <- localmoran(data$NO.LISTS, data_weights) %>% 
     as_tibble() %>% 
@@ -631,8 +645,6 @@ localmoran_coa <- function(data, data_weights,
                 P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS < mean.ref ~ "LH"),
       levels = CO_levels
     )) %>% 
-    # # setting insignificant values to NA to map separately
-    # mutate(NO.LISTS = if_else(CO.TYPE == "NS", NA_real_, NO.LISTS)) %>% 
     # renaming Ii to MORAN for easy reference
     rename(MORAN = Ii) %>% 
     # reclassifying from "localmoran" type to double
@@ -647,36 +659,9 @@ localmoran_coa <- function(data, data_weights,
 
 # need to input three different data objects corresponding to three periods
 
-pw_spread_LMCOA <- function(data_p1, data_p2, data_p3, trans.resp = F, countrywide = F) {
+pw_spread_LMCOA <- function(data_p1, data_p2, data_p3, trans.resp = F) {
   
   require(spdep)
-  
-  # filling in missing values (0 lists) for grid cells within India 
-  # that were not sampled in any period
-  if (countrywide == T) {
-    
-    data_p1 <- data_p1 %>% 
-      st_drop_geometry() %>% 
-      right_join(gridmapg1_IN) %>% 
-      mutate(COVID = "BEF",
-             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
-      st_as_sf()
-    
-    data_p2 <- data_p2 %>% 
-      st_drop_geometry() %>% 
-      right_join(gridmapg1_IN) %>% 
-      mutate(COVID = "DUR",
-             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
-      st_as_sf()
-
-    data_p3 <- data_p3 %>% 
-      st_drop_geometry() %>% 
-      right_join(gridmapg1_IN) %>% 
-      mutate(COVID = "AFT",
-             NO.LISTS = replace_na(NO.LISTS, 0)) %>% 
-      st_as_sf()
-    
-  }
 
   
   {
