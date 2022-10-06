@@ -1728,37 +1728,48 @@ data0 <- data0 %>%
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
-load("data/maps_gridmapg1_IN.RData") # all cells in India
-
 # tidy version of 25*25 grid to which values of interest can be joined (for spatial object)
 gridmapg1_sf <- gridmapg1 %>% 
   st_as_sf() %>% 
   rename(CELL.ID = id)
 
-data_SoIBmap0 <- gridmapg1_sf %>% 
-  left_join(data0_MY_slice_G) %>% 
+load("data/maps_gridmapg1_IN.RData") # all cells within India
+
+
+data_SoIBmap0 <- data0_MY_slice_G %>% 
   # selecting only nine months (DUR has only nine)
   filter(MONTH %in% month_compar$MONTH) %>% 
   group_by(COVID, CELL.ID, MONTH) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   # summarise removes one grouping variable so no need to repeat group_by() 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
-  ungroup()
+  ungroup() %>% 
+  inner_join(gridmapg1_IN) %>% 
+  st_as_sf()
+# not filling zero lists for cell.id-month combinations because we are interested in the 
+# average monthly effort (when effort present)
 
 # all grid cells covered in whole time period (four years) 
 # (not all grids in India)
 # this is enough to show difference/change; other grids will be blank
 foc_grids <- data_SoIBmap0 %>% distinct(CELL.ID)
 
+# only grid cells covered in all four periods
+foc_grids1 <- data_SoIBmap0 %>% 
+  group_by(CELL.ID) %>% 
+  summarise(N.PERIODS = n_distinct(COVID)) %>% 
+  filter(N.PERIODS == 4) %>% 
+  distinct(CELL.ID)
 
-data_SoIBmap1 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "BEF" ~ NO.LISTS,
-                              TRUE ~ 0),
-         COVID = "BEF") %>% 
-  arrange(desc(NO.LISTS)) %>% 
-  group_by(COVID, CELL.ID) %>% 
-  slice(1) %>% 
-  ungroup()
+# only non-zero grid cells but period-wise
+foc_grids2 <- data_SoIBmap0 %>% distinct(COVID, CELL.ID)
+
+
+data_SoIBmap0_filt1 <- data_SoIBmap0 %>% right_join(foc_grids1)
+data_SoIBmap0_filt2 <- data_SoIBmap0 %>% right_join(foc_grids2)
+
+
+data_SoIBmap1 <- data_SoIBmap0_filt2 %>% filter(COVID == "BEF")
 
 # # to plot and check
 # data_SoIBmap1 %>%
@@ -1768,26 +1779,17 @@ data_SoIBmap1 <- data_SoIBmap0 %>%
 #                colour = "black", fill = NA, size = 0.2) +
 #   geom_sf(aes(fill = NO.LISTS), col = NA)
 
-data_SoIBmap2 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID %in% c("DUR_20","DUR_21") ~ NO.LISTS,
-                              TRUE ~ 0),
-         COVID = "DUR") %>% 
+data_SoIBmap2 <- data_SoIBmap0_filt2 %>% 
+  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
+  mutate(COVID = "DUR") %>% 
   # averages for cells with lists both years, but returns single year value for others (n/1)
   group_by(COVID, CELL.ID) %>% 
+  filter(NO.LISTS != 0) %>% 
   dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
-  arrange(desc(NO.LISTS)) %>% 
-  group_by(COVID, CELL.ID) %>% 
-  slice(1) %>% 
   ungroup()
 
-data_SoIBmap3 <- data_SoIBmap0 %>% 
-  mutate(NO.LISTS = case_when(COVID == "AFT" ~ NO.LISTS,
-                              TRUE ~ 0),
-         COVID = "AFT") %>% 
-  arrange(desc(NO.LISTS)) %>% 
-  group_by(COVID, CELL.ID) %>% 
-  slice(1) %>% 
-  ungroup()
+
+data_SoIBmap3 <- data_SoIBmap0_filt2 %>% filter(COVID == "AFT")
 
 
 ##### Change in birding effort (no. of lists) per grid cell (map)  ####
@@ -1882,27 +1884,7 @@ require(spdep)
 #### analysing three periods separately
 
 clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3,
-                              countrywide = T, trans.resp = T)
-# only realised after creating this function that there was no need to do this as
-# localmoran() has zero.policy argument as well like poly2nb()
-
-clust_map_all <- ggplot(clust_data) +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.2) +
-  facet_wrap(~ COVID, nrow = 1) +
-  geom_sf(aes(fill = CO.TYPE), color = NA) +
-  scale_fill_viridis_d(option = "cividis", direction = -1,
-                       name = 'Clusters & \nOutliers') +
-  labs(x = "Longitude", y = "Latitude",
-       title = "") +
-  # making the colourbar bigger
-  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
-
-ggsave("03_wrap_figs/10c_s_spread_clust_map_all.png", clust_map_all,
-       width = 24, height = 9, units = "in", dpi = 300)
-
-
+                              trans.resp = T)
 
 clust_map <- ggplot(clust_data) +
   geom_polygon(data = indiamap,
@@ -1913,7 +1895,7 @@ clust_map <- ggplot(clust_data) +
   scale_fill_viridis_d(option = "cividis", direction = -1,
                        name = 'Clusters & \nOutliers') +
   labs(x = "Longitude", y = "Latitude",
-       title = "") +
+       title = "Only cells with lists from all 4 periods") +
   # making the colourbar bigger
   theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
 
@@ -1944,15 +1926,6 @@ moran.test(clust_data1$NO.LISTS, clust_w)
 
 
 #
-
-##### Removing packages ####
-
-detach("package:gdalUtils", unload=T)
-detach("package:geodata", unload=T)
-detach("package:raster", unload=T, force = T)
-detach("package:terra", unload=T, force = T)
-detach("package:luna", unload=T)
-
 
 ```
 
