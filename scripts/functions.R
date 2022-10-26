@@ -783,15 +783,17 @@ bird_model_state <- function(data_full = data0_MY,
     left_join(species) %>% 
     mutate(REP.FREQ.PRED = NA)
   
+  print("Completed preparations for modelling. Now starting modelling.")
+  
   
   count <- 0
   for (m in 1:n_distinct(birds_pred$MONTHS.TYPE)) {
     
     data_mtype <- data_occ0 %>% 
-      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m])
+      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m])
     
     birds_pred0 <- birds_pred %>% 
-      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m]) %>% 
+      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m]) %>% 
       rename(REP.FREQ.PRED2 = REP.FREQ.PRED)
 
     for (i in 1:n_distinct(birds_pred0$COMMON.NAME)) {
