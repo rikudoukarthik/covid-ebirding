@@ -726,6 +726,8 @@ bird_model_state <- function(data_full = data0_MY,
                              data_sliceG = data0_MY_slice_G, 
                              state) {
   
+  tictoc::tic("Total time elapsedfor bird_model_state():")
+  
   require(lme4)
   
   species <- species_list %>% filter(STATE == state)
@@ -892,5 +894,7 @@ bird_model_state <- function(data_full = data0_MY,
   
   assign("birds_pred", birds_pred, envir = .GlobalEnv)
   assign("birds_graph", birds_graph, envir = .GlobalEnv)
+  
+  tictoc::toc()
   
   }
