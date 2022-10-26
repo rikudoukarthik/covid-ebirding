@@ -719,3 +719,176 @@ pw_spread_LMCOA <- function(data_p1, data_p2, data_p3, trans.resp = F) {
   return(clust_data)
   
 }
+
+### state-level modelling of bird repfreq -----------------
+
+bird_model_state <- function(data_full = data0_MY, 
+                             data_sliceG = data0_MY_slice_G, 
+                             state) {
+  
+  require(lme4)
+  
+  species <- species_list %>% filter(STATE == state)
+
+  ### modelling directly with presence-absence data instead of relative abundance
+  
+  # to join for presence-absence of various species
+  temp1 <- data_full %>% 
+    filter(STATE == state) %>% 
+    group_by(GROUP.ID, COMMON.NAME) %>% 
+    summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
+    ungroup()
+  
+  # to later join checklist metadata
+  temp2 <- data_full %>% 
+    filter(STATE == state) %>% 
+    arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(GROUP.ID) %>% 
+    slice(1) %>% ungroup() %>% 
+    select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+           M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+  
+  data_occ <- data_sliceG %>% 
+    filter(STATE == state) %>% 
+    group_by(GROUP.ID) %>% 
+    summarise(COMMON.NAME = species$COMMON.NAME) %>% 
+    left_join(temp1) %>% 
+    # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
+    mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
+    select(-OBSERVATION.COUNT) %>% 
+    mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+    # checklist metadata
+    left_join(temp2, by = "GROUP.ID") %>% 
+    arrange(GROUP.ID) %>% 
+    # species categories
+    left_join(species) %>% 
+    ungroup()
+  
+  data_occ0 <- bind_rows("LD" = data_occ %>% filter(MONTH %in% 4:5), 
+                         "NL" = data_occ %>% filter(!(MONTH %in% 4:5)), 
+                         "ALL" = data_occ, 
+                         .id = "MONTHS.TYPE") 
+  
+  # getting median list length for prediction later
+  median_length <- data_occ0 %>% 
+    distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+    group_by(MONTHS.TYPE, MONTH) %>% 
+    summarise(NO.SP.MED = floor(median(NO.SP)))
+
+  # dataframe with empty column to populate with looped values
+  # total rows: product of distinct values of predictors
+  birds_pred <- data_occ0 %>% 
+    group_by(MONTHS.TYPE) %>% 
+    tidyr::expand(COMMON.NAME, nesting(MONTH), M.YEAR) %>% 
+    left_join(species) %>% 
+    mutate(REP.FREQ.PRED = NA)
+  
+  
+  count <- 0
+  for (m in 1:n_distinct(birds_pred$MONTHS.TYPE)) {
+    
+    data_mtype <- data_occ0 %>% 
+      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m])
+    
+    birds_pred0 <- birds_pred %>% 
+      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m]) %>% 
+      rename(REP.FREQ.PRED2 = REP.FREQ.PRED)
+
+    for (i in 1:n_distinct(birds_pred0$COMMON.NAME)) {
+      
+      data_spec <- data_mtype %>% 
+        filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[i]) %>% 
+        # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+        filter(REPORT == 1) %>% 
+        distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+        left_join(data_occ)
+      
+      
+      model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                            (1|CELL.ID),
+                          data = data_spec, family = binomial(link = "cloglog"),
+                          nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+      
+      for (j in 1:n_distinct(birds_pred0$MONTH)) {
+        
+        for (k in 1:n_distinct(birds_pred0$M.YEAR)) {
+          count <- count + 1
+          
+          birds_pred0$REP.FREQ.PRED2[count] = predict(
+            model_spec,
+            data.frame(COMMON.NAME = birds_pred0$COMMON.NAME[count],
+                       MONTH = birds_pred0$MONTH[count],
+                       M.YEAR = birds_pred0$M.YEAR[count],
+                       NO.SP = median_length$NO.SP.MED[birds_pred0$MONTH[count]]),
+            re.form = NA, 
+            type = "response")
+          
+          print(glue::glue("Months type {m}: Completed predictions for {birds_pred0$COMMON.NAME[count]} in
+                     month {birds_pred0$MONTH[count]}, migratory year {birds_pred0$M.YEAR[count]}"))
+        }
+      }
+    } 
+    
+    birds_pred <- birds_pred %>% 
+      left_join(birds_pred0) %>% 
+      mutate(REP.FREQ.PRED = coalesce(REP.FREQ.PRED, REP.FREQ.PRED2)) %>% 
+      select(-REP.FREQ.PRED2)
+    
+    # resetting counter for next MONTHS.TYPE
+    count <- 0
+  }
+  
+  birds_pred <- birds_pred %>% 
+    group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
+    summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
+              REP.FREQ.PRED = mean(REP.FREQ.PRED),
+              CI.L = REP.FREQ.PRED - 1.96*SE,
+              CI.U = REP.FREQ.PRED + 1.96*SE)
+
+
+  (ggplot(filter(birds_pred, MONTHS.TYPE == "LD"), 
+          aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For the months of April and May",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+    ggplot(filter(birds_pred, MONTHS.TYPE == "NL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For other ten months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+    ggplot(filter(birds_pred, MONTHS.TYPE == "ALL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For all twelve months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+    plot_layout(guides = "collect") +
+    plot_annotation(title = paste(state, "state"),
+                    subtitle = paste0(
+                      "Predicted reporting frequencies of ",
+                      n_distinct(data_occ$COMMON.NAME), " species (",
+                      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
+                      " in three separate models")) -> birds_graph
+  
+  assign("birds_pred", birds_pred, envir = .GlobalEnv)
+  assign("birds_graph", birds_graph, envir = .GlobalEnv)
+  
+  }
