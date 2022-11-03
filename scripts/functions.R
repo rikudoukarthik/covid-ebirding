@@ -221,29 +221,6 @@ rast_UNU <- rast_UNU %>%
 save(rast_UNU, file = "data/rast_UNU.RData")
 
 # 
-# below needed only when finalising the correct code for this whole process. no need to repeat. 
-# ### Leaflet overlay to verify urban/non- classification #######
-# 
-# # https://rstudio.github.io/leaflet/raster.html
-# # https://rpubs.com/mgei/drivingtimes
-# 
-# library(leaflet)
-# 
-# leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU),
-#                         na.color = "#ffba00")
-# 
-# # leaflet uses different crs so must be projected; method should be made categorical
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU, 
-#                  method = "ngb", # nearest neighbour
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 150 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU))
-
-
 
 }
 
