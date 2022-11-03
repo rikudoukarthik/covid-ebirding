@@ -103,7 +103,7 @@ joinmapvars = function(data, admin = T, grids = T){
 
 getmodisdata <- function(){
   
-# MCD12Q1 LULC data from December 2019, being aggregated to 2kmx2km ("UNU")
+# MCD12Q1 LULC data from May 2022, being aggregated to 2kmx2km ("UNU")
 # this will be retained as a raster and also joined to the EBD data
 
 require(raster) # masks dplyr functions, so have used package::function()
@@ -132,8 +132,8 @@ require(luna)
 
 
 prod <- "MCD12Q1" # short name of product of interest
-start <- "2019-12-31" # time period of mapping
-end <- "2019-12-31" # time period of mapping
+start <- "2022-05-31" # time period of mapping
+end <- "2022-05-31" # time period of mapping
 
 
 # creating folder to store MODIS data that will be downloaded
