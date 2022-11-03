@@ -27,7 +27,7 @@ library(spdep)
 library(sf)
 library(tmap)
 
-theme_set(theme_bw())
+theme_set(theme_classic())
 
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
