@@ -60,11 +60,18 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 source("scripts/functions.R")
 
-# # Only needed once in the beginning to obtain the data.
-#
-# # Getting MODIS data ###
-# getmodisdata()
-#
+# Only needed once in the beginning to obtain the data.
+
+# Getting MODIS data ###
+if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") & 
+    !file.exists("data/rast_UNU.RData")) {
+
+  getmodisdata()
+
+} else {
+  print("MODIS data is ready to use!")
+}
+
 # #  Getting EBD data + filtering and preparing for current use (13 mins on server) ###
 # tictoc::tic("Preparing data for analyses")
 # rawdatapath <- "data/ebd_IN_prv_relMay-2022.txt"

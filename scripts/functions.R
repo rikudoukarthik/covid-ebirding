@@ -103,12 +103,12 @@ joinmapvars = function(data, admin = T, grids = T){
 
 getmodisdata <- function(){
   
-# MCD12Q1 LULC data from May 2022, being aggregated to 2kmx2km ("UNU")
+# MCD12Q1 LULC data from December 2021, being aggregated to 2kmx2km ("UNU")
 # this will be retained as a raster and also joined to the EBD data
 
 require(raster) # masks dplyr functions, so have used package::function()
 require(terra)
-require(gdalUtils)
+require(sf)
 require(geodata)
 # install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 require(luna)
@@ -132,8 +132,8 @@ require(luna)
 
 
 prod <- "MCD12Q1" # short name of product of interest
-start <- "2022-05-31" # time period of mapping
-end <- "2022-05-31" # time period of mapping
+start <- "2021-12-31" # time period of mapping
+end <- "2021-12-31" # time period of mapping
 
 
 # creating folder to store MODIS data that will be downloaded
@@ -154,11 +154,13 @@ modis <- luna::getModis(prod, start, end,
                         aoi = india, download = T, path = MODISpath,
                         username = userpass$UN, password = userpass$PW)
 
+print("Downloaded MODIS data")
+
 # choose the band (SDS) that you want using sds[] option and write GTiff files.
 # University of Maryland SDS (LC_Type2) is SDS1
 for (i in (modis)) {
-  sds <- get_subdatasets(i)
-  modis2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))
+  sds <- terra::sds(i)
+  modis2 <- terra::writeRaster(sds[1], filename = paste0(i, ".tif"))
 }
 
 
@@ -173,6 +175,8 @@ rast_full <- rast_list %>%
   do.call(what = raster::merge) %>% # merge the files
   terra::rast()
 
+print("Merged multiple MODIS rasters into one")
+
 
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
 projto <- raster::crs(india)
@@ -185,11 +189,14 @@ rast_proj <- terra::project(rast_full, projto, method = "near")
 rast_aoi <- terra::crop(rast_proj, india)
 rast_aoi <- terra::mask(rast_aoi, india)
 
+print("Projected to WGS84, and cropped and masked to AOI")
+
 
 raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
 rm(prod, start, end, MODISpath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
 
+print("Created merged TIFF file")
 
 ### Modifying the MODIS data #######
 
@@ -219,6 +226,8 @@ rast_UNU <- rast_UNU %>%
   raster::aggregate(fact = 2, fun = rast_agg_fn)
 
 save(rast_UNU, file = "data/rast_UNU.RData")
+
+print("Reclassified and aggregated MODIS data")
 
 # 
 
