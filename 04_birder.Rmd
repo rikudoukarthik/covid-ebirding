@@ -54,7 +54,7 @@ These are usually driven by decision at the state level, so since the models are
 
 ### Group birding (\>2 observer) per observer
 
-```{r no_lists_po, cache=TRUE, message=FALSE}
+```{r d1_group_po, cache=TRUE, message=FALSE}
 
 ##### Change in group birding per observer ####
 
@@ -149,6 +149,7 @@ data0 <- data0_MY_slice_S %>%
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
+         SE = NA,
          STATE = factor(STATE, levels = anal_states[1,])) %>% 
   arrange(STATE)
 
@@ -169,15 +170,27 @@ for (i in 1:4) { # for each state
 
   for (j in 1:n_distinct(data0$MONTH)) {
     for (k in 1:n_distinct(data0$M.YEAR)) {
+      
       count <- count + 1
       
-      data0$PRED[count] = predict(model_a,
-                                  data.frame(MONTH = data0$MONTH[count],
-                                             M.YEAR = data0$M.YEAR[count]),
-                                  re.form = NA, type = "response")
+      tictoc::tic(glue::glue("Bootstrapped predictions for {anal_states[, i]}"))
+      prediction <- boot_conf_GLMM(model_a,
+                                   new_data = data.frame(MONTH = data0$MONTH[count],
+                                                         M.YEAR = data0$M.YEAR[count]),
+                                   nsim = 100)
+      tictoc::toc()
+      
+      data0$PRED[count] <- median(na.omit(prediction$t[count]))
+      data0$SE[count] <- sd(na.omit(prediction$t[count]))
+
     }
   }
 } 
+
+      f2$freqt = clogloglink(f2$freq,inverse = T)
+      f2$cl = clogloglink((f2$freq-f2$se),inverse = T)
+      f2$set = f2$freqt-f2$cl
+
 
 data0 <- data0 %>% 
     left_join(timeline)
