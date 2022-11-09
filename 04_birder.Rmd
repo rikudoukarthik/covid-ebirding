@@ -1890,55 +1890,7 @@ ggsave("03_wrap_figs/10c_s_spread_netchange.png",
        dpi = 300, width = 6, height = 9, units = "in")
 
 
-##### Final analysis (map): cluster and outlier analysis with local Moran's I ####
-
-require(spdep)
-
-#### analysing three periods separately
-
-clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3,
-                              trans.resp = T)
-
-clust_map <- ggplot(clust_data) +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.2) +
-  facet_wrap(~ COVID, nrow = 1) +
-  geom_sf(aes(fill = CO.TYPE), color = NA) +
-  scale_fill_viridis_d(option = "cividis", direction = -1,
-                       name = 'Clusters & \nOutliers') +
-  labs(x = "Longitude", y = "Latitude",
-       title = "Only cells with lists from all 4 periods") +
-  # making the colourbar bigger
-  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
-
-ggsave("03_wrap_figs/10c_s_spread_clust_map.png", clust_map,
-       width = 24, height = 9, units = "in", dpi = 300)
-
-##### Final analysis: testing change in clustering ####
-
-clust_data0 <- clust_data %>% st_drop_geometry()
-
-lmer(MORAN ~ COVID + (1|CELL.ID), data = clust_data0)
-
-# # removing outliers not a good idea because +ve values MUCH higher than -ve values
-# # by order of magnitude, so no point
-# summary(clust_data0$MORAN)
-# Removing the 9-10 highest values of Moran, reduced the difference in estimates
-# (approx. intercept 0.2, DUR -0.09, AFT -.009)
-
-# can maybe try with log instead, but are there zero values?
-clust_data0 %>% filter(MORAN == 0) # no!
-# but negative values cannot be log or sqrt transformed
-summary(log(clust_data0$MORAN))
-
-
-### trying global Moran instead
-
-moran.test(clust_data1$NO.LISTS, clust_w)
-
-
-#
+##### Final analysis  ####
 
 ```
 
