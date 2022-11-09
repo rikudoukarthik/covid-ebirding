@@ -103,12 +103,12 @@ joinmapvars = function(data, admin = T, grids = T){
 
 getmodisdata <- function(){
   
-# MCD12Q1 LULC data from December 2019, being aggregated to 2kmx2km ("UNU")
+# MCD12Q1 LULC data from December 2021, being aggregated to 2kmx2km ("UNU")
 # this will be retained as a raster and also joined to the EBD data
 
 require(raster) # masks dplyr functions, so have used package::function()
 require(terra)
-require(gdalUtils)
+require(sf)
 require(geodata)
 # install.packages("luna", repos = "https://rspatial.r-universe.dev") # requires Rtools 4.0
 require(luna)
@@ -132,8 +132,8 @@ require(luna)
 
 
 prod <- "MCD12Q1" # short name of product of interest
-start <- "2019-12-31" # time period of mapping
-end <- "2019-12-31" # time period of mapping
+start <- "2021-12-31" # time period of mapping
+end <- "2021-12-31" # time period of mapping
 
 
 # creating folder to store MODIS data that will be downloaded
@@ -154,11 +154,13 @@ modis <- luna::getModis(prod, start, end,
                         aoi = india, download = T, path = MODISpath,
                         username = userpass$UN, password = userpass$PW)
 
+print("Downloaded MODIS data")
+
 # choose the band (SDS) that you want using sds[] option and write GTiff files.
 # University of Maryland SDS (LC_Type2) is SDS1
 for (i in (modis)) {
-  sds <- get_subdatasets(i)
-  modis2 <- gdal_translate(sds[1], dst_dataset = paste0(i, ".tif"))
+  sds <- terra::sds(i)
+  modis2 <- terra::writeRaster(sds[1], filename = paste0(i, ".tif"))
 }
 
 
@@ -173,6 +175,8 @@ rast_full <- rast_list %>%
   do.call(what = raster::merge) %>% # merge the files
   terra::rast()
 
+print("Merged multiple MODIS rasters into one")
+
 
 ## projecting from MODIS sinusoidal to WGS84 (flat 2D)
 projto <- raster::crs(india)
@@ -185,11 +189,14 @@ rast_proj <- terra::project(rast_full, projto, method = "near")
 rast_aoi <- terra::crop(rast_proj, india)
 rast_aoi <- terra::mask(rast_aoi, india)
 
+print("Projected to WGS84, and cropped and masked to AOI")
+
 
 raster::writeRaster(rast_aoi, paste0(MODISpath, "/in_LULC_MODIS.tif"), overwrite = TRUE)
 
 rm(prod, start, end, MODISpath, userpass, modis, sds, modis2, rast_list, rast_full, projto, rast_proj, rast_aoi)
 
+print("Created merged TIFF file")
 
 ### Modifying the MODIS data #######
 
@@ -220,57 +227,104 @@ rast_UNU <- rast_UNU %>%
 
 save(rast_UNU, file = "data/rast_UNU.RData")
 
-# 
-# below needed only when finalising the correct code for this whole process. no need to repeat. 
-# ### Leaflet overlay to verify urban/non- classification #######
-# 
-# # https://rstudio.github.io/leaflet/raster.html
-# # https://rpubs.com/mgei/drivingtimes
-# 
-# library(leaflet)
-# 
-# leafcols <- colorFactor(c(NA, "#0C2C84"), values(rast_UNU),
-#                         na.color = "#ffba00")
-# 
-# # leaflet uses different crs so must be projected; method should be made categorical
-# 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addRasterImage(rast_UNU, 
-#                  method = "ngb", # nearest neighbour
-#                  colors = leafcols,
-#                  opacity = 0.7,
-#                  maxBytes = 150 * 1024 * 1024) %>% 
-#   addLegend(pal = leafcols, values = values(rast_UNU))
+print("Reclassified and aggregated MODIS data")
 
-
+# 
 
 }
 
 ### data quality filters and preparation -----------------
 
-# data file path
+# data file path (first time .txt which then creates .RData for future uses; functionised)
 # latest Ashwin's maps.RData file (having areas)
 # path to list of group accounts to be filtered out
 # path to classification of year-month as COVID categories
 # path to raster data at 2x2 scale
 
 
-data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
+data_qualfilt_prep <- function(rawdatapath, senspath,
+                               datapath, groupaccspath, covidclasspath,
                                rast_UNU_path,
                                maxvel = 20, minsut = 2){
   
+  require(tidyverse)
+  require(lubridate)
   require(tictoc)
-  tic("Completed data quality filtering and preparation in")
+
+  # if first time, importing data from EBD .txt and saving as .RData for future
+  # else directly loading .RData
   
-  ### importing from usual modified ebd RData
-  load(datapath) 
-  # adding migratory year column
-  data <- data %>% 
-    mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
-           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) 
+  if (!file.exists(datapath) & file.exists(rawdatappath)) {
     
+    # variables required in data object
+    preimp <- c("CATEGORY","EXOTIC.CODE","COMMON.NAME","OBSERVATION.COUNT",
+                "LOCALITY.ID","LOCALITY.TYPE","REVIEWED","APPROVED","STATE","COUNTY","LAST.EDITED.DATE",
+                "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
+                "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM","LOCALITY","BREEDING.CODE",
+                "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER",
+                "TRIP.COMMENTS","SPECIES.COMMENTS", "HAS.MEDIA")
+    
+
+    ### main EBD ###
+    
+    # this method using base R import takes only 373 sec with May 2022 release
+    nms <- names(read.delim(rawdatappath, nrows = 1, sep = "\t", header = T, quote = "", 
+                            stringsAsFactors = F, na.strings = c(""," ", NA)))
+    nms[!(nms %in% preimp)] <- "NULL"
+    nms[nms %in% preimp] <- NA
+    data <- read.delim(rawdatappath, colClasses = nms, sep = "\t", header = T, quote = "",
+                       stringsAsFactors = F, na.strings = c(""," ",NA)) 
+    
+    # # tidy import takes way longer, a total of 877 sec, but could be useful for smaller data
+    # data <- read_delim(rawpath, col_select = preimp,
+    #                    name_repair = make.names, # base R nomencl. with periods for spaces
+    #                    quote = "", na = c(""," ", NA), show_col_types = F)
+    
+    
+    ### sensitive species ###
+    nms1 <- names(read.delim(senspath, nrows = 1, sep = "\t", header = T, quote = "", 
+                             stringsAsFactors = F, na.strings = c(""," ", NA)))
+    nms1[!(nms1 %in% preimp)] <- "NULL"
+    nms1[nms1 %in% preimp] <- NA
+    senssp <- read.delim(senspath, colClasses = nms1, sep = "\t", header = T, quote = "",
+                         stringsAsFactors = F, na.strings = c(""," ",NA))
+    
+    ### combing the two ###
+    data <- bind_rows(data, senssp) %>% 
+      # filtering unvetted as well as exotic species (provisional and escapee)
+      filter(APPROVED == 1 & !(EXOTIC.CODE %in% c("P", "X")))
+    
+    
+    data <- data %>% 
+      # trimming whitespace in breeding codes
+      mutate(BREEDING.CODE = str_trim(BREEDING.CODE)) %>% 
+      # group ID and dates
+      mutate(GROUP.ID = ifelse(is.na(GROUP.IDENTIFIER), SAMPLING.EVENT.IDENTIFIER, GROUP.IDENTIFIER), 
+             OBSERVATION.DATE = as.Date(OBSERVATION.DATE), 
+             YEAR = year(OBSERVATION.DATE), 
+             MONTH = month(OBSERVATION.DATE),
+             DAY.M = day(OBSERVATION.DATE)) %>% 
+      # migratory year and month information
+      mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
+             M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) 
+    
+    
+    tic("Completed data import, quality filtering and preparation in")
+    
+  } else if (!file.exists(datapath) & !file.exists(rawdatappath)) {
+    
+    print("Raw data file of EBD does not exist!")
+    
+  } else if (file.exists(datapath)) {
+    
+    tic("Completed data quality filtering and preparation in")
+    
+    ### importing from usual modified ebd RData
+    load(datapath) 
+    
+  }
   
+
   ### list of group accounts to be filtered
   groupaccs <- read_csv(groupaccspath) %>% 
     mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
@@ -306,7 +360,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   
   save(lists_UNU, file = "data/lists_UNU.RData")
   
-  print("added UNU information")
+  print("Added UNU information")
   
   ### new observer data (to calculate no. of new observers metric) #######
 
@@ -339,7 +393,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA)
   save(new_obsr_data, file = "data/new_obsr_data.RData")
   
-  print("obtained new observer data")
+  print("Obtained new observer data")
   
   ### main data filtering ######
   
@@ -453,7 +507,7 @@ data_qualfilt_prep <- function(datapath, groupaccspath, covidclasspath,
   save(data0_MY, file = "data/data0_MY.RData")
   save(data0_MY_slice_S, data0_MY_slice_G, file = "data/data0_MY_slice.RData")
   
-  print("completed main data filtering")
+  print("Completed main data filtering!")
   
   
   

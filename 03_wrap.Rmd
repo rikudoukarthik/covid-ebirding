@@ -28,10 +28,10 @@ library(sf)
 library(tmap)
 library(parallel) # for bootstrapping error from GLMMs
 
-theme_set(theme_bw())
+theme_set(theme_classic())
 
 
-covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
+covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
@@ -61,19 +61,28 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 source("scripts/functions.R")
 
-# # Only needed once in the beginning to obtain the data.
-#
-# # Getting MODIS data ###
-# getmodisdata()
-#
+# Only needed once in the beginning to obtain the data.
+
+# Getting MODIS data ###
+if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") & 
+    !file.exists("data/rast_UNU.RData")) {
+
+  getmodisdata()
+
+} else {
+  print("MODIS data is ready to use!")
+}
+
 # #  Getting EBD data + filtering and preparing for current use (13 mins on server) ###
 # tictoc::tic("Preparing data for analyses")
+# rawdatapath <- "data/ebd_IN_prv_relMay-2022.txt"
+# senspath <- "data/ebd_sensitive_relMay-2022_IN.txt" 
 # datapath <- "data/ebd_IN_relMay-2022.RData"
 # groupaccspath <- "data/ebd_users_GA_relMay-2022.csv"
 # covidclasspath <- "data/covid_classification.csv"
 # rast_UNU_path <- "data/rast_UNU.RData"
 # 
-# data_qualfilt_prep(datapath, groupaccspath, covidclasspath,
+# data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
 #                    rast_UNU_path, 
 #                    maxvel = 20, minsut = 2)
 # tictoc::toc()
