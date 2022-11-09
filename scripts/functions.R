@@ -499,6 +499,41 @@ boot_conf = function(x, fn = mean, B = 1000) {
 
 
 
+
+### bootstrapping confidence from GLMMs (bootMer) -------------------------------------
+
+# adapted from Ashwin's function for SoIB
+# https://github.com/ashwinv2005/trend-analyses/blob/master/functions.R
+
+boot_conf_GLMM = function(model, 
+                          new_data, # separately specify dataframe with vars for model
+                          re_form = NA,
+                          nsim = 1000)
+{
+  require(tidyverse)
+  require(lme4)
+  # require(VGAM)
+  require(parallel) # to parallelise bootstrap step
+  
+  pred_fun <- function(model) {
+    predict(model, newdata = new_data, re.form = re_form, allow.new.levels = TRUE)
+    # not specifying type = "response" because will later transform prediction along with SE
+  }
+  
+  par_cores <- max(1, detectCores() - 4)
+  par_cluster <- makeCluster(par_cores)
+  clusterEvalQ(par_cluster, library(lme4))
+  
+  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun, 
+                          seed = 1000, use.u = FALSE, type = "parametric", 
+                          parallel = "snow", ncpus = par_cores, cl = par_cluster)
+  
+  stopCluster(par_cluster)
+
+  return(pred_bootMer)
+  
+}
+
 ### raster aggregation -----------------
 
 # Function to supply in raster::aggregate(), with 25% threshold for classification

@@ -26,6 +26,7 @@ library(glue)
 library(spdep)
 library(sf)
 library(tmap)
+library(parallel) # for bootstrapping error from GLMMs
 
 theme_set(theme_bw())
 
