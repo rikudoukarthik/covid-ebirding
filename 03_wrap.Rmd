@@ -118,7 +118,7 @@ month_compar <- data0_MY_slice_G %>%
   dplyr::select(MONTH)
 
 # removing unnecessary objects from maps.RData
-rm(areag1, areag2, areag3, areag4, districtmap)
+rm(areag1, areag2, areag3, areag4, gridmapg2, gridmapg3, gridmapg4)
 
 ```
 

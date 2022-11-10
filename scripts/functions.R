@@ -634,6 +634,37 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
 
 }
 
+### change in spatial spread/clustering metric -----------------
+
+s_spread_propchange <- function(x, y, k = 1)  {
+  
+  # proportional change here is defined differently from earlier functions
+  
+  # when both values being compared are zero, converting to NA which can later be removed
+  # when LHS is zero, adding k = 1 to both values (to avoid infinity due to 0 in denominator)
+  # when RHS is zero, adding nothing
+  
+  case_when(x == 0 & y == 0 ~ NA_real_, 
+            x == 0 & y != 0 ~ ((y + k) - (x + k))/(x + k), 
+            TRUE ~ (y - x)/x)
+  
+  
+}
+
+s_spread_change <- function(x, y, k = 1)  {
+  
+  # simple change here is defined differently from earlier functions
+  
+  # when both values being compared are zero, converting to NA which can later be removed
+  # when LHS is zero, adding k = 1 to both values (to avoid infinity due to 0 in denominator)
+  # when RHS is zero, adding nothing
+  
+  case_when(x == 0 & y == 0 ~ NA_real_, 
+            TRUE ~ (y - x))
+
+}
+
+
 ### create nb object but omit grid cells having no neighbours -----------------
 
 # these need to be removed when calculating weights for the Moran analyses

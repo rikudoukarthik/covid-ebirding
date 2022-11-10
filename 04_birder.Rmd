@@ -1741,113 +1741,118 @@ data0 <- data0 %>%
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
-# tidy version of 25*25 grid to which values of interest can be joined (for spatial object)
-gridmapg1_sf <- gridmapg1 %>% 
-  st_as_sf() %>% 
-  rename(CELL.ID = id)
-
 load("data/maps_gridmapg1_IN.RData") # all cells within India
 
+gridmapg1_IN <- gridmapg1_IN %>% 
+  # setting CRS for join in next step
+  st_set_crs(value = st_crs(districtmap))
 
-data_SoIBmap0 <- data0_MY_slice_G %>% 
-  # selecting only nine months (DUR has only nine)
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, CELL.ID, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
-  # summarise removes one grouping variable so no need to repeat group_by() 
-  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
-  ungroup() %>% 
-  inner_join(gridmapg1_IN) %>% 
-  st_as_sf()
-# not filling zero lists for cell.id-month combinations because we are interested in the 
-# average monthly effort (when effort present)
+# creating object linking grid cells to districts
+grid_dist <- districtmap %>% 
+  st_as_sf() %>% 
+  dplyr::select(dtname) %>% 
+  rename(DISTRICT.NAME = dtname) %>% 
+  st_join(gridmapg1_IN)
+# losing some districts and grid cells, but doesn't matter. 
+# Will explore patterns with existing.
 
-# all grid cells covered in whole time period (four years) 
-# (not all grids in India)
-# this is enough to show difference/change; other grids will be blank
-foc_grids <- data_SoIBmap0 %>% distinct(CELL.ID)
-
-# only grid cells covered in all four periods
-foc_grids1 <- data_SoIBmap0 %>% 
+# Ensuring that a grid cell is only linked with one district
+grid_dist_links <- grid_dist %>% 
+  st_drop_geometry() %>% 
   group_by(CELL.ID) %>% 
-  summarise(N.PERIODS = n_distinct(COVID)) %>% 
-  filter(N.PERIODS == 4) %>% 
-  distinct(CELL.ID)
-
-# only non-zero grid cells but period-wise
-foc_grids2 <- data_SoIBmap0 %>% distinct(COVID, CELL.ID)
-
-
-data_SoIBmap0_filt1 <- data_SoIBmap0 %>% right_join(foc_grids1)
-data_SoIBmap0_filt2 <- data_SoIBmap0 %>% right_join(foc_grids2)
-
-
-data_SoIBmap1 <- data_SoIBmap0_filt2 %>% filter(COVID == "BEF")
-
-# # to plot and check
-# data_SoIBmap1 %>%
-#   ggplot() +
-#   geom_polygon(data = indiamap,
-#                aes(long, lat, group = group),
-#                colour = "black", fill = NA, size = 0.2) +
-#   geom_sf(aes(fill = NO.LISTS), col = NA)
-
-data_SoIBmap2 <- data_SoIBmap0_filt2 %>% 
-  filter(COVID %in% c("DUR_20","DUR_21")) %>% 
-  mutate(COVID = "DUR") %>% 
-  # averages for cells with lists both years, but returns single year value for others (n/1)
-  group_by(COVID, CELL.ID) %>% 
-  filter(NO.LISTS != 0) %>% 
-  dplyr::summarise(NO.LISTS = mean(NO.LISTS)) %>% 
+  slice_sample() %>% 
+  group_by(DISTRICT.NAME) %>% 
+  mutate(DISTRICT.CELLS.TOT = n_distinct(CELL.ID)) %>% 
   ungroup()
 
+# # distribution of number of cells covered, across districts
+# x <- grid_dist_links %>% 
+#   group_by(DISTRICT.NAME) %>% 
+#   summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
+#   group_by(NO.CELLS) %>% 
+#   summarise(NO.DISTRICTS = n())
 
-data_SoIBmap3 <- data_SoIBmap0_filt2 %>% filter(COVID == "AFT")
-
-
-##### Change in birding effort (no. of lists) per grid cell (map)  ####
-
-transition_names <- data.frame(T.CODE = c("T1", "T2", "T3"),
-                               T.LABEL = c("Before to During", "During to After", 
-                                         "Before to After"))
-
-data_SoIBmap <- data_SoIBmap1 %>% 
-  bind_rows(data_SoIBmap2) %>% 
-  bind_rows(data_SoIBmap3) %>% 
-  pivot_wider(names_from = "COVID", values_from = "NO.LISTS") %>% 
-  mutate(T1 = rast_logpropchange(BEF, DUR, emptycheck = T),
-         T2 = rast_logpropchange(DUR, AFT, emptycheck = T),
-         T3 = rast_logpropchange(BEF, AFT, emptycheck = T)) %>% 
-  pivot_longer(cols = c(T1, T2, T3), names_to = "T.CODE", values_to = "T.CHANGE") %>% 
-  left_join(transition_names) %>% 
-  mutate(T.LABEL = factor(T.LABEL, levels = c("Before to During", "During to After", 
-                                              "Before to After")))
+grid_dist <- grid_dist %>% 
+  right_join(grid_dist_links)
 
 
-s_spread_map <- ggplot(data_SoIBmap) +
+temp0 <- data0_MY_slice_G %>% 
+  # selecting only nine months (AFT has only nine)
+  filter(MONTH %in% month_compar$MONTH) %>% 
+  # combining the two DUR periods
+  mutate(COVID = as.character(COVID)) %>% 
+  mutate(COVID = case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
+                           TRUE ~ COVID)) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
+  # although data has fewer cells than grid_dist, using inner so only those cells with 
+  # established district links will be considered (removes 3 cells)
+  dplyr::select(-DISTRICT) %>% # removing to avoid confusion
+  inner_join(grid_dist)
+
+# summarising cell metrics
+temp1 <- temp0 %>% 
+  group_by(COVID, CELL.ID) %>% 
+  dplyr::summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
+  ungroup() %>% 
+  # filling zeroes for all grid cells under consideration (in each time period)
+  complete(COVID, CELL.ID, fill = list(CELL.LISTS = 0)) %>% 
+  left_join(grid_dist) %>% 
+  st_drop_geometry()
+
+
+data_spread0 <- temp0 %>% 
+  # summarising metrics of interest
+  group_by(COVID, DISTRICT.NAME, DISTRICT.CELLS.TOT) %>% 
+  summarise(DISTRICT.LISTS = n_distinct(GROUP.ID),
+            DISTRICT.CELLS = n_distinct(CELL.ID)) %>% 
+  ungroup() %>% 
+  complete(COVID, nesting(DISTRICT.NAME, DISTRICT.CELLS.TOT),
+           fill = list(DISTRICT.LISTS = 0, DISTRICT.CELLS = 0)) %>% 
+  mutate(DISTRICT.CELLS.COV = 100*DISTRICT.CELLS/DISTRICT.CELLS.TOT) %>% 
+  right_join(temp1) %>% 
+  # moving COVID to columns
+  dplyr::select(-DISTRICT.CELLS) %>% 
+  pivot_longer(cols = c("CELL.LISTS", "DISTRICT.LISTS", "DISTRICT.CELLS.COV"),
+               names_to = "METRIC", values_to = "VALUE") %>% 
+  pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
+  # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
+  mutate(CHANGE1 = s_spread_change(BEF, DUR),
+         CHANGE2 = s_spread_change(DUR, AFT)) %>% 
+  # joining grid cell geometry
+  left_join(gridmapg1_IN, by = "CELL.ID", suffix = c(".district", ".cell"))
+
+transition_names <- data.frame(T.CODE = c("T1", "T2"),
+                               T.LABEL = c("Before to During", "During to After"))
+
+
+##### Proportional change in birding effort per grid cell ####
+
+# 1. map
+# 2. distribution
+# 3. with SEs
+
+data_spread <- data_spread0 %>% 
+  filter(METRIC == "CELL.LISTS")
+
+s_spread_map <- ggplot(data_spread) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
                colour = "black", fill = "#E6E9F1", size = 0.2) +
-  geom_sf(aes(fill = T.CHANGE), col = NA, na.rm = T) +
-  facet_wrap(~ T.LABEL) +
+  geom_sf(aes(fill = CHANGE1, geometry = geometry.cell), col = NA, na.rm = T) +
   scale_fill_viridis_c(option = "cividis",
-                       labels = ~ glue::glue("{10^(.x)}\u00d7"),
-                       name = "Proportional\nchange",
-                       # # failed attempt at rescaling to have mid-colour at midpoint
-                       # rescaler = ~ scales::rescale(c(min(.x, na.rm = T), 
-                       #                                exp(1), 
-                       #                                max(.x, na.rm = T)))
-                       ) +
+                       name = "Proportional\nchange") +
   labs(x = "Longitude", y = "Latitude",
-       title = "Proportional change in monthly no. of lists per 25km \u00d7 25km cell") +
+       title = "Proportional change in no. of lists per 25km \u00d7 25km cell in transition periods") +
   # making the colourbar bigger
   theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+
+hist(data_spread$CHANGE1, breaks = 100)
+hist(data_spread$CHANGE2, breaks = 100)
 
 ggsave("03_wrap_figs/10c_s_spread_map.png", s_spread_map,
        width = 24, height = 9, units = "in", dpi = 300)
 
-
-##### Net change across grids with SEs ####
+# 3. with SEs
 
 set.seed(23) # for bootstrap
 
@@ -1889,8 +1894,56 @@ ggsave("03_wrap_figs/10c_s_spread_netchange.png",
        plot = s_spread_netchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
+##### Proportional change in birding effort per district ####
 
-##### Final analysis  ####
+# 1. map
+# 2. distribution
+# 3. with SEs
+
+data_spread <- data_spread0 %>% 
+  filter(METRIC == "DISTRICT.LISTS") %>% 
+  distinct(DISTRICT.NAME, geometry.district, CHANGE1, CHANGE2)
+
+ggplot(data_spread) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = "#E6E9F1", size = 0.2) +
+  geom_sf(aes(fill = CHANGE1, geometry = geometry.district), col = NA, na.rm = T) +
+  scale_fill_viridis_c(option = "cividis",
+                       name = "Proportional\nchange") +
+  labs(x = "Longitude", y = "Latitude",
+       title = "Proportional change in no. of lists per district in transition periods") +
+  # making the colourbar bigger
+  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+
+hist(data_spread$CHANGE1, breaks = 100)
+hist(data_spread$CHANGE2, breaks = 100)
+
+##### Proportional change in grid coverage per district ####
+
+# 1. map
+# 2. distribution
+# 3. with SEs
+
+data_spread <- data_spread0 %>% 
+  filter(METRIC == "DISTRICT.CELLS.COV") %>% 
+  distinct(DISTRICT.NAME, geometry.district, CHANGE1, CHANGE2)
+
+
+ggplot(data_spread) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               colour = "black", fill = "#E6E9F1", size = 0.2) +
+  geom_sf(aes(fill = CHANGE1, geometry = geometry.district), col = NA, na.rm = T) +
+  scale_fill_viridis_c(option = "cividis",
+                       name = "Proportional\nchange") +
+  labs(x = "Longitude", y = "Latitude",
+       title = "Proportional change in grid coverage per district in transition periods") +
+  # making the colourbar bigger
+  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+
+hist(data_spread$CHANGE1, breaks = 100)
+hist(data_spread$CHANGE2, breaks = 100)
 
 ```
 
