@@ -1437,12 +1437,12 @@ data0 <- data0 %>%
     -   Proportion of lists that are urban per grid cell GLMM\
 2.  Spatial coverage (min. 10 lists per grid cell)
     -   Proportion of total cells in country/state covered across months
-    -   Proportions of total urban and non-urban cells in country/state covered across months
     -   Proportion of total cells in country/state covered across months GLMM\
-3.  Spatial spread/evenness (24kmx24km cells; across 7 months) Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
-    -   Averaged monthly proportional change in no. of lists per 24x24 cell
-    -   Averaged monthly proportional change in no. of lists per 2x2 UNU cell averaged across 24x24 cell, for urban and non-urban separately.
-    -   Averaged monthly urban:non-urban ratio in no. of lists per 24x24 cell
+3.  Spatial spread/evenness (25kmx25km cells; across 9 months) Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
+    -   Raw change in no. of lists per district
+    -   Proportional change in no. of lists per district
+    -   Proportional change in grid coverage per district
+    -   Proportional change in grid coverage per district with threshold for "coverage"
 
 ```{r s_UNU, cache=TRUE, message=FALSE}
 
@@ -1739,6 +1739,10 @@ data0 <- data0 %>%
 
 ```
 
+For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns.
+
+For latter 3, only those districts that have a minimum of 5 grid cells will be considered.
+
 ```{r s_spread, cache=TRUE, message=FALSE}
 
 load("data/maps_gridmapg1_IN.RData") # all cells within India
@@ -1762,7 +1766,7 @@ grid_dist_links <- grid_dist %>%
   group_by(CELL.ID) %>% 
   slice_sample() %>% 
   group_by(DISTRICT.NAME) %>% 
-  mutate(DISTRICT.CELLS.TOT = n_distinct(CELL.ID)) %>% 
+  mutate(NO.CELLS.TOT = n_distinct(CELL.ID)) %>% 
   ungroup()
 
 # # distribution of number of cells covered, across districts
@@ -1789,141 +1793,134 @@ temp0 <- data0_MY_slice_G %>%
   dplyr::select(-DISTRICT) %>% # removing to avoid confusion
   inner_join(grid_dist)
 
-# summarising cell metrics
+# considering only districts with at least 5 grid cells for latter 3 metrics
 temp1 <- temp0 %>% 
-  group_by(COVID, CELL.ID) %>% 
-  dplyr::summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
+  filter(NO.CELLS.TOT >= 5) %>% 
+  # summarising metrics of interest
+  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
   ungroup() %>% 
-  # filling zeroes for all grid cells under consideration (in each time period)
-  complete(COVID, CELL.ID, fill = list(CELL.LISTS = 0)) %>% 
-  left_join(grid_dist) %>% 
-  st_drop_geometry()
+  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
+           fill = list(NO.CELLS = 0)) %>% 
+  mutate(GRID.COV = 100*NO.CELLS/NO.CELLS.TOT) %>% 
+  # moving COVID to columns
+  dplyr::select(-NO.CELLS)
 
+# for grid coverage per district with threshold
+temp2 <- temp0 %>% 
+  filter(NO.CELLS.TOT >= 5) %>% 
+  # summarising metrics of interest
+  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
+  summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
+  # threshold of 5 lists in a grid cell for the cell to be considered "covered"
+  filter(CELL.LISTS >= 5) %>% 
+  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
+  ungroup() %>% 
+  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
+           fill = list(NO.CELLS = 0)) %>% 
+  mutate(GRID.COV.T = 100*NO.CELLS/NO.CELLS.TOT) %>% 
+  # moving COVID to columns
+  dplyr::select(-NO.CELLS)
 
 data_spread0 <- temp0 %>% 
   # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, DISTRICT.CELLS.TOT) %>% 
-  summarise(DISTRICT.LISTS = n_distinct(GROUP.ID),
-            DISTRICT.CELLS = n_distinct(CELL.ID)) %>% 
+  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, DISTRICT.CELLS.TOT),
-           fill = list(DISTRICT.LISTS = 0, DISTRICT.CELLS = 0)) %>% 
-  mutate(DISTRICT.CELLS.COV = 100*DISTRICT.CELLS/DISTRICT.CELLS.TOT) %>% 
-  right_join(temp1) %>% 
-  # moving COVID to columns
-  dplyr::select(-DISTRICT.CELLS) %>% 
-  pivot_longer(cols = c("CELL.LISTS", "DISTRICT.LISTS", "DISTRICT.CELLS.COV"),
+  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
+           fill = list(NO.LISTS = 0)) %>% 
+  left_join(temp1) %>% 
+  left_join(temp2) %>% 
+  pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
                names_to = "METRIC", values_to = "VALUE") %>% 
   pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
   # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
-  mutate(CHANGE1 = s_spread_change(BEF, DUR),
-         CHANGE2 = s_spread_change(DUR, AFT)) %>% 
-  # joining grid cell geometry
-  left_join(gridmapg1_IN, by = "CELL.ID", suffix = c(".district", ".cell"))
+  mutate(RAW.CHANGE1 = if_else(METRIC == "NO.LISTS", s_spread_change(BEF, DUR), NA_real_),
+         RAW.CHANGE2 = if_else(METRIC == "NO.LISTS", s_spread_change(DUR, AFT), NA_real_),
+         PROP.CHANGE1 = s_spread_propchange(BEF, DUR),
+         PROP.CHANGE2 = s_spread_propchange(DUR, AFT)) %>% 
+  left_join(grid_dist)
 
 transition_names <- data.frame(T.CODE = c("T1", "T2"),
                                T.LABEL = c("Before to During", "During to After"))
 
 
-##### Proportional change in birding effort per grid cell ####
+##### Change in birding effort per district ####
+
+# 1. map of raw change
+# 2. with SEs of raw change
+# 3. distribution of proportional change
+# 4. with SEs of proportional change
+
 
 # 1. map
-# 2. distribution
-# 3. with SEs
 
-data_spread <- data_spread0 %>% 
-  filter(METRIC == "CELL.LISTS")
+data_spread1 <- data_spread0 %>% 
+  filter(METRIC == "NO.LISTS") %>% 
+  distinct(DISTRICT.NAME, geometry, RAW.CHANGE1, RAW.CHANGE2) %>% 
+  # pivoting longer for facetting
+  pivot_longer(cols = c("RAW.CHANGE1", "RAW.CHANGE2"),
+               names_to = "METRIC", values_to = "VALUE") %>% 
+  mutate(T.CODE = case_when(str_detect(METRIC, "1") ~ "T1",
+                            str_detect(METRIC, "2") ~ "T2")) %>% 
+  left_join(transition_names)
 
-s_spread_map <- ggplot(data_spread) +
+s_spread_map <- ggplot(data_spread1) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.2) +
-  geom_sf(aes(fill = CHANGE1, geometry = geometry.cell), col = NA, na.rm = T) +
-  scale_fill_viridis_c(option = "cividis",
-                       name = "Proportional\nchange") +
+               colour = "black", fill = "#E6E9F1", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col = NA) +
+  facet_wrap(~ T.LABEL) +
+  scale_fill_continuous_divergingx(palette = "RdBu", mid = 0) +
   labs(x = "Longitude", y = "Latitude",
-       title = "Proportional change in no. of lists per 25km \u00d7 25km cell in transition periods") +
-  # making the colourbar bigger
-  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+       fill = "Difference in\nno. of lists",
+       title = "Change in no. of lists per district in transition periods")
 
-hist(data_spread$CHANGE1, breaks = 100)
-hist(data_spread$CHANGE2, breaks = 100)
+ggsave("03_wrap_figs/10c_s_spread_map.png", 
+       plot = s_spread_map,
+       dpi = 300, width = 14, height = 8, units = "in")
 
-ggsave("03_wrap_figs/10c_s_spread_map.png", s_spread_map,
-       width = 24, height = 9, units = "in", dpi = 300)
 
-# 3. with SEs
+# 2. with SEs
 
 set.seed(23) # for bootstrap
 
 # not directly using data_SoIBmap object because backtransforming after bootstrapping mean 
 # and SE is not wise
-net_effort <- data_SoIBmap1 %>% 
-  bind_rows(data_SoIBmap2) %>% 
-  bind_rows(data_SoIBmap3) %>% 
-  pivot_wider(names_from = "COVID", values_from = "NO.LISTS") %>% 
-  mutate(T1 = rast_propchange(BEF, DUR, emptycheck = T),
-         T2 = rast_propchange(DUR, AFT, emptycheck = T),
-         T3 = rast_propchange(BEF, AFT, emptycheck = T)) %>% 
-  pivot_longer(cols = c(T1, T2, T3), names_to = "T.CODE", values_to = "T.CHANGE") %>% 
-  left_join(transition_names) %>% 
-  mutate(T.LABEL = factor(T.LABEL, levels = c("Before to During", "During to After", 
-                                              "Before to After"))) %>% 
-  st_drop_geometry() %>% 
+data_spread2 <- data_spread1 %>% 
   # removing NA cells
-  filter(!is.na(T.CHANGE)) %>% 
+  filter(!is.na(VALUE)) %>% 
   group_by(T.CODE, T.LABEL) %>% 
-  # this gives B number of means/medians of bootstrapped samples
-  # median resulting in just 1s so mean is fine
-  dplyr::summarise(T.CHANGE = boot_conf(x = T.CHANGE)) %>% 
+  # this gives B number of means of bootstrapped samples
+  dplyr::summarise(VALUE = boot_conf(x = VALUE)) %>% 
   group_by(T.CODE, T.LABEL) %>% 
-  dplyr::summarise(CI.L = stats::quantile(T.CHANGE, 0.025), # Obtain the CIs
-                   CI.U = stats::quantile(T.CHANGE, 0.975),
-                   T.CHANGE = mean(T.CHANGE)) 
+  dplyr::summarise(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(VALUE, 0.975),
+                   VALUE = median(VALUE)) 
 
-s_spread_netchange <- ggplot(net_effort, aes(x = T.LABEL, y = T.CHANGE)) + 
+s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 4, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.75, width = 0.08, position = position_dodge(0.5)) +
   # scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
-  labs(title = "Net proportional change in monthly birding effort (no. of lists)",
-       subtitle = "Change per 25km \u00d7 25km cell averaged across all cells with birding activity",
-       x = "Transition", y = "Proportional change") 
+  labs(title = "Net change in birding effort (no. of lists) across districts\nin transition periods",
+       x = "Transition", y = "Difference in no. of lists") 
 
-ggsave("03_wrap_figs/10c_s_spread_netchange.png", 
-       plot = s_spread_netchange,
+ggsave("03_wrap_figs/10c_s_spread_rawchange.png", 
+       plot = s_spread_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
-##### Proportional change in birding effort per district ####
-
-# 1. map
-# 2. distribution
-# 3. with SEs
-
-data_spread <- data_spread0 %>% 
-  filter(METRIC == "DISTRICT.LISTS") %>% 
-  distinct(DISTRICT.NAME, geometry.district, CHANGE1, CHANGE2)
-
-ggplot(data_spread) +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.2) +
-  geom_sf(aes(fill = CHANGE1, geometry = geometry.district), col = NA, na.rm = T) +
-  scale_fill_viridis_c(option = "cividis",
-                       name = "Proportional\nchange") +
-  labs(x = "Longitude", y = "Latitude",
-       title = "Proportional change in no. of lists per district in transition periods") +
-  # making the colourbar bigger
-  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
-
-hist(data_spread$CHANGE1, breaks = 100)
-hist(data_spread$CHANGE2, breaks = 100)
+# is DUR-AFT really lower than BEF-DUR?
+ggplot(data_spread1) +
+  geom_histogram(aes(VALUE)) +
+  facet_wrap(~ T.LABEL)
 
 ##### Proportional change in grid coverage per district ####
 
-# 1. map
-# 2. distribution
-# 3. with SEs
+# 1. distribution of grid coverage
+# 2. with SEs of grid coverage
+# 3. distribution of grid coverage with threshold
+# 4. with SEs of grid coverage with threshold
 
 data_spread <- data_spread0 %>% 
   filter(METRIC == "DISTRICT.CELLS.COV") %>% 

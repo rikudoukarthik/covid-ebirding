@@ -27,6 +27,7 @@ library(spdep)
 library(sf)
 library(tmap)
 library(parallel) # for bootstrapping error from GLMMs
+library(colorspace) # for ability to set midpoint in ggplot scale colour
 
 theme_set(theme_classic())
 
