@@ -28,6 +28,7 @@ library(sf)
 library(tmap)
 library(parallel) # for bootstrapping error from GLMMs
 library(colorspace) # for ability to set midpoint in ggplot scale colour
+library(ggallin) # for inverse arcsine transformation of ggplot scale
 
 theme_set(theme_classic())
 
