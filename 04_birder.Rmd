@@ -1850,8 +1850,6 @@ transition_names <- data.frame(T.CODE = c("T1", "T2"),
 # 1. map of raw change
 # 2. with SEs of raw change
 # 3. map of proportional change
-# 4. distribution of proportional change
-
 
 # 1. map
 
@@ -1921,54 +1919,6 @@ ggplot(data_spread1) +
 
 
 
-# 4. distribution
-
-data_spread3 <- data_spread0 %>% 
-  filter(METRIC == "NO.LISTS") %>% 
-  # inverse transitions
-  mutate(PROP.CHANGE3 = s_spread_propchange(DUR, BEF),
-         PROP.CHANGE4 = s_spread_propchange(AFT, DUR)) %>% 
-  distinct(DISTRICT.NAME, geometry, PROP.CHANGE1, PROP.CHANGE2, PROP.CHANGE3, PROP.CHANGE4) %>% 
-  # pivoting longer for facetting
-  pivot_longer(cols = c("PROP.CHANGE1", "PROP.CHANGE2", "PROP.CHANGE3", "PROP.CHANGE4"),
-               names_to = "METRIC", values_to = "VALUE") %>% 
-  mutate(T.CODE = case_when(str_detect(METRIC, "1") ~ "T1",
-                            str_detect(METRIC, "2") ~ "T2",
-                            str_detect(METRIC, "3") ~ "T3",
-                            str_detect(METRIC, "4") ~ "T4")) %>% 
-  left_join(transition_names) %>% 
-  mutate(T.LABEL = case_when(T.CODE == "T3" ~ "During to Before",
-                             T.CODE == "T4" ~ "After to During",
-                             TRUE ~ T.LABEL)) %>% 
-  mutate(T.LABEL = factor(T.LABEL, 
-                          levels = c("Before to During", "During to After",
-                                      "During to Before", "After to During")))
-
-medianvalue <- data_spread3 %>% 
-  filter(!is.na(VALUE)) %>% 
-  group_by(T.LABEL) %>% 
-  summarise(MEDIAN = median(VALUE))
-
-data_spread3 <- data_spread3 %>% left_join(medianvalue)
-
-s_spread_distprop <- ggplot(data_spread3) +
-  geom_density(aes(VALUE)) +
-  facet_wrap(~ T.LABEL, ncol = 2, dir = "v", strip.position = "left") +
-  scale_x_continuous(trans = pseudolog10_trans,
-                     breaks = c(-1, -0.5, 0, 10, 25, 50, 75, 100)) +
-  geom_vline(xintercept = 0) +
-  labs(x = "Proportional change", y = "Density",
-       title = "Proportional change in no. of lists per district in transition periods",
-       subtitle = "Red line represents median value") +
-  # to add median line
-  geom_vline(aes(xintercept = MEDIAN), colour = "red") +
-  geom_text(aes(x = MEDIAN + 0.3, y = 0.1, label = round(MEDIAN, 2))) 
-
-ggsave("03_wrap_figs/10c_s_spread_distprop.png", 
-       plot = s_spread_distprop,
-       dpi = 300, width = 16, height = 10, units = "in")
-
-# the density function of the inverse transitions shows the same shape. Hence, this visualisation is not a good one.
 
 ##### Proportional change in grid coverage per district ####
 
