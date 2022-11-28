@@ -1851,7 +1851,7 @@ transition_names <- data.frame(T.CODE = c("T1", "T2"),
 # 2. with SEs of raw change
 # 3. map of proportional change
 
-# 1. map
+# 1. map (to give an idea of overall clustering)
 
 data_spread1 <- data_spread0 %>% 
   filter(METRIC == "NO.LISTS") %>% 
@@ -1895,7 +1895,7 @@ set.seed(23) # for bootstrap
 # not directly using data_spread0 object because backtransforming after bootstrapping mean 
 # and SE is not wise
 data_spread2 <- data_spread1 %>% 
-  # removing NA cells
+  # removing NA cells (when both periods of the transition are zero)
   filter(!is.na(VALUE)) %>% 
   group_by(T.CODE, T.LABEL) %>% 
   # this gives B number of means of bootstrapped samples
