@@ -1789,11 +1789,11 @@ temp0 <- data0_MY_slice_G %>%
                            TRUE ~ COVID)) %>% 
   mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
   # although data has fewer cells than grid_dist, using inner so only those cells with 
-  # established district links will be considered (removes 3 cells)
+  # established district links will be considered (removes some cells and districts)
   dplyr::select(-DISTRICT) %>% # removing to avoid confusion
   inner_join(grid_dist)
 
-# considering only districts with at least 5 grid cells for latter 3 metrics
+# considering only districts with at least 5 grid cells for grid coverage
 temp1 <- temp0 %>% 
   filter(NO.CELLS.TOT >= 5) %>% 
   # summarising metrics of interest
@@ -1866,13 +1866,22 @@ data_spread1 <- data_spread0 %>%
 s_spread_map <- ggplot(data_spread1) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = geometry), col = NA) +
+               fill = "#467C27", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
-  scale_fill_continuous_divergingx(palette = "RdBu", mid = 0) +
+  # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
+  #                                  n_interp = 7, na.value = "grey") +
+  scale_fill_steps2(low = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[1],
+                    mid = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[6],
+                    high = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[11],
+                    midpoint = 0,
+                    breaks = c(-2500, -1000, -100, 0, 1, 100, 2500, 5000),
+                    limits = c(-4134, 7848),
+                    na.value = "#D4B449") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\nno. of lists",
-       title = "Change in no. of lists per district in transition periods")
+       title = "Change in no. of lists per district in transition periods",
+       subtitle = "Gold: districts in which both periods of the transition had zero lists.\nGreen: districts not considered in analysis.")
 
 ggsave("03_wrap_figs/10c_s_spread_map.png", 
        plot = s_spread_map,
