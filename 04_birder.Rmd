@@ -1440,9 +1440,9 @@ data0 <- data0 %>%
     -   Proportion of total cells in country/state covered across months GLMM\
 3.  Spatial spread/evenness (25kmx25km cells; across 9 months) Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
     -   Raw change in no. of lists per district
-    -   Proportional change in no. of lists per district
-    -   Proportional change in grid coverage per district
-    -   Proportional change in grid coverage per district with threshold for "coverage"
+    -   Proportional change in no. of lists per district (only declines)
+    -   Raw change in grid coverage per district
+    -   Proportional change in grid coverage per district (only declines)
 
 ```{r s_UNU, cache=TRUE, message=FALSE}
 
@@ -1739,9 +1739,7 @@ data0 <- data0 %>%
 
 ```
 
-For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns.
-
-For latter 3, only those districts that have a minimum of 5 grid cells will be considered.
+For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns. For grid coverage, only those districts that have a minimum of 5 grid cells will be considered.
 
 ```{r s_spread, cache=TRUE, message=FALSE}
 
@@ -1833,16 +1831,22 @@ data_spread0 <- temp0 %>%
   left_join(temp2) %>% 
   pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
                names_to = "METRIC", values_to = "VALUE") %>% 
+  # some NAs produced for grid coverage because those districts don't qualify for coverage
+  # analysis but present in number of lists analysis, so need to remove them
+  filter(!(is.na(VALUE))) %>% 
   pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
   # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
-  mutate(RAW.CHANGE1 = if_else(METRIC == "NO.LISTS", s_spread_change(BEF, DUR), NA_real_),
-         RAW.CHANGE2 = if_else(METRIC == "NO.LISTS", s_spread_change(DUR, AFT), NA_real_),
-         PROP.CHANGE1 = s_spread_propchange(BEF, DUR),
-         PROP.CHANGE2 = s_spread_propchange(DUR, AFT)) %>% 
+  mutate(RAW.CHANGE1 = s_spread_change(BEF, DUR),
+         RAW.CHANGE2 = s_spread_change(DUR, AFT),
+         PROP.CHANGE1a = s_spread_propchange(BEF, DUR),
+         PROP.CHANGE1b = s_spread_propchange(DUR, AFT),
+         PROP.CHANGE2a = s_spread_propchange(DUR, BEF),
+         PROP.CHANGE2b = s_spread_propchange(AFT, DUR)) %>% 
   left_join(grid_dist)
 
-transition_names <- data.frame(T.CODE = c("T1", "T2"),
-                               T.LABEL = c("Before to During", "During to After"))
+transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
+                               T.LABEL = c("Before to During", "During to After",
+                                           "During to Before", "After to During"))
 
 
 ##### Change in birding effort per district ####
@@ -1866,26 +1870,27 @@ data_spread1 <- data_spread0 %>%
 s_spread_map <- ggplot(data_spread1) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               fill = "#467C27", colour = "black", size = 0.4) +
+               fill = "#ACACAC", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
   #                                  n_interp = 7, na.value = "grey") +
-  scale_fill_steps2(low = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[1],
-                    mid = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[6],
-                    high = RColorBrewer::brewer.pal(n = 11, name = "RdBu")[11],
-                    midpoint = 0,
-                    breaks = c(-2500, -1000, -100, 0, 1, 100, 2500, 5000),
+  scale_fill_stepsn(colours = c(RColorBrewer::brewer.pal(n = 7, name = "RdBu")[1],
+                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[4],
+                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[7]),
+                    breaks = c(-2500, -1000, -100, 0, 100, 2500, 5000),
+                    values = scales::rescale(c(-4134, 0, 7848)), 
                     limits = c(-4134, 7848),
-                    na.value = "#D4B449") +
+                    na.value = "#e2b33c") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\nno. of lists",
        title = "Change in no. of lists per district in transition periods",
-       subtitle = "Gold: districts in which both periods of the transition had zero lists.\nGreen: districts not considered in analysis.")
+       subtitle = "Gold: districts in which both periods of the transition had zero lists.\nGrey: districts not considered in analysis.")
 
 ggsave("03_wrap_figs/10c_s_spread_map.png", 
        plot = s_spread_map,
        dpi = 300, width = 14, height = 8, units = "in")
+
 
 
 # 2. with SEs
@@ -1905,7 +1910,7 @@ data_spread2 <- data_spread1 %>%
                    CI.U = stats::quantile(VALUE, 0.975),
                    VALUE = median(VALUE)) 
 
-s_spread_change <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) + 
+s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 4, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1.75, width = 0.08, position = position_dodge(0.5)) +
@@ -1914,7 +1919,7 @@ s_spread_change <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) +
        x = "Transition", y = "Difference in no. of lists") 
 
 ggsave("03_wrap_figs/10c_s_spread_rawchange.png", 
-       plot = s_spread_change,
+       plot = s_spread_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
 # is DUR-AFT really lower than BEF-DUR?
@@ -1925,41 +1930,232 @@ ggplot(data_spread1) +
 
 # 3. map
 
+# forward direction
+data_spread3a <- data_spread0 %>% 
+  filter(METRIC == "NO.LISTS") %>% 
+  distinct(DISTRICT.NAME, geometry, PROP.CHANGE1a, PROP.CHANGE1b) %>% 
+  # pivoting longer for facetting
+  pivot_longer(cols = c("PROP.CHANGE1a", "PROP.CHANGE1b"),
+               names_to = "METRIC", values_to = "VALUE") %>% 
+  mutate(T.CODE = case_when(str_detect(METRIC, "a") ~ "T1",
+                            str_detect(METRIC, "b") ~ "T2")) %>% 
+  left_join(transition_names) %>% 
+  # keeping only negative change
+  filter(VALUE < 0)
+
+# backward direction
+data_spread3b <- data_spread0 %>% 
+  filter(METRIC == "NO.LISTS") %>% 
+  distinct(DISTRICT.NAME, geometry, PROP.CHANGE2a, PROP.CHANGE2b) %>% 
+  # pivoting longer for facetting
+  pivot_longer(cols = c("PROP.CHANGE2a", "PROP.CHANGE2b"),
+               names_to = "METRIC", values_to = "VALUE") %>% 
+  mutate(T.CODE = case_when(str_detect(METRIC, "a") ~ "T3",
+                            str_detect(METRIC, "b") ~ "T4")) %>% 
+  left_join(transition_names) %>% 
+  # keeping only negative change
+  filter(VALUE < 0) %>% 
+  # order
+  mutate(T.LABEL = factor(T.LABEL, levels = c("After to During", "During to Before")))
 
 
-
-
-##### Proportional change in grid coverage per district ####
-
-# 1. distribution of grid coverage
-# 2. with SEs of grid coverage
-# 3. distribution of grid coverage with threshold
-# 4. with SEs of grid coverage with threshold
-
-data_spread <- data_spread0 %>% 
-  filter(METRIC == "DISTRICT.CELLS.COV") %>% 
-  distinct(DISTRICT.NAME, geometry.district, CHANGE1, CHANGE2)
-
-
-ggplot(data_spread) +
+s_spread_mapprop <- (ggplot(data_spread3a) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               colour = "black", fill = "#E6E9F1", size = 0.2) +
-  geom_sf(aes(fill = CHANGE1, geometry = geometry.district), col = NA, na.rm = T) +
-  scale_fill_viridis_c(option = "cividis",
-                       name = "Proportional\nchange") +
+               fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL) +
+  # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
+  #                                  n_interp = 7, na.value = "grey") +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#D4B449") +
   labs(x = "Longitude", y = "Latitude",
-       title = "Proportional change in grid coverage per district in transition periods") +
-  # making the colourbar bigger
-  theme(legend.key.height = unit(1, "inches")) # height between two breaks of legend
+       fill = "Proportional change")) /
+  (ggplot(data_spread3b) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL) +
+  # scale_fill_viridis_b(option = "cividis", direction = -1, na.value = "grey",
+  #                      values = c(0.1, 0.25, 0.45, 0.65, 0.9)) +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#D4B449") +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Proportional change")) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Proportional declines in no. of lists per district in transition periods",
+                  subtitle = "Grey: districts not considered in analysis.")
 
-hist(data_spread$CHANGE1, breaks = 100)
-hist(data_spread$CHANGE2, breaks = 100)
+ggsave("03_wrap_figs/10c_s_spread_mapprop.png", 
+       plot = s_spread_mapprop,
+       dpi = 300, width = 14, height = 15, units = "in")
+
+
+##### Change in grid coverage per district (without & with threshold) ####
+
+# 1. map of raw change
+# 2. with SEs of raw change
+# 3. map of proportional change
+
+coverage_types <- data.frame(METRIC = c("GRID.COV", "GRID.COV.T"),
+                             METRIC.LABEL = c("Coverage (%)", "Coverage with threshold (%)"))
+
+# 1. map (to give an idea of overall clustering)
+
+data_spread4 <- data_spread0 %>% 
+  filter(METRIC == "GRID.COV" | METRIC == "GRID.COV.T") %>% 
+  distinct(METRIC, DISTRICT.NAME, geometry, RAW.CHANGE1, RAW.CHANGE2) %>% 
+  # pivoting longer for facetting
+  pivot_longer(cols = c("RAW.CHANGE1", "RAW.CHANGE2"),
+               names_to = "CHANGE.TYPE", values_to = "VALUE") %>% 
+  mutate(T.CODE = case_when(str_detect(CHANGE.TYPE, "1") ~ "T1",
+                            str_detect(CHANGE.TYPE, "2") ~ "T2")) %>% 
+  left_join(transition_names) %>% 
+  left_join(coverage_types)
+
+s_spread_gridcov_map <- ggplot(data_spread4) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  facet_grid(METRIC.LABEL ~ T.LABEL, switch = "y") +
+  scale_fill_stepsn(colours = c(RColorBrewer::brewer.pal(n = 7, name = "RdBu")[1],
+                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[4],
+                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[7]),
+                    breaks = c(-50, -25, -10, 0, 10, 25, 50),
+                    values = scales::rescale(c(-100, 0, 100)), 
+                    limits = c(-100, 100),
+                    na.value = "#e2b33c") +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Difference in\ngrid coverage",
+       title = "Change in grid coverage per district in transition periods",
+       subtitle = "Gold: districts in which both periods of the transition had zero grid coverage.\nGrey: districts not considered in analysis.")
+
+ggsave("03_wrap_figs/10c_s_spread_gridcov_map.png", 
+       plot = s_spread_gridcov_map,
+       dpi = 300, width = 14, height = 14, units = "in")
+
+
+# 2. with SEs
+
+set.seed(23) # for bootstrap
+
+data_spread5 <- data_spread4 %>% 
+  # removing NA cells (when both periods of the transition are zero)
+  filter(!is.na(VALUE)) %>% 
+  group_by(METRIC, METRIC.LABEL, T.CODE, T.LABEL) %>% 
+  # this gives B number of means of bootstrapped samples
+  dplyr::summarise(VALUE = boot_conf(x = VALUE)) %>% 
+  group_by(METRIC, METRIC.LABEL, T.CODE, T.LABEL) %>% 
+  dplyr::summarise(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(VALUE, 0.975),
+                   VALUE = median(VALUE)) 
+
+s_spread_gridcov_rawchange <- ggplot(data_spread5, aes(x = T.LABEL, y = VALUE)) + 
+  facet_wrap(~ METRIC.LABEL, nrow = 2) +
+  geom_point(size = 4, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
+  # scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
+  labs(title = "Net change in grid coverage across districts\nin transition periods",
+       x = "Transition", y = "Difference in grid coverage") 
+
+ggsave("03_wrap_figs/10c_s_spread_gridcov_rawchange.png", 
+       plot = s_spread_gridcov_rawchange,
+       dpi = 300, width = 6, height = 9, units = "in")
+
+
+# 3. map
+
+data_spread6 <- data_spread0 %>% 
+  filter(METRIC == "GRID.COV" | METRIC == "GRID.COV.T") %>% 
+  distinct(METRIC, DISTRICT.NAME, geometry, 
+           PROP.CHANGE1a, PROP.CHANGE1b, PROP.CHANGE2a, PROP.CHANGE2b) %>% 
+  # pivoting longer for facetting
+  pivot_longer(cols = c("PROP.CHANGE1a", "PROP.CHANGE1b",
+                        "PROP.CHANGE2a", "PROP.CHANGE2b"),
+               names_to = "CHANGE.TYPE", values_to = "VALUE") %>% 
+  mutate(T.CODE = case_when(str_detect(CHANGE.TYPE, "1a") ~ "T1",
+                            str_detect(CHANGE.TYPE, "1b") ~ "T2",
+                            str_detect(CHANGE.TYPE, "2a") ~ "T3",
+                            str_detect(CHANGE.TYPE, "2b") ~ "T4")) %>% 
+  left_join(transition_names) %>% 
+  left_join(coverage_types) %>% 
+  # keeping only negative change
+  filter(VALUE < 0) %>% 
+  mutate(T.LABEL = factor(T.LABEL, levels = c("Before to During", "During to After",
+                                              "After to During", "During to Before")))
+
+# with the threshold, the IQR of proportional change has increased even though range is smaller
+# i.e., the distribution is much more rounded
+# this results in more districts with higher declines, but what's important here is to
+# compare bef-dur with aft-dur and see which districts overlap---not many
+# then compare these two with dur-aft and dur-bef respectively to check whether changes are 
+# only in one direction---evidently not
+
+s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>% 
+                                       filter(METRIC == "GRID.COV")) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL, ncol = 2) +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#D4B449") +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Proportional change",
+       title = "Proportional declines in grid coverage per district in transition periods",
+       subtitle = "Grey: districts not considered in analysis.")
+
+ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_a.png", 
+       plot = s_spread_gridcov_mapprop_a,
+       dpi = 300, width = 14, height = 14, units = "in")
+
+s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>% 
+                                       filter(METRIC == "GRID.COV.T")) +
+  geom_polygon(data = indiamap,
+               aes(long, lat, group = group),
+               fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL, ncol = 2) +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#D4B449") +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Proportional change",
+       title = "Proportional declines in grid coverage per district (with threshold) in transition periods",
+       subtitle = "Grey: districts not considered in analysis.")
+
+ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_b.png", 
+       plot = s_spread_gridcov_mapprop_b,
+       dpi = 300, width = 14, height = 14, units = "in")
 
 ```
 
--   The maps and the graphs all show that there was an overall growth in eBirding.\
--   Spatial coverage was entirely unaffected by the pandemic!
+-   In terms of pure no. of lists, birding effort overall decreased *after the pandemic*. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
+-   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that aside from a few districts in MP, UP and Bihar area there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual indiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT.
+-   Overall grid coverage across all districts did not increase during the pandemic (either stayed the same or decreased slightly, judging from CI), while it did so after. As a result, the changes in grid coverage for BEF-DUR and DUR-AFT are notably different. However, when grid coverage is defined with a threshold of 5 lists, the patterns are much more similar: looks like grid coverage during the pandemic was very similar to that before, while there was a slight (not major) increase in overall coverage after the pandemic. Looking into this deeper, it is clear that major worrisome changes (\>50% change in coverage) are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
+-   Like with no. of lists, in some central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are a similar number of districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which might be suggesting that some of this is due to annual variability.
 
 ### Temporal spread
 
