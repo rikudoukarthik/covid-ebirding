@@ -1875,11 +1875,10 @@ s_spread_map <- ggplot(data_spread1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
   #                                  n_interp = 7, na.value = "grey") +
-  scale_fill_stepsn(colours = c(RColorBrewer::brewer.pal(n = 7, name = "RdBu")[1],
-                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[4],
-                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[7]),
-                    breaks = c(-2500, -1000, -100, 0, 100, 2500, 5000),
-                    values = scales::rescale(c(-4134, 0, 7848)), 
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu"),
+                    breaks = c(-1000, -500, -100, 0, 100, 500, 1000),
+                    values = scales::rescale(c(-4134, -1000, -500, -100, 0, 
+                                               100, 500, 1000, 7848)), 
                     limits = c(-4134, 7848),
                     na.value = "#e2b33c") +
   labs(x = "Longitude", y = "Latitude",
@@ -2030,11 +2029,9 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
                fill = "#ACACAC", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_grid(METRIC.LABEL ~ T.LABEL, switch = "y") +
-  scale_fill_stepsn(colours = c(RColorBrewer::brewer.pal(n = 7, name = "RdBu")[1],
-                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[4],
-                                RColorBrewer::brewer.pal(n = 7, name = "RdBu")[7]),
-                    breaks = c(-50, -25, -10, 0, 10, 25, 50),
-                    values = scales::rescale(c(-100, 0, 100)), 
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu"),
+                    breaks = c(-40, -25, -10, 0, 10, 25, 40),
+                    values = scales::rescale(c(-100, -40, -25, -10, 0, 10, 25, 40, 100)), 
                     limits = c(-100, 100),
                     na.value = "#e2b33c") +
   labs(x = "Longitude", y = "Latitude",
