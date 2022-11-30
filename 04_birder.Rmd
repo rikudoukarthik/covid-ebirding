@@ -1881,11 +1881,13 @@ s_spread_map <- ggplot(data_spread1) +
                     values = scales::rescale(c(-4134, -1000, -500, -100, 0, 
                                                100, 500, 1000, 7848)), 
                     limits = c(-4134, 7848),
-                    na.value = "#e2b33c") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\nno. of lists",
        title = "Change in no. of lists per district in transition periods",
-       subtitle = "Gold: districts in which both periods of the transition had zero lists.\nGrey: districts not considered in analysis.")
+       subtitle = "Grey: districts not considered in analysis")
+# not considered can be either because both time periods are zero, or if generally no 
+# district-grid cell link present
 
 ggsave("03_wrap_figs/10c_s_spread_map.png", 
        plot = s_spread_map,
@@ -1941,7 +1943,7 @@ data_spread3a <- data_spread0 %>%
                             str_detect(METRIC, "b") ~ "T2")) %>% 
   left_join(transition_names) %>% 
   # keeping only negative change
-  filter(VALUE < 0)
+  mutate(VALUE = ifelse(VALUE < 0, VALUE, NA_real_))
 
 # backward direction
 data_spread3b <- data_spread0 %>% 
@@ -1954,7 +1956,7 @@ data_spread3b <- data_spread0 %>%
                             str_detect(METRIC, "b") ~ "T4")) %>% 
   left_join(transition_names) %>% 
   # keeping only negative change
-  filter(VALUE < 0) %>% 
+  mutate(VALUE = ifelse(VALUE < 0, VALUE, NA_real_)) %>% 
   # order
   mutate(T.LABEL = factor(T.LABEL, levels = c("After to During", "During to Before")))
 
@@ -1962,7 +1964,7 @@ data_spread3b <- data_spread0 %>%
 s_spread_mapprop <- (ggplot(data_spread3a) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               fill = "#ACACAC", colour = "black", size = 0.4) +
+               fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
@@ -1973,13 +1975,13 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#D4B449") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change")) /
   (ggplot(data_spread3b) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               fill = "#ACACAC", colour = "black", size = 0.4) +
+               fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_viridis_b(option = "cividis", direction = -1, na.value = "grey",
@@ -1990,12 +1992,12 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#D4B449") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change")) +
   plot_layout(guides = "collect") +
-  plot_annotation(title = "Proportional declines in no. of lists per district in transition periods",
-                  subtitle = "Grey: districts not considered in analysis.")
+  plot_annotation(title = "Proportional declines in no. of lists per district in transition periods (only when N1 >= 10)",
+                  subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
 ggsave("03_wrap_figs/10c_s_spread_mapprop.png", 
        plot = s_spread_mapprop,
@@ -2034,11 +2036,11 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
                     breaks = c(-40, -25, -10, 0, 10, 25, 40),
                     values = scales::rescale(c(-100, -40, -25, -10, 0, 10, 25, 40, 100)), 
                     limits = c(-100, 100),
-                    na.value = "#e2b33c") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\ngrid coverage",
        title = "Change in grid coverage per district in transition periods",
-       subtitle = "Gold: districts in which both periods of the transition had zero grid coverage.\nGrey: districts not considered in analysis.")
+       subtitle = "Grey: districts not considered in analysis")
 
 ggsave("03_wrap_figs/10c_s_spread_gridcov_map.png", 
        plot = s_spread_gridcov_map,
@@ -2091,7 +2093,7 @@ data_spread6 <- data_spread0 %>%
   left_join(transition_names) %>% 
   left_join(coverage_types) %>% 
   # keeping only negative change
-  filter(VALUE < 0) %>% 
+  mutate(VALUE = ifelse(VALUE < 0, VALUE, NA_real_)) %>% 
   mutate(T.LABEL = factor(T.LABEL, levels = c("Before to During", "During to After",
                                               "After to During", "During to Before")))
 
@@ -2106,7 +2108,7 @@ s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>%
                                        filter(METRIC == "GRID.COV")) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               fill = "#ACACAC", colour = "black", size = 0.4) +
+               fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
@@ -2115,11 +2117,11 @@ s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>%
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#D4B449") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change",
        title = "Proportional declines in grid coverage per district in transition periods",
-       subtitle = "Grey: districts not considered in analysis.")
+       subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
 ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_a.png", 
        plot = s_spread_gridcov_mapprop_a,
@@ -2129,7 +2131,7 @@ s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>%
                                        filter(METRIC == "GRID.COV.T")) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
-               fill = "#ACACAC", colour = "black", size = 0.4) +
+               fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
@@ -2138,11 +2140,11 @@ s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>%
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#D4B449") +
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change",
        title = "Proportional declines in grid coverage per district (with threshold) in transition periods",
-       subtitle = "Grey: districts not considered in analysis.")
+       subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
 ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_b.png", 
        plot = s_spread_gridcov_mapprop_b,
