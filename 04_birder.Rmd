@@ -1821,35 +1821,6 @@ temp2 <- temp0 %>%
   dplyr::select(-NO.CELLS)
 
 
-# for the proportional change of number of lists, setting a threshold of 10 lists per district
-# to avoid large values of proportional change caused by them
-temp3 <- temp0 %>% 
-  # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
-  ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
-           fill = list(NO.LISTS = 0)) %>% 
-  left_join(temp1) %>% 
-  left_join(temp2) %>% 
-  # threshold
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  filter(!any(NO.LISTS < 10)) %>% 
-  ungroup() %>% 
-  pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
-               names_to = "METRIC", values_to = "VALUE") %>% 
-  # some NAs produced for grid coverage because those districts don't qualify for coverage
-  # analysis but present in number of lists analysis, so need to remove them
-  filter(!(is.na(VALUE))) %>% 
-  pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
-  # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
-  transmute(DISTRICT.NAME = DISTRICT.NAME,
-            METRIC = METRIC,
-            PROP.CHANGE1b = s_spread_propchange(DUR, AFT),
-            PROP.CHANGE2a = s_spread_propchange(DUR, BEF),
-            PROP.CHANGE2b = s_spread_propchange(AFT, DUR))
-
-
 data_spread0 <- temp0 %>% 
   # summarising metrics of interest
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
@@ -1867,9 +1838,11 @@ data_spread0 <- temp0 %>%
   pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
   # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
   mutate(RAW.CHANGE1 = s_spread_change(BEF, DUR),
-         RAW.CHANGE2 = s_spread_change(DUR, AFT)) %>% 
-  # joining prop.change
-  left_join(temp3) %>% 
+         RAW.CHANGE2 = s_spread_change(DUR, AFT),
+         PROP.CHANGE1a = s_spread_propchange(METRIC, BEF, DUR),
+         PROP.CHANGE1b = s_spread_propchange(METRIC, DUR, AFT),
+         PROP.CHANGE2a = s_spread_propchange(METRIC, DUR, BEF),
+         PROP.CHANGE2b = s_spread_propchange(METRIC, AFT, DUR)) %>% 
   left_join(grid_dist)
 
 transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),

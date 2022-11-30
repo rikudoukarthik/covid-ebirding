@@ -636,16 +636,21 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
 
 ### change in spatial spread/clustering metric -----------------
 
-s_spread_propchange <- function(x, y, k = 1)  {
+s_spread_propchange <- function(metric, x, y, k = 1)  {
   
   # proportional change here is defined differently from earlier functions
   
   # when both values being compared are zero, converting to NA which can later be removed
   # when LHS is zero, adding k = 1 to both values (to avoid infinity due to 0 in denominator)
   # when RHS is zero, adding nothing
+
+  # for the proportional change of number of lists, setting a threshold of 10 lists per district
+  # to avoid large values of proportional change caused by them
   
-  case_when(x == 0 & y == 0 ~ NA_real_, 
-            x == 0 & y != 0 ~ ((y + k) - (x + k))/(x + k), 
+  
+  case_when(x == 0 & y == 0 ~ NA_real_,
+            x < 10 & metric == "NO.LISTS" ~ NA_real_, 
+            x == 0 & metric != "NO.LISTS" & y != 0 ~ ((y + k) - (x + k))/(x + k), 
             TRUE ~ (y - x)/x)
   
   
