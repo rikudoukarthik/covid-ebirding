@@ -568,6 +568,7 @@ boot_conf_GLMM = function(model,
                           re_form = NA,
                           nsim = 1000)
 {
+
   require(tidyverse)
   require(lme4)
   # require(VGAM)
@@ -578,13 +579,14 @@ boot_conf_GLMM = function(model,
     # not specifying type = "response" because will later transform prediction along with SE
   }
   
-  par_cores <- max(1, detectCores() - 4)
-  par_cluster <- makeCluster(par_cores)
+  par_cores <- max(1, detectCores())
+  par_cluster <- makeCluster(rep("localhost", par_cores), outfile = "log.txt")
   clusterEvalQ(par_cluster, library(lme4))
   
-  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun, 
-                          seed = 1000, use.u = FALSE, type = "parametric", 
-                          parallel = "snow", ncpus = par_cores, cl = par_cluster)
+  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun,
+                          parallel = "multicore", 
+                          use.u = FALSE, type = "parametric", 
+                          ncpus = par_cores, cl = par_cluster)
   
   stopCluster(par_cluster)
 
