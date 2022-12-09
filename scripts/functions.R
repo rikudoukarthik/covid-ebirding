@@ -561,7 +561,7 @@ boot_conf = function(x, fn = mean, B = 1000) {
 ### bootstrapping confidence from GLMMs (bootMer) -------------------------------------
 
 # adapted from Ashwin's function for SoIB
-# https://github.com/ashwinv2005/trend-analyses/blob/master/functions.R
+# https://github.com/ashwinv2005/soib_v2/blob/master/SoIB_v2%20functions.R
 
 boot_conf_GLMM = function(model, 
                           new_data, # separately specify dataframe with vars for model

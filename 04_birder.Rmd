@@ -63,18 +63,24 @@ These are usually driven by decision at the state level, so since the models are
 # taking data from all states instead of just chosen 4
 data0_a <- data0_MY_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA,
-         SE = NA)
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
 
 
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
-  ungroup() 
+  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  filter(GROUP.BIRDING == 1) %>% 
+  dplyr::summarise(G.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   TOT.LISTS = min(TOT.LISTS),
+                   PROP.GROUP = G.LISTS/TOT.LISTS) %>% 
+  ungroup()
 
 tictoc::tic(glue::glue("GLMM for India"))
-model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = binomial(link = "cloglog"),
+model_a <- glmer(PROP.GROUP ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, weights = TOT.LISTS,
+                 family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
 # 220 sec
