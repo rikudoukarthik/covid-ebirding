@@ -52,20 +52,20 @@ GLMMs for birder behaviour run only for the following metrics:
 
 These are usually driven by decision at the state level, so since the models are being run for the states individually, no need to consider district.
 
-### Group birding (\>2 observer) per observer
+### Group birding (>2 observer) per observer
 
 ```{r d1_group_po, cache=TRUE, message=FALSE}
 
 ##### Change in group birding per observer ####
 
 temp1 <- data0_MY_slice_S %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup() 
 
 temp2 <- data0_MY_slice_S %>% 
   filter(NUMBER.OBSERVERS > 2) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+  group_by(M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
   ungroup()
 
@@ -74,22 +74,33 @@ temp2 <- data0_MY_slice_S %>%
 
 nl_po_sw <- temp1 %>% 
   left_join(temp2) %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
   mutate(NO.SLISTS = replace_na(NO.SLISTS, 0)) %>% 
   mutate(PROP.SLISTS = NO.SLISTS/NO.LISTS,
          SE = sqrt((PROP.SLISTS)*(1 - PROP.SLISTS)/NO.LISTS)) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
+  group_by(M.YEAR, MONTH, STATE) %>% 
   dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
-            CI.U = PROP.SLISTS + 1.96*SE)
+            CI.U = PROP.SLISTS + 1.96*SE) %>% 
+  left_join(timeline)
 
 nl_po_nw <- nl_po_sw %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
+  group_by(M.YEAR, MONTH) %>% 
   dplyr::summarise(PROP.SLISTS = mean(PROP.SLISTS),
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PROP.SLISTS - 1.96*SE,
-            CI.U = PROP.SLISTS + 1.96*SE)
+            CI.U = PROP.SLISTS + 1.96*SE) %>% 
+  left_join(timeline)
 
+(ggplot(filter(data0, STATE == anal_states$a), 
+       aes(MONTH, PRED, colour = COVID)) +
+  labs(title = anal_states$a,
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Period")) 
 
 (ggplot(nl_po_nw, aes(MONTH, PROP.SLISTS, colour = COVID)) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
@@ -133,8 +144,6 @@ nl_po_nw <- nl_po_sw %>%
 plot_layout(guides = "collect") +
 plot_annotation(title = "Change in proportion of group birding per observer with the pandemic",
                 subtitle = "Y-axis shows proportion of observers' checklists that are group birding events") -> no_lists_po
-
-no_lists_po # plot
 
 ggsave("03_wrap_figs/01_no_lists_po.png", plot = no_lists_po,
        width = 9, height = 9, units = "in")
