@@ -254,7 +254,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   # if first time, importing data from EBD .txt and saving as .RData for future
   # else directly loading .RData
   
-  if (!file.exists(datapath) & file.exists(rawdatappath)) {
+  if (!file.exists(datapath) & file.exists(rawdatapath)) {
     
     # variables required in data object
     preimp <- c("CATEGORY","EXOTIC.CODE","COMMON.NAME","OBSERVATION.COUNT",
@@ -268,11 +268,11 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     ### main EBD ###
     
     # this method using base R import takes only 373 sec with May 2022 release
-    nms <- names(read.delim(rawdatappath, nrows = 1, sep = "\t", header = T, quote = "", 
+    nms <- names(read.delim(rawdatapath, nrows = 1, sep = "\t", header = T, quote = "", 
                             stringsAsFactors = F, na.strings = c(""," ", NA)))
     nms[!(nms %in% preimp)] <- "NULL"
     nms[nms %in% preimp] <- NA
-    data <- read.delim(rawdatappath, colClasses = nms, sep = "\t", header = T, quote = "",
+    data <- read.delim(rawdatapath, colClasses = nms, sep = "\t", header = T, quote = "",
                        stringsAsFactors = F, na.strings = c(""," ",NA)) 
     
     # # tidy import takes way longer, a total of 877 sec, but could be useful for smaller data
@@ -330,7 +330,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
                                 GA.2 == 1 ~ "GA.2", 
                                 TRUE ~ "NG"))
-  filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% select(OBSERVER.ID)
+  filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% dplyr::select(OBSERVER.ID)
   
   
   ### COVID classification
@@ -356,7 +356,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
            # 2km*2km
            SUBCELL.ID = raster::cellFromXY(rast_UNU, cbind(LONGITUDE, LATITUDE))) %>% 
     filter(!is.na(URBAN)) %>% 
-    select(-LONGITUDE, -LATITUDE)
+    dplyr::select(-LONGITUDE, -LATITUDE)
   
   save(lists_UNU, file = "data/lists_UNU.RData")
   
@@ -365,7 +365,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ### new observer data (to calculate no. of new observers metric) #######
 
   new_obsr_data <- data %>%
-    select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
+    dplyr::select(c("YEAR", "MONTH", "STATE", "SAMPLING.EVENT.IDENTIFIER",
              "LAST.EDITED.DATE", "OBSERVATION.DATE", "OBSERVER.ID")) %>%
     mutate(LAST.EDITED.DATE = ymd_hms(LAST.EDITED.DATE)) %>%
     group_by(OBSERVER.ID) %>%
@@ -382,12 +382,16 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>%
     rename(LE.YEAR = M.YEAR,
            LE.MONTH = M.MONTH) %>%
-    mutate(LE.YEAR = factor(LE.YEAR, levels = seq(2018, 2021, by = 1)),
+    mutate(LE.YEAR = factor(LE.YEAR, levels = seq(2018, 2022, by = 1)),
            LE.MONTH = factor(LE.MONTH, levels = seq(1, 12, by = 1)),
-           YEAR = factor(year(OBSERVATION.DATE), levels = seq(2018, 2022, by = 1)),
-           MONTH = factor(month(OBSERVATION.DATE), levels = seq(1, 12, by = 1))) %>% 
-    mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
-           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH)))
+           YEAR = year(OBSERVATION.DATE),
+           MONTH = month(OBSERVATION.DATE),
+           M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
+           M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) %>% 
+    mutate(YEAR = factor(YEAR, levels = seq(2018, 2022, by = 1)),
+           MONTH = factor(MONTH, levels = seq(1, 12, by = 1)),
+           M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+           M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
 
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA)
@@ -448,7 +452,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
     terra::intersect(india) %>% 
     terra::as.data.frame() %>% 
-    select(GROUP.ID) 
+    dplyr::select(GROUP.ID) 
 
   # speed and distance filter for travelling lists
   temp3 <- data0_MY %>%
@@ -471,7 +475,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
                 (ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Incidental")) &
              # pelagic filter
              (GROUP.ID %in% temp2$GROUP.ID)) %>% 
-    select(-BREEDING.CODE, -SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER)
+    dplyr::select(-BREEDING.CODE, -SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER)
   
   
   # making month and year ordered factors
@@ -799,7 +803,7 @@ bird_model_state <- function(data_full = data0_MY,
     arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
     group_by(GROUP.ID) %>% 
     slice(1) %>% ungroup() %>% 
-    select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
+    dplyr::select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
            M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
   data_occ <- data_sliceG %>% 
@@ -809,7 +813,7 @@ bird_model_state <- function(data_full = data0_MY,
     left_join(temp1) %>% 
     # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
     mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
-    select(-OBSERVATION.COUNT) %>% 
+    dplyr::select(-OBSERVATION.COUNT) %>% 
     mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
     # checklist metadata
     left_join(temp2, by = "GROUP.ID") %>% 
@@ -886,7 +890,7 @@ bird_model_state <- function(data_full = data0_MY,
     birds_pred <- birds_pred %>% 
       left_join(birds_pred0) %>% 
       mutate(REP.FREQ.PRED = coalesce(REP.FREQ.PRED, REP.FREQ.PRED2)) %>% 
-      select(-REP.FREQ.PRED2)
+      dplyr::select(-REP.FREQ.PRED2)
     
     # resetting counter for next MONTHS.TYPE
     count <- 0
