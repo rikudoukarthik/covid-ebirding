@@ -52,7 +52,7 @@ species_list <- bind_rows("Karnataka" = species_bang,
                           .id = "STATE") %>% 
   filter(!(SP.CATEGORY %in% "W")) # removing wetland spp. cos we want to compare UNU
 
-rm(species, species_koch, species_guwa)
+rm(species_bang, species_pune, species_koch, species_guwa)
 
 
 ### choosing grid cells of 4 cities ####

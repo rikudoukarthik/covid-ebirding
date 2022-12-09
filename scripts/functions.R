@@ -557,6 +557,41 @@ boot_conf = function(x, fn = mean, B = 1000) {
 
 
 
+
+### bootstrapping confidence from GLMMs (bootMer) -------------------------------------
+
+# adapted from Ashwin's function for SoIB
+# https://github.com/ashwinv2005/trend-analyses/blob/master/functions.R
+
+boot_conf_GLMM = function(model, 
+                          new_data, # separately specify dataframe with vars for model
+                          re_form = NA,
+                          nsim = 1000)
+{
+  require(tidyverse)
+  require(lme4)
+  # require(VGAM)
+  require(parallel) # to parallelise bootstrap step
+  
+  pred_fun <- function(model) {
+    predict(model, newdata = new_data, re.form = re_form, allow.new.levels = TRUE)
+    # not specifying type = "response" because will later transform prediction along with SE
+  }
+  
+  par_cores <- max(1, detectCores() - 4)
+  par_cluster <- makeCluster(par_cores)
+  clusterEvalQ(par_cluster, library(lme4))
+  
+  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun, 
+                          seed = 1000, use.u = FALSE, type = "parametric", 
+                          parallel = "snow", ncpus = par_cores, cl = par_cluster)
+  
+  stopCluster(par_cluster)
+
+  return(pred_bootMer)
+  
+}
+
 ### raster aggregation -----------------
 
 # Function to supply in raster::aggregate(), with 25% threshold for classification
@@ -603,6 +638,42 @@ rast_propchange <- function(x, y, k = 1, emptycheck = F)  {
 
 }
 
+### change in spatial spread/clustering metric -----------------
+
+s_spread_propchange <- function(metric, x, y, k = 1)  {
+  
+  # proportional change here is defined differently from earlier functions
+  
+  # when both values being compared are zero, converting to NA which can later be removed
+  # when LHS is zero, adding k = 1 to both values (to avoid infinity due to 0 in denominator)
+  # when RHS is zero, adding nothing
+
+  # for the proportional change of number of lists, setting a threshold of 10 lists per district
+  # to avoid large values of proportional change caused by them
+  
+  
+  case_when(x == 0 & y == 0 ~ NA_real_,
+            x < 10 & metric == "NO.LISTS" ~ NA_real_, 
+            x == 0 & metric != "NO.LISTS" & y != 0 ~ ((y + k) - (x + k))/(x + k), 
+            TRUE ~ (y - x)/x)
+  
+  
+}
+
+s_spread_change <- function(x, y, k = 1)  {
+  
+  # simple change here is defined differently from earlier functions
+  
+  # when both values being compared are zero, converting to NA which can later be removed
+  # when LHS is zero, adding k = 1 to both values (to avoid infinity due to 0 in denominator)
+  # when RHS is zero, adding nothing
+  
+  case_when(x == 0 & y == 0 ~ NA_real_, 
+            TRUE ~ (y - x))
+
+}
+
+
 ### create nb object but omit grid cells having no neighbours -----------------
 
 # these need to be removed when calculating weights for the Moran analyses
@@ -642,147 +713,13 @@ poly2omit0nb <- function(data) {
 }
 
 
-### local moran cluster and outlier analysis (COA) -----------------
-
-# Deriving the cluster/outlier types (COType in ArcGIS term) for each spatial feature 
-
-# manual implementation of COA using local Moran's I (Anselin), because no function 
-# exists for this
-
-# ARGUMENTS:
-# data is the input spatial object (sf dataframe)
-# data_weights is the list of weights
-# sig.lvl <- 0.05 # 95% confidence
-# correction <- "fdr" # False Discovery Rate, performs better in COA; other options in p.adjust()
-
-localmoran_coa <- function(data, data_weights, 
-                           sig.lvl = 0.05, correction = "fdr", 
-                           highlight = "outlier", trans.resp = F){
-  
-  if (highlight == "outlier") {
-    CO_levels <- c("HL", "HH", "NS", "LL", "LH")
-    } else if (highlight == "cluster") {
-      CO_levels <- c("HH", "HL", "NS", "LH", "LL")
-    }
-  
-  if (trans.resp == T) {
-    # log-transforming the number of lists (+1) in order to allow analysis to be more sensitive,
-    # and to not let the high values overwhelm
-    data <- data %>% mutate(NO.LISTS = log(NO.LISTS + 1))
-    
-    print("Response variable transformed:")
-    print(summary(data$NO.LISTS))
-  } else {
-    print("Response variable not transformed.")
-  }
-  # is response variable normally distributed?
-  hist(data$NO.LISTS)
-  
-  
-  # calculating mean value because in cluster and outlier analysis, the reference to 
-  # high and low is relative to the mean of the variable, and should not be interpreted 
-  # in an absolute sense.
-  mean.ref <- mean(data$NO.LISTS)
-  print(paste("Mean reference value:", mean.ref))
-  
-  data_COA <- localmoran(data$NO.LISTS, data_weights) %>% 
-    as_tibble() %>% 
-    magrittr::set_colnames(c("Ii","E.Ii","Var.Ii","Z.Ii","Pr(z > 0)")) # for easy reference
-  
-  # adjusting the p-value based on correction method
-  data_COA$P.ADJ <- p.adjust(data_COA$`Pr(z > 0)`, method = correction)
-  
-  data_COA <- data_COA %>% 
-    # joining to main data
-    bind_cols(data) %>% 
-    mutate(CO.TYPE = factor(
-      case_when(P.ADJ > sig.lvl ~ "NS",
-                P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS >= mean.ref ~ "HH",
-                P.ADJ <= sig.lvl & Ii >= 0 & NO.LISTS < mean.ref ~ "LL",
-                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS >= mean.ref ~ "HL",
-                P.ADJ <= sig.lvl & Ii < 0 & NO.LISTS < mean.ref ~ "LH"),
-      levels = CO_levels
-    )) %>% 
-    # renaming Ii to MORAN for easy reference
-    rename(MORAN = Ii) %>% 
-    # reclassifying from "localmoran" type to double
-    mutate(across(c("MORAN","E.Ii","Var.Ii","Z.Ii","Pr(z > 0)"), ~ as.double(.x)))
-  
-  return(data_COA)
-  
-}
-
-
-### period-wise spatial spread analysis (local Moran cluster and outlier analysis) -------
-
-# need to input three different data objects corresponding to three periods
-
-pw_spread_LMCOA <- function(data_p1, data_p2, data_p3, trans.resp = F) {
-  
-  require(spdep)
-
-  
-  {
-    clust_data1 <- data_p1 %>% 
-      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
-    
-    clust_w1 <- clust_data1 %>% poly2omit0nb() %>% nb2listw()
-    
-    # removing 0nb cells from main data obj also
-    clust_data1 <- clust_data1 %>% anti_join(cell_zero)
-    
-    clust_data1 <- localmoran_coa(clust_data1, clust_w1, 
-                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
-
-  }
-  
-  {
-    clust_data2 <- data_p2 %>% 
-      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
-    
-    clust_w2 <- clust_data2 %>% poly2omit0nb() %>% nb2listw()
-    
-    # removing 0nb cells from main data obj also
-    clust_data2 <- clust_data2 %>% anti_join(cell_zero)
-    
-    clust_data2 <- localmoran_coa(clust_data2, clust_w2, 
-                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
-  }
-  
-  {
-    clust_data3 <- data_p3 %>% 
-      mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) 
-    
-    clust_w3 <- clust_data3 %>% poly2omit0nb() %>% nb2listw()
-    
-    # removing 0nb cells from main data obj also
-    clust_data3 <- clust_data3 %>% anti_join(cell_zero)
-    
-    clust_data3 <- localmoran_coa(clust_data3, clust_w3, 
-                                  sig.lvl = 0.05, correction = "fdr", trans.resp = trans.resp)
-  }
-  
-  
-  clust_data <- clust_data1 %>% 
-    bind_rows(clust_data2) %>% 
-    bind_rows(clust_data3) %>% 
-    # making it sf object
-    st_as_sf()
-  
-  
-  # should the weights objects be saved in environment? don't think so
-  
-  
-  # returning overall data with moran values
-  return(clust_data)
-  
-}
-
 ### state-level modelling of bird repfreq -----------------
 
 bird_model_state <- function(data_full = data0_MY, 
                              data_sliceG = data0_MY_slice_G, 
                              state) {
+  
+  tictoc::tic("Total time elapsedfor bird_model_state():")
   
   require(lme4)
   
@@ -841,15 +778,17 @@ bird_model_state <- function(data_full = data0_MY,
     left_join(species) %>% 
     mutate(REP.FREQ.PRED = NA)
   
+  print("Completed preparations for modelling. Now starting modelling.")
+  
   
   count <- 0
   for (m in 1:n_distinct(birds_pred$MONTHS.TYPE)) {
     
     data_mtype <- data_occ0 %>% 
-      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m])
+      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m])
     
     birds_pred0 <- birds_pred %>% 
-      filter(MONTHS.TYPE == unique(prolific$MONTHS.TYPE)[m]) %>% 
+      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m]) %>% 
       rename(REP.FREQ.PRED2 = REP.FREQ.PRED)
 
     for (i in 1:n_distinct(birds_pred0$COMMON.NAME)) {
@@ -948,5 +887,7 @@ bird_model_state <- function(data_full = data0_MY,
   
   assign("birds_pred", birds_pred, envir = .GlobalEnv)
   assign("birds_graph", birds_graph, envir = .GlobalEnv)
+  
+  tictoc::toc()
   
   }

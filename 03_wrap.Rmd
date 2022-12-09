@@ -26,6 +26,9 @@ library(glue)
 library(spdep)
 library(sf)
 library(tmap)
+library(parallel) # for bootstrapping error from GLMMs
+library(colorspace) # for ability to set midpoint in ggplot scale colour
+library(ggallin) # for inverse arcsine transformation of ggplot scale
 
 theme_set(theme_classic())
 
@@ -117,7 +120,7 @@ month_compar <- data0_MY_slice_G %>%
   dplyr::select(MONTH)
 
 # removing unnecessary objects from maps.RData
-rm(areag1, areag2, areag3, areag4, districtmap)
+rm(areag1, areag2, areag3, areag4, gridmapg2, gridmapg3, gridmapg4)
 
 ```
 
