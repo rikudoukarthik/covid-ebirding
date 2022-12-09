@@ -93,25 +93,24 @@ for (j in 1:n_distinct(data0_a$MONTH)) {
                                  nsim = 100)
     tictoc::toc()
     
-    data0_a$PRED[count] <- median(na.omit(prediction$t[count]))
-    data0_a$SE[count] <- sd(na.omit(prediction$t[count]))
+    data0_a$PRED.LINK[count] <- median(na.omit(prediction$t[count]))
+    data0_a$SE.LINK[count] <- sd(na.omit(prediction$t[count]))
     
   }
 }
 
-      f2$freqt = clogloglink(f2$freq,inverse = T)
-      f2$cl = clogloglink((f2$freq-f2$se),inverse = T)
-      f2$set = f2$freqt-f2$cl
-
-
 data0_a <- data0_a %>% 
-    left_join(timeline)
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_S %>% 
+data0_b <- data0_b_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -122,47 +121,46 @@ data0 <- data0_MY_slice_S %>%
 count <- 0
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_S %>% 
+  data_b <- data0_b_MY_slice_S %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
     ungroup() 
   
   tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
-  model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_a, family = binomial(link = "cloglog"),
+  model_b <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                   data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
 
-  for (j in 1:n_distinct(data0$MONTH)) {
-    for (k in 1:n_distinct(data0$M.YEAR)) {
+  for (j in 1:n_distinct(data0_b$MONTH)) {
+    for (k in 1:n_distinct(data0_b$M.YEAR)) {
       
       count <- count + 1
       
-      tictoc::tic(glue::glue("Bootstrapped predictions for {anal_states[, i]}"))
-      prediction <- boot_conf_GLMM(model_a,
-                                   new_data = data.frame(MONTH = data0$MONTH[count],
-                                                         M.YEAR = data0$M.YEAR[count]),
+      tictoc::tic(glue::glue("Bootstrapped predictions for {anal_states[, i]} in month {j} of MY {data0_a$M.YEAR[count]}"))
+      prediction <- boot_conf_GLMM(model_b,
+                                   new_data = data.frame(MONTH = data0_b$MONTH[count],
+                                                         M.YEAR = data0_b$M.YEAR[count]),
                                    nsim = 100)
       tictoc::toc()
       
-      data0$PRED[count] <- median(na.omit(prediction$t[count]))
-      data0$SE[count] <- sd(na.omit(prediction$t[count]))
+      data0_b$PRED.LINK[count] <- median(na.omit(prediction$t[count]))
+      data0_b$SE.LINK[count] <- sd(na.omit(prediction$t[count]))
 
     }
   }
 } 
 
-      f2$freqt = clogloglink(f2$freq,inverse = T)
-      f2$cl = clogloglink((f2$freq-f2$se),inverse = T)
-      f2$set = f2$freqt-f2$cl
+data0_b <- data0_b %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
 
-
-data0 <- data0 %>% 
-    left_join(timeline)
 
 ##### Graph ####
-
 
 (ggplot(filter(data0, STATE == anal_states$a), 
        aes(MONTH, PRED, colour = M.YEAR)) +
@@ -196,6 +194,9 @@ data0 <- data0 %>%
   # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
   #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Period"))
+
+##### Saving analysis objects ####
+
 
 ```
 
