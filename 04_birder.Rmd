@@ -71,8 +71,7 @@ data0_a <- data0_MY_slice_S %>%
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
-  ungroup() %>% 
-  slice_sample(n = 10000)
+  ungroup()
 
 tictoc::tic(glue("GLMM for India"))
 model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
@@ -83,17 +82,17 @@ tictoc::toc()
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
-prediction <- boot_conf_GLMM(model_a,
-                             new_data = data0_a,
-                             new_data_string = "data0_a",
-                             nsim = 100)
+prediction <- split_par_boot(model = model_a, 
+                             new_data = data0_a, 
+                             new_data_string = "data0_a", 
+                             mode = "extra")
 tictoc::toc()
 
 
 for (i in 1:length(data0_a$MONTH)) {
   
-  data0_a$PRED.LINK[i] <- median(na.omit(prediction$t[,i]))
-  data0_a$SE.LINK[i] <- sd(na.omit(prediction$t[,i]))
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
 
 }
 
@@ -139,13 +138,13 @@ for (i in 1:4) { # for each state
   prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
                                new_data_string = "data0_b2",
-                               nsim = 10)
+                               nsim = 1000)
   tictoc::toc()
   
   for (j in 1:length(data0_b2$MONTH)) {
     
-    data0_b2$PRED.LINK[j] <- median(na.omit(prediction$t[,j]))
-    data0_b2$SE.LINK[j] <- sd(na.omit(prediction$t[,j]))
+    data0_b2$PRED.LINK[j] <- median(na.omit(prediction[,j]))
+    data0_b2$SE.LINK[j] <- sd(na.omit(prediction[,j]))
     
   }
   
@@ -203,91 +202,57 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### Site fidelity per observer
 
-```{r fidelity, cache=TRUE, message=FALSE}
+```{r d02_fidelity_po, cache=TRUE, message=FALSE}
 
-##### Change in site fidelity per observer ####
+anal_name <- "d02_fidelity_po"
 
-# here, doing 24km x 24km (SoIB and also more lenient and appropriate)
+##### Final analysis: national GLMMs ####
 
-set.seed(213) # for bootstrap
-fidel_sw <- data0_MY_slice_S %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE, OBSERVER.ID) %>% 
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+# taking data from all states instead of just chosen 4
+data0_a <- data0_MY_slice_S %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
+
+data_a <- data0_MY_slice_S %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
-  mutate(NO.SITES = replace_na(NO.SITES, 0)) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.SITES = boot_conf(x = NO.SITES)) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(SE = sd(NO.SITES),
-                   NO.SITES = mean(NO.SITES),
-                   CI.L = NO.SITES - 1.96*SE,
-                   CI.U = NO.SITES + 1.96*SE)
-
-fidel_nw <- fidel_sw %>% 
   ungroup() %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.SITES = mean(NO.SITES),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = NO.SITES - 1.96*SE,
-            CI.U = NO.SITES + 1.96*SE)
+  mutate(NO.SITES = replace_na(NO.SITES, 0))
 
+
+tictoc::tic(glue("GLMM for India"))
+model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc()
+# 220 sec
+
+
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- boot_conf_GLMM(model_a,
+                             new_data = data0_a,
+                             new_data_string = "data0_a",
+                             nsim = 1000)
+tictoc::toc()
+
+
+for (i in 1:length(data0_a$MONTH)) {
   
-(ggplot(fidel_nw, aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Month", y = "No. of sites")) /
-((ggplot(filter(fidel_sw, STATE == "Kerala"), 
-         aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "No. of sites")) |
-(ggplot(filter(fidel_sw, STATE == "Karnataka"), 
-         aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "No. of sites"))) /
-((ggplot(filter(fidel_sw, STATE == "Maharashtra"), 
-         aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "No. of sites")) |
-(ggplot(filter(fidel_sw, STATE == "Assam"), 
-         aes(MONTH, NO.SITES, colour = COVID)) + 
-    scale_y_log10() + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Month", y = "No. of sites"))) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in observer site fidelity with the pandemic",
-subtitle = "Y-axis shows average number of unique sites (25kmx25km cells) visited by observers") -> fidelity
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction$t[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction$t[,i]))
 
-fidelity # plot
+}
 
-ggsave("03_wrap_figs/02_fidelity.png", plot = fidelity,
-       width = 9, height = 9, units = "in")
+data0_a <- data0_a %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
+
 
 
 ##### Final analysis: statewise GLMMs ####
