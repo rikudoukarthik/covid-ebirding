@@ -70,39 +70,30 @@ data0_a <- data0_MY_slice_S %>%
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
-  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  filter(GROUP.BIRDING == 1) %>% 
-  dplyr::summarise(G.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
-                   TOT.LISTS = min(TOT.LISTS),
-                   PROP.GROUP = G.LISTS/TOT.LISTS) %>% 
-  ungroup()
+  ungroup() %>% 
+  slice_sample(n = 10000)
 
 tictoc::tic(glue::glue("GLMM for India"))
-model_a <- glmer(PROP.GROUP ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, weights = TOT.LISTS,
-                 family = binomial(link = "cloglog"),
+model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
 # 220 sec
 
 
-count <- 0
-for (j in 1:n_distinct(data0_a$MONTH)) {
-  for (k in 1:n_distinct(data0_a$M.YEAR)) {
-    
-    count <- count + 1
-    
-    tictoc::tic(glue::glue("Bootstrapped predictions for India in month {j} of MY {data0_a$M.YEAR[count]}"))
-    prediction <- boot_conf_GLMM(model_a,
-                                 new_data = data.frame(MONTH = data0_a$MONTH[count],
-                                                       M.YEAR = data0_a$M.YEAR[count]),
-                                 nsim = 100)
-    tictoc::toc()
-    
-    data0_a$PRED.LINK[count] <- median(na.omit(prediction$t[count]))
-    data0_a$SE.LINK[count] <- sd(na.omit(prediction$t[count]))
-    
-  }
+tictoc::tic(glue::glue("Bootstrapped predictions for India"))
+prediction <- boot_conf_GLMM(model_a,
+                             new_data = data0_a,
+                             new_data_string = "data0_a",
+                             nsim = 100)
+tictoc::toc()
+
+
+for (i in 1:length(data0_a$MONTH)) {
+  
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction$t[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction$t[,i]))
+
 }
 
 data0_a <- data0_a %>% 
@@ -116,7 +107,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_b_MY_slice_S %>% 
+data0_b <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED = NA,
@@ -167,6 +158,16 @@ data0_b <- data0_b %>%
 
 
 ##### Graph ####
+
+ggplot(data0_a, 
+       aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "India",
+       x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1.5, width = 0.2, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")
+
 
 (ggplot(filter(data0, STATE == anal_states$a), 
        aes(MONTH, PRED, colour = M.YEAR)) +

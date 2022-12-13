@@ -565,29 +565,32 @@ boot_conf = function(x, fn = mean, B = 1000) {
 
 boot_conf_GLMM = function(model, 
                           new_data, # separately specify dataframe with vars for model
+                          new_data_string, # string for clusterExport()
                           re_form = NA,
                           nsim = 1000)
 {
 
   require(tidyverse)
   require(lme4)
-  # require(VGAM)
+  require(VGAM)
   require(parallel) # to parallelise bootstrap step
-  
+
   pred_fun <- function(model) {
     predict(model, newdata = new_data, re.form = re_form, allow.new.levels = TRUE)
     # not specifying type = "response" because will later transform prediction along with SE
   }
   
-  par_cores <- max(1, detectCores())
+  par_cores <- max(1, floor(detectCores()/2))
   par_cluster <- makeCluster(rep("localhost", par_cores), outfile = "log.txt")
   clusterEvalQ(par_cluster, library(lme4))
+  clusterExport(par_cluster, varlist = new_data_string)
   
   pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun,
-                          parallel = "multicore", 
+                          parallel = "snow", 
                           use.u = FALSE, type = "parametric", 
                           ncpus = par_cores, cl = par_cluster)
   
+  print(glue("Using {par_cores} cores."))
   stopCluster(par_cluster)
 
   return(pred_bootMer)
