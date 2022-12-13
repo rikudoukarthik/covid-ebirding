@@ -73,7 +73,7 @@ data_a <- data0_MY_slice_S %>%
   ungroup() %>% 
   slice_sample(n = 10000)
 
-tictoc::tic(glue::glue("GLMM for India"))
+tictoc::tic(glue("GLMM for India"))
 model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
@@ -81,7 +81,7 @@ tictoc::toc()
 # 220 sec
 
 
-tictoc::tic(glue::glue("Bootstrapped predictions for India"))
+tictoc::tic(glue("Bootstrapped predictions for India"))
 prediction <- boot_conf_GLMM(model_a,
                              new_data = data0_a,
                              new_data_string = "data0_a",
@@ -103,6 +103,7 @@ data0_a <- data0_a %>%
   mutate(CI.U = PRED + SE) %>% 
   left_join(timeline)
 
+
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
@@ -110,43 +111,51 @@ data0_a <- data0_a %>%
 data0_b <- data0_MY_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA,
-         SE = NA,
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA,
          STATE = factor(STATE, levels = anal_states[1,])) %>% 
   arrange(STATE)
 
-count <- 0
+
 for (i in 1:4) { # for each state
   
-  data_b <- data0_b_MY_slice_S %>% 
+  data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
+  
+  data_b <- data0_MY_slice_S %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
     ungroup() 
   
-  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
+  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
   model_b <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
-
-  for (j in 1:n_distinct(data0_b$MONTH)) {
-    for (k in 1:n_distinct(data0_b$M.YEAR)) {
-      
-      count <- count + 1
-      
-      tictoc::tic(glue::glue("Bootstrapped predictions for {anal_states[, i]} in month {j} of MY {data0_a$M.YEAR[count]}"))
-      prediction <- boot_conf_GLMM(model_b,
-                                   new_data = data.frame(MONTH = data0_b$MONTH[count],
-                                                         M.YEAR = data0_b$M.YEAR[count]),
-                                   nsim = 100)
-      tictoc::toc()
-      
-      data0_b$PRED.LINK[count] <- median(na.omit(prediction$t[count]))
-      data0_b$SE.LINK[count] <- sd(na.omit(prediction$t[count]))
-
-    }
+  
+  
+  tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
+  prediction <- boot_conf_GLMM(model_b,
+                               new_data = data0_b2,
+                               new_data_string = "data0_b2",
+                               nsim = 10)
+  tictoc::toc()
+  
+  for (j in 1:length(data0_b2$MONTH)) {
+    
+    data0_b2$PRED.LINK[j] <- median(na.omit(prediction$t[,j]))
+    data0_b2$SE.LINK[j] <- sd(na.omit(prediction$t[,j]))
+    
   }
+  
+  data0_b <- data0_b %>% 
+    left_join(data0_b2, by = c("STATE", "MONTH", "M.YEAR")) %>% 
+    transmute(MONTH = MONTH,
+              M.YEAR = M.YEAR,
+              STATE = STATE,
+              PRED.LINK = ifelse(!is.na(PRED.LINK.y), PRED.LINK.y, PRED.LINK.x),
+              SE.LINK = ifelse(!is.na(SE.LINK.y), SE.LINK.y, SE.LINK.x))
+  
 } 
 
 data0_b <- data0_b %>% 
