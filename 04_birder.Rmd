@@ -56,6 +56,8 @@ These are usually driven by decision at the state level, so since the models are
 
 ```{r d01_group_po, cache=TRUE, message=FALSE}
 
+anal_name <- "d01_group_po"
+
 ##### Final analysis: national GLMMs ####
 
 # dataframe with empty column to populate with looped values
@@ -65,7 +67,6 @@ data0_a <- data0_MY_slice_S %>%
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
-
 
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -166,53 +167,37 @@ data0_b <- data0_b %>%
   left_join(timeline)
 
 
-##### Graph ####
+##### Saving analysis objects ####
 
-ggplot(data0_a, 
+save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+##### Graphs ####
+
+plot_a <- ggplot(data0_a, 
        aes(MONTH, PRED, colour = M.YEAR)) +
-  labs(title = "India",
+  labs(title = "National-level models",
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
 
-(ggplot(filter(data0, STATE == anal_states$a), 
+plot_b <- ggplot(data0_b, 
        aes(MONTH, PRED, colour = M.YEAR)) +
-  labs(title = anal_states$a,
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  labs(title = "State-level models",
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$b), 
-       aes(MONTH, PRED, colour = M.YEAR)) +
-  labs(title = anal_states$b,
-       x = "Month", y = "Predicted group birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$c), 
-       aes(MONTH, PRED, colour = M.YEAR)) +
-  labs(title = anal_states$c,
-       x = "Month", y = "Predicted group birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$d), 
-       aes(MONTH, PRED, colour = M.YEAR)) +
-  labs(title = anal_states$d,
-       x = "Month", y = "Predicted group birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period"))
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-##### Saving analysis objects ####
-
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
 
 ```
 
