@@ -86,7 +86,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "extra")
-tictoc::toc()
+tictoc::toc() # 205 min
 
 
 for (i in 1:length(data0_a$MONTH)) {
@@ -177,9 +177,9 @@ plot_a <- ggplot(data0_a,
        aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
        x = "Month", y = "Predicted group birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
 ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
