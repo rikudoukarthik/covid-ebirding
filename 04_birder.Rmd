@@ -551,7 +551,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "extra")
-tictoc::toc() # 
+tictoc::toc() # 7520 sec (2h5m)
 
 
 for (i in 1:length(data0_a$MONTH)) {
