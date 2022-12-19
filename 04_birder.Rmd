@@ -219,10 +219,11 @@ data0_a <- data0_MY_slice_S %>%
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
-  ungroup() %>% 
-  # filling zeroes for M.YEAR-MONTH combos where observer had no list
-  complete(OBSERVER.ID, nesting(M.YEAR, MONTH),
-           fill = list(NO.SITES = 0))
+  ungroup() 
+# not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
+# our aim is to see, from the people who were birding, how many sites did a birder 
+# visit on average?
+# number of sites is the focus here, not the individual observer (anyway a random effect)
 
 
 tictoc::tic(glue("GLMM for India"))
@@ -275,10 +276,12 @@ for (i in 1:4) { # for each state
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
     dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
-    ungroup() %>% 
-    # filling zeroes for M.YEAR-MONTH combos where observer had no list
-    complete(OBSERVER.ID, nesting(M.YEAR, MONTH),
-             fill = list(NO.SITES = 0))
+    ungroup() 
+  # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
+  # our aim is to see, from the people who were birding, how many sites did a birder 
+  # visit on average?
+  # number of sites is the focus here, not the individual observer (anyway a random effect)
+  
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
   model_b <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
@@ -374,10 +377,10 @@ data0_a <- data0_MY_slice_S %>%
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
-  ungroup() %>% 
-  # filling zeroes for M.YEAR-MONTH combos where observer had no list
-  complete(OBSERVER.ID, nesting(M.YEAR, MONTH),
-           fill = list(BIRDING.TIME = 0))
+  ungroup() 
+# not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
+# our aim is to see, from the people who were birding, how much time was spent?
+
 
 
 tictoc::tic(glue("GLMM for India"))
@@ -430,10 +433,10 @@ for (i in 1:4) { # for each state
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
     dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
-    ungroup() %>% 
-    # filling zeroes for M.YEAR-MONTH combos where observer had no list
-    complete(OBSERVER.ID, nesting(M.YEAR, MONTH),
-             fill = list(BIRDING.TIME = 0))
+    ungroup()
+  # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
+  # our aim is to see, from the people who were birding, how much time was spent?
+  
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
   model_b <- glmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
