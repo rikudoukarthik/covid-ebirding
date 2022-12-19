@@ -543,7 +543,7 @@ model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
-#  sec
+# 150 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -672,172 +672,153 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 Not "per observer", as this metric from data POV.
 
-```{r protocol, cache=TRUE, message=FALSE}
+```{r d05_protocol, cache=TRUE, message=FALSE}
 
-##### Change in travelling birding ####
+anal_name <- "d05_protocol"
 
-temp1 <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
+##### Final analysis: national GLMMs ####
 
-temp2 <- data0_MY_slice_G %>% 
-  filter(PROTOCOL.TYPE == "Traveling" & EFFORT.DISTANCE.KM >= 0.1) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.TLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+# dataframe with empty column to populate with looped values
+# total rows: product of distinct values of predictors
+# taking data from all states instead of just chosen 4
+data0_a <- data0_MY_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
+
+data0_MY_slice_G %>% 
+  distinct(PROTOCOL.TYPE)
+
+data_a <- data0_MY_slice_G %>% 
+  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
+                                           EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
   ungroup()
 
-prot_sw <- temp1 %>% 
-  left_join(temp2) %>% 
-  mutate(NO.TLISTS = replace_na(NO.TLISTS, 0)) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  mutate(PROP.TLISTS = NO.TLISTS/NO.LISTS,
-         SE = sqrt((PROP.TLISTS)*(1 - PROP.TLISTS)/NO.LISTS),
-         CI.L = PROP.TLISTS - 1.96*SE,
-         CI.U = PROP.TLISTS + 1.96*SE) 
-
-rm(list = c("temp1","temp2"))
-
-prot_nw <- prot_sw %>%
-  filter(NO.LISTS != 0) %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.TLISTS = mean(PROP.TLISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.TLISTS - 1.96*SE,
-            CI.U = PROP.TLISTS + 1.96*SE) 
+tictoc::tic(glue("GLMM for India"))
+model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 
 
 
-(ggplot(prot_nw, aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Month", y = "Proportion of travelling lists")) /
-((ggplot(filter(prot_sw, STATE == "Kerala"), 
-         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "Proportion of travelling lists")) |
-(ggplot(filter(prot_sw, STATE == "Karnataka"), 
-         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "Proportion of travelling lists"))) /
-((ggplot(filter(prot_sw, STATE == "Maharashtra"), 
-         aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "Proportion of travelling lists")) |
-(ggplot(filter(prot_sw, STATE == "Assam"), 
-        aes(MONTH, PROP.TLISTS, colour = COVID)) + 
-   scale_x_continuous(breaks = 1:12) + 
-   geom_point(size = 3, position = position_dodge(0.5)) +
-   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                 size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-   scale_colour_manual(values = covid_palette) +
-   labs(title = "Assam",
-        x = "Month", y = "Proportion of travelling lists"))) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in birding mobility with the pandemic",
-                subtitle = "Y-axis shows proportion of checklists using the travelling protocol (>= 100m)") -> protocol
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_a, 
+                             new_data = data0_a, 
+                             new_data_string = "data0_a", 
+                             mode = "extra")
+tictoc::toc() # 
 
-protocol 
 
-ggsave("03_wrap_figs/05_protocol.png", plot = protocol,
-       width = 9, height = 9, units = "in")
+for (i in 1:length(data0_a$MONTH)) {
+  
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
 
-rm(list = c("prot_nw","prot_sw","protocol"))
+}
+
+data0_a <- data0_a %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA,
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA,
          STATE = factor(STATE, levels = anal_states[1,])) %>% 
   arrange(STATE)
 
-count <- 0
+
 for (i in 1:4) { # for each state
   
-  # using 300m as threshold to define travelling birding
-  data_a <- data0_MY_slice_G %>% 
+  data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
+    
+  data_b <- data0_MY_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
                                              EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
-    ungroup() 
+    ungroup()
   
-  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
-  model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                   data = data_a, family = binomial(link = "cloglog"),
+  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
+  model_b <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-  tictoc::toc()
+  tictoc::toc() #
 
-  for (j in 1:n_distinct(data0$MONTH)) {
-    for (k in 1:n_distinct(data0$M.YEAR)) {
-      count <- count + 1
-      
-      data0$PRED[count] = predict(model_a,
-                                  data.frame(MONTH = data0$MONTH[count],
-                                             M.YEAR = data0$M.YEAR[count]),
-                                  re.form = NA, type = "response")
-    }
+
+  tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
+  prediction <- split_par_boot(model_b,
+                               new_data = data0_b2,
+                               new_data_string = "data0_b2",
+                               mode = "extra")
+  tictoc::toc() #
+
+  
+  for (j in 1:length(data0_b2$MONTH)) {
+    
+    data0_b2$PRED.LINK[j] <- median(na.omit(prediction[,j]))
+    data0_b2$SE.LINK[j] <- sd(na.omit(prediction[,j]))
+    
   }
+  
+  data0_b <- data0_b %>% 
+    left_join(data0_b2, by = c("STATE", "MONTH", "M.YEAR")) %>% 
+    transmute(MONTH = MONTH,
+              M.YEAR = M.YEAR,
+              STATE = STATE,
+              PRED.LINK = ifelse(!is.na(PRED.LINK.y), PRED.LINK.y, PRED.LINK.x),
+              SE.LINK = ifelse(!is.na(SE.LINK.y), SE.LINK.y, SE.LINK.x))
+  
 } 
 
-data0 <- data0 %>% 
-    left_join(timeline)
+data0_b <- data0_b %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
 
+##### Saving analysis objects ####
 
-(ggplot(filter(data0, STATE == anal_states$a), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$a,
+save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+##### Graphs ####
+
+plot_a <- ggplot(data0_a, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models",
+       x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+plot_b <- ggplot(data0_b, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  labs(title = "State-level models",
        x = "Month", y = "Predicted travelling birding proportion") +
   geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$b), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$b,
-       x = "Month", y = "Predicted travelling birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$c), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$c,
-       x = "Month", y = "Predicted travelling birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$d), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$d,
-       x = "Month", y = "Predicted travelling birding proportion") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period"))
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
+
 
 ```
 
