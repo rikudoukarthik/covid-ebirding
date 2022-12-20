@@ -699,7 +699,7 @@ tictoc::tic(glue("GLMM for India"))
 model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() # 
+tictoc::toc() # 110 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -707,7 +707,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "extra")
-tictoc::toc() # 
+tictoc::toc() # 6245 sec (104 min)
 
 
 for (i in 1:length(data0_a$MONTH)) {
@@ -756,11 +756,12 @@ for (i in 1:4) { # for each state
 
 
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
-  prediction <- split_par_boot(model_b,
+  prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
                                new_data_string = "data0_b2",
-                               mode = "extra")
+                               nsim = 1000)
   tictoc::toc() #
+
 
   
   for (j in 1:length(data0_b2$MONTH)) {
