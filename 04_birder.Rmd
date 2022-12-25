@@ -218,7 +218,9 @@ data0_a <- data0_MY_slice_S %>%
 
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
+  # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
+  # value in our response variable); so will run LMM instead
   ungroup() 
 # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
 # our aim is to see, from the people who were birding, how many sites did a birder 
@@ -226,11 +228,11 @@ data_a <- data0_MY_slice_S %>%
 # number of sites is the focus here, not the individual observer (anyway a random effect)
 
 
-tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() # 15 sec
+tictoc::tic(glue("LMM for India"))
+model_a <- lmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, 
+                 control = lmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 6 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -238,7 +240,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "normal")
-tictoc::toc() # 791 sec (13)
+tictoc::toc() # 476 sec (8 min)
 
 for (i in 1:length(data0_a$MONTH)) {
   
@@ -248,6 +250,8 @@ for (i in 1:length(data0_a$MONTH)) {
 }
 
 data0_a <- data0_a %>% 
+  # this step doesn't change even though we log-transform prior to fitting the model
+  # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
          CI.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - CI.L) %>% 
@@ -275,7 +279,7 @@ for (i in 1:4) { # for each state
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-    dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+    dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
     ungroup() 
   # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
   # our aim is to see, from the people who were birding, how many sites did a birder 
@@ -283,10 +287,10 @@ for (i in 1:4) { # for each state
   # number of sites is the focus here, not the individual observer (anyway a random effect)
   
   
-  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, family = poisson,
-                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::tic(glue("LMM for {anal_states[, i]}"))
+  model_b <- lmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
   
   
@@ -376,18 +380,20 @@ data0_a <- data0_MY_slice_S %>%
 
 data_a <- data0_MY_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
+  dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
+  # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
+  # value in our response variable); so will run LMM instead
   ungroup() 
 # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
 # our aim is to see, from the people who were birding, how much time was spent?
 
 
 
-tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() # 10 sec
+tictoc::tic(glue("LMM for India"))
+model_a <- lmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                data = data_a, 
+                control = lmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 6 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -395,7 +401,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "normal")
-tictoc::toc() # 814 sec (13 min)
+tictoc::toc() # 471 sec (8 min)
 
 for (i in 1:length(data0_a$MONTH)) {
   
@@ -432,16 +438,16 @@ for (i in 1:4) { # for each state
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-    dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
+    dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
     ungroup()
   # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
   # our aim is to see, from the people who were birding, how much time was spent?
   
   
-  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, family = poisson,
-                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::tic(glue("LMM for {anal_states[, i]}"))
+  model_b <- lmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
   
   
