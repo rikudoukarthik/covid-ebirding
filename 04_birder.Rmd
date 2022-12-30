@@ -1359,125 +1359,88 @@ data0_a <- data0_a %>%
   mutate(CI.U = PRED + SE) %>% 
   left_join(timeline)
 
+##### Final analysis: national GLMMs (without nested random effect) ####
 
-##### Proportion of urban lists per grid cell ####
+data0_b <- data0_MY_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
 
-temp <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% # state is meaningless cos CELL.ID
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
+data_b <- data0_MY_slice_G %>% 
+  distinct(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
   ungroup()
 
-urban_lists <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
-  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(temp) %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
-  dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
-                   PROP.U = U.LISTS/TOT.LISTS,
-                   SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS)) %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.U = mean(PROP.U),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.U - 1.96*SE,
-                   CI.U = PROP.U + 1.96*SE)
-
-rm(temp)
+tictoc::tic(glue("GLMM for India"))
+model_b <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_b, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 303 sec (5 min)
 
 
-ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12,
-                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
-                                "Sep", "Oct", "Nov", "Dec")) + 
-  annotate("rect", xmin = 2.5, xmax = 9.5, ymin = -Inf, ymax = Inf, 
-            fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette,
-                      name = "Period", 
-                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
-  labs(title = "2020 lockdown restricted birders to urban areas",
-       x = "Month", y = "Proportion of urban lists per grid cell") -> s_UNU
-
-s_UNU
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_b, 
+                             new_data = data0_b, 
+                             new_data_string = "data0_b", 
+                             mode = "extra")
+tictoc::toc() #  sec
 
 
-ggsave("03_wrap_figs/10a_s_UNU.png", 
-       plot = s_UNU,
-       width = 13, height = 7, units = "in")
-
-
-##### Final analysis: GLMM of urban birding using weighted proportions ####
-
-# https://github.com/lme4/lme4/issues/281
-# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
-# So, need to include random effects in prediction.
-
-data_urban <- data0_MY_slice_G %>% 
-  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
-  right_join(data0_MY_slice_G) %>% 
-  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
-  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
-                   U.LISTS = replace_na(min(U.LISTS), 0),
-                   PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
-  ungroup()
+for (i in 1:length(data0_b$MONTH)) {
   
-counties <- data_urban %>% distinct(COUNTY, CELL.ID)
+  data0_b$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_b$SE.LINK[i] <- sd(na.omit(prediction[,i]))
 
-# no MONTH main effect unlike in birds model
-tictoc::tic("UNU GLMM using weighted proportions")
-model_urban <- glmer(PROP.U ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID), 
-                      weights = TOT.LISTS,
-                      data = data_urban, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 119 sec
-tictoc::toc()
+}
 
-# dataframe with empty column to populate with looped values
-# total rows: product of distinct values of predictors
-urban1 <- data_urban %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
-  filter(!is.na(COUNTY)) %>% 
-  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
-                               type = "response")) %>% 
-  group_by(M.YEAR, MONTH) %>% 
-  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
-            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
-  summarise(PROP.U.PRED = mean(PROP.U.PRED),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.U.PRED - 1.96*SE,
-            CI.U = PROP.U.PRED + 1.96*SE)
-
-urban2 <- data_urban %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
-  filter(!is.na(COUNTY)) %>% 
-  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
-                               type = "response")) %>% 
-  filter(MONTH %in% 4:5) %>% 
-  group_by(M.YEAR, MONTH) %>% 
-  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
-            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
-  summarise(PROP.U.PRED = mean(PROP.U.PRED),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.U.PRED - 1.96*SE,
-            CI.U = PROP.U.PRED + 1.96*SE)
+data0_b <- data0_b %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
 
 
-ggplot(urban2, aes(M.YEAR, PROP.U.PRED)) +
-    labs(title = "For the months of April and May",
-         x = "Migratory year", y = "Predicted urban birding proportion") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+##### Saving analysis objects ####
 
-ggplot(urban1, aes(M.YEAR, PROP.U.PRED)) +
-    labs(title = "For all months",
-         x = "Migratory year", y = "Predicted urban birding proportion") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+##### Graphs ####
+
+plot_a <- ggplot(data0_a, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models",
+       x = "Month", y = "Predicted list length") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+# plot_b <- ggplot(data0_b, 
+#                  aes(MONTH, PRED, colour = M.YEAR)) +
+#   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+#   labs(title = "State-level models",
+#        x = "Month", y = "Predicted list length") +
+#   geom_point(size = 3, position = position_dodge(0.5)) +
+#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+#                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+plot_b <- ggplot(data0_b, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models (without nested random effects)",
+       x = "Month", y = "Predicted list length") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
+
 
 
 ```
