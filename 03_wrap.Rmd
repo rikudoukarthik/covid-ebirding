@@ -52,6 +52,20 @@ india <- terra::vect(india)
 states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") %>% 
   terra::vect()
 
+india_sf <- india %>% 
+  st_as_sf() %>% 
+  dplyr::select(-DISTRICT) 
+
+states_sf <- states %>% 
+  dplyr::select(ST_NM, geometry) %>% 
+  magrittr::set_colnames(c("STATE", "geometry")) %>% 
+  mutate(STATE = str_to_title(STATE)) %>% 
+  # replacing ampersand with "and"
+  mutate(STATE = str_replace(STATE, "&", "and")) %>% 
+  # corrections for Madhu's SPDF values
+  mutate(STATE = case_when(STATE == "Dadra and Nagar Have" ~ "Dadra and Nagar Haveli",
+                           STATE == "Andaman and Nicobar" ~ "Andaman and Nicobar Islands",
+                           TRUE ~ STATE))
 
 
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
@@ -92,6 +106,23 @@ if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") &
 load("data/data0_MY_slice.RData")
 load("data/maps.RData")
 
+
+load("data/maps_gridmapg1_IN.RData") # all cells within India
+
+# getting total number of cells for country and states
+totcells_india <- gridmapg1_IN %>% 
+  st_drop_geometry() %>% 
+  dplyr::summarise(TOT.CELLS = n_distinct(CELL.ID))
+
+totcells_states <- gridmapg1_IN %>% 
+  st_join(states_sf) %>% 
+  st_drop_geometry() %>% 
+  group_by(STATE) %>% 
+  dplyr::summarise(TOT.CELLS = n_distinct(CELL.ID))
+
+gridmapg1_ST <- states_sf %>% 
+  st_join(gridmapg1_IN)
+  
 ```
 
 ```{r setup2, include=FALSE}
