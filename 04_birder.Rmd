@@ -1313,7 +1313,52 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
     -   Raw change in grid coverage per district
     -   Proportional change in grid coverage per district (only declines)
 
-```{r s_UNU, cache=TRUE, message=FALSE}
+```{r d09a_s_UNU, cache=TRUE, message=FALSE}
+
+anal_name <- "d09a_s_UNU"
+
+##### Final analysis: national GLMMs ####
+
+data0_a <- data0_MY_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
+
+data_a <- data0_MY_slice_G %>% 
+  distinct(M.YEAR, MONTH, COUNTY, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
+  ungroup()
+
+county_cell <- data_a %>% distinct(COUNTY, CELL.ID)
+
+tictoc::tic(glue("GLMM for India"))
+model_a <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 924 sec (15 min)
+
+
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_a, 
+                             new_data = data0_a, 
+                             new_data_string = "data0_a", 
+                             mode = "extra")
+tictoc::toc() # 32920 sec (9.14 h)
+
+
+for (i in 1:length(data0_a$MONTH)) {
+  
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
+
+}
+
+data0_a <- data0_a %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - CI.L) %>% 
+  mutate(CI.U = PRED + SE) %>% 
+  left_join(timeline)
+
 
 ##### Proportion of urban lists per grid cell ####
 
