@@ -1388,7 +1388,7 @@ prediction <- split_par_boot(model = model_b,
                              mode = "extra",
                              re_form = ~ (1|CELL.ID),
                              pred_type = "response")
-tictoc::toc() # 8944 sec (150 min)
+tictoc::toc() # 9028 sec (150 min)
 
 
 for (i in 1:length(data0_b$MONTH)) {
@@ -1401,8 +1401,8 @@ for (i in 1:length(data0_b$MONTH)) {
 data0_b <- data0_b %>% 
   mutate(PRED = PRED.LINK,
          SE = SE.LINK) %>% 
-  mutate(CI.L = PRED - SE,
-         CI.U = PRED + SE) %>% 
+  mutate(CI.L = PRED - 1.96*SE,
+         CI.U = PRED + 1.96*SE) %>% 
   left_join(timeline)
 
 
