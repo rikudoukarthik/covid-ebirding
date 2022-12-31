@@ -1317,6 +1317,10 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 anal_name <- "d09a_s_UNU"
 
+# https://github.com/lme4/lme4/issues/281
+# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation (Jensen's inequality effects)
+# So, need to include random effects in prediction, and need to predict at response scale.
+
 ##### Final analysis: national GLMMs ####
 
 data0_a <- data0_MY_slice_G %>% 
@@ -1362,7 +1366,7 @@ data0_a <- data0_a %>%
 ##### Final analysis: national GLMMs (without nested random effect) ####
 
 data0_b <- data0_MY_slice_G %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR, CELL.ID)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
@@ -1381,8 +1385,10 @@ tictoc::tic(glue("Bootstrapped predictions for India"))
 prediction <- split_par_boot(model = model_b, 
                              new_data = data0_b, 
                              new_data_string = "data0_b", 
-                             mode = "extra")
-tictoc::toc() #  sec
+                             mode = "extra",
+                             re_form = ~ (1|CELL.ID),
+                             pred_type = "response")
+tictoc::toc() # 8944 sec (150 min)
 
 
 for (i in 1:length(data0_b$MONTH)) {
@@ -1393,10 +1399,10 @@ for (i in 1:length(data0_b$MONTH)) {
 }
 
 data0_b <- data0_b %>% 
-  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+  mutate(PRED = PRED.LINK,
+         SE = SE.LINK) %>% 
+  mutate(CI.L = PRED - SE,
+         CI.U = PRED + SE) %>% 
   left_join(timeline)
 
 
@@ -1410,7 +1416,7 @@ save(data0_a, data_a, model_a, data0_b, data_b, model_b,
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
-       x = "Month", y = "Predicted list length") +
+       x = "Month", y = "Predicted urban birding proportion") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
@@ -1432,14 +1438,14 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
 plot_b <- ggplot(data0_b, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models (without nested random effects)",
-       x = "Month", y = "Predicted list length") +
+       x = "Month", y = "Predicted urban birding proportion") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
-       dpi = 300, width = 22, height = 13, units = "in")
+       dpi = 300, width = 11, height = 6, units = "in")
 
 
 

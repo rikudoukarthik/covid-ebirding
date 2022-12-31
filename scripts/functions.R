@@ -567,7 +567,8 @@ boot_conf_GLMM = function(model,
                           new_data, # separately specify dataframe with vars for model
                           new_data_string, # string for clusterExport()
                           re_form = NA,
-                          nsim = 1000)
+                          nsim = 1000,
+                          pred_type = "link")
 {
 
   require(tidyverse)
@@ -576,7 +577,8 @@ boot_conf_GLMM = function(model,
   require(parallel) # to parallelise bootstrap step
 
   pred_fun <- function(model) {
-    predict(model, newdata = new_data, re.form = re_form, allow.new.levels = TRUE)
+    predict(model, newdata = new_data, type = pred_type, re.form = re_form, 
+            allow.new.levels = TRUE)
     # not specifying type = "response" because will later transform prediction along with SE
   }
   
@@ -606,7 +608,8 @@ split_par_boot <- function(model,
                            new_data, # separately specify dataframe with vars for model
                            new_data_string, # string for clusterExport()
                            re_form = NA, 
-                           mode = "normal") {
+                           mode = "normal",
+                           pred_type = "link") {
   
   if (mode == "extra") {
     
