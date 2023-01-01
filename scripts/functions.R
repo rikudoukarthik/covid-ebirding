@@ -496,7 +496,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData") # Ashwin's maps data
+  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
   lists_grids <- data0_MY_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
@@ -617,140 +617,180 @@ split_par_boot <- function(model,
     prediction1 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction2 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction3 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction4 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction5 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction6 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction7 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction8 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction9 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction10 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction11 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction12 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction13 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction14 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction15 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction16 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction17 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction18 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction19 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction20 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
@@ -770,70 +810,90 @@ split_par_boot <- function(model,
     prediction1 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction2 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction3 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction4 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction5 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction6 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction7 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction8 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction9 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction10 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 100)
+                                   nsim = 100,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
