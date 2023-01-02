@@ -1447,8 +1447,6 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 11, height = 6, units = "in")
 
-
-
 ```
 
 ```{r d09b_s_cover, cache=TRUE, message=FALSE}
@@ -2054,183 +2052,164 @@ Not "per observer", as this metric from data POV.
 
 Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
 
-Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect).
+Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect; response has more than 2 values).
 
-```{r t_spread_1, cache=TRUE, message=FALSE}
+```{r d10a_t_dow, cache=TRUE, message=FALSE}
+
+anal_name <- "d10a_t_dow"
 
 ##### Change in DoW spread ####
 
-t_dow_sw <- data0_MY_slice_G %>% 
-  filter(MONTH %in% month_compar$MONTH) %>% 
+met_week <- function(dates) {
+  require(lubridate)
+  
+  normalyear <- c((0:363 %/% 7 + 1), 52)
+  leapyear   <- c(normalyear[1:59], 9, normalyear[60:365])
+  yearday    <- yday(dates)
+  
+  return(ifelse(leap_year(dates), leapyear[yearday], normalyear[yearday])) 
+}
+
+
+data_a <- data0_MY_slice_G %>% 
+  mutate(WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       # start week from Monday
-                      week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
-  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, DAY.W, STATE, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = min(NO.LISTS),
+                      week_start = getOption("lubridate.week.start", 1)),
+         DAY.W.LABEL = wday(OBSERVATION.DATE, 
+                            week_start = getOption("lubridate.week.start", 1),
+                            label = T)) %>% 
+  group_by(M.YEAR, WEEK.Y) %>% 
+  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(M.YEAR, WEEK.Y, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
                    DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
-                   PROP.LISTS = DAY.LISTS/NO.LISTS,
-                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
-  group_by(COVID, DAY.W, STATE) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.LISTS - 1.96*SE,
-                   CI.U = PROP.LISTS + 1.96*SE)
+                   PROP.LISTS = DAY.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
-t_dow_nw <- t_dow_sw %>% 
-  group_by(COVID, DAY.W) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.LISTS - 1.96*SE,
-            CI.U = PROP.LISTS + 1.96*SE)
-
-(ggplot(t_dow_nw, 
-       aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Day", y = "Proportion of lists")) /
-((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Day", y = "Proportion of lists")) |
-ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Day", y = "Proportion of lists")) /
-((ggplot(filter(t_dow_sw, STATE == "Maharashtra"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Day", y = "Proportion of lists")) |
-ggplot(filter(t_dow_sw, STATE == "Assam"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Day", y = "Proportion of lists")) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
-                subtitle = "Y-axis shows average proportion of checklists from respective days of the week on X-axis") -> t_spread_dow
-
-t_spread_dow
-
-ggsave("03_wrap_figs/13_t_spread_dow.png", 
-       plot = t_spread_dow,
-       width = 9, height = 9, units = "in")
+data_b <- data0_MY_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(STATE = factor(STATE, levels = anal_states[1,]),
+         WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      # start week from Monday
+                      week_start = getOption("lubridate.week.start", 1)),
+         DAY.W.LABEL = wday(OBSERVATION.DATE, 
+                            week_start = getOption("lubridate.week.start", 1),
+                            label = T)) %>% 
+  group_by(M.YEAR, STATE, WEEK.Y) %>% 
+  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(M.YEAR, STATE, WEEK.Y, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = DAY.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, STATE, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, STATE, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
 
-rm(t_dow_sw, t_dow_nw, t_spread_dow)
+plot_a <- ggplot(data_a, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  labs(title = "National level",
+       x = "Day of week", y = "Proportion of lists")
 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+
+plot_b <- ggplot(data_b, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  geom_point(size = 3.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  labs(title = "State-level",
+       x = "Day of week", y = "Proportion of lists")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
 
 ```
 
--   At the national level, birding on Saturdays has decreased, and been balanced by more birding on Wednesdays, while Sunday birding seems to have also increased.\
--   In Kerala, birding seems to have increased during Thursday--Saturday and decreased on Sunday.\
--   In Karnataka there hasn't been much of a change with the pandemic, and there is still a heavy weekend bias in birding activity (Saturday and Sunday levels being similar).\
--   In Gujarat and Maharashtra, Sundays see more birding than Saturdays, but there has been no major impact of the pandemic.\
--   This might mean that the national level patterns might be driven by changes in states with generally low birding activity.
 
-```{r t_spread_2, cache=TRUE, message=FALSE}
+```{r d10b_t_tod, cache=TRUE, message=FALSE}
+
+anal_name <- "d10b_t_tod"
 
 ##### Change in ToD spread ####
 
-t_tod_sw <- data0_MY_slice_G %>% 
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
-  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, STATE, HOUR, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = min(NO.LISTS),
-                   TIME.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
-                   PROP.LISTS = TIME.LISTS/NO.LISTS,
-                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
-  group_by(COVID, STATE, HOUR) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.LISTS - 1.96*SE,
-                   CI.U = PROP.LISTS + 1.96*SE)
+data_a <- data0_MY_slice_G %>% 
+  mutate(DAY.Y = yday(OBSERVATION.DATE)) %>% 
+  group_by(M.YEAR, DAY.Y) %>% 
+  mutate(TOT.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER))) %>%
+  group_by(M.YEAR, DAY.Y, HOUR) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   HOUR.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = HOUR.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR) %>% 
+  complete(HOUR = 0:23, fill = list(PROP.LISTS = 0)) %>% 
+  group_by(M.YEAR, HOUR) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, HOUR) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
-t_tod_nw <- t_tod_sw %>%
-  group_by(COVID, HOUR) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.LISTS - 1.96*SE,
-            CI.U = PROP.LISTS + 1.96*SE)
-
-
-(ggplot(t_tod_nw, 
-       aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Time of day (hours)", y = "Proportion of lists")) /
-((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Time of day (hours)", y = "Proportion of lists")) |
-ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Time of day (hours)", y = "Proportion of lists")) /
-((ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Time of day (hours)", y = "Proportion of lists")) |
-ggplot(filter(t_tod_sw, STATE == "Assam"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Time of day (hours)", y = "Proportion of lists")) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
-                subtitle = "Y-axis shows average proportion of checklists from respective times of the day on X-axis") -> t_spread_tod
-
-t_spread_tod
-
-ggsave("03_wrap_figs/14_t_spread_tod.png", 
-       plot = t_spread_tod,
-       width = 13, height = 9, units = "in")
+data_b <- data0_MY_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(STATE = factor(STATE, levels = anal_states[1,]),
+         DAY.Y = yday(OBSERVATION.DATE)) %>% 
+  group_by(M.YEAR, STATE, DAY.Y) %>% 
+  mutate(TOT.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER))) %>%
+  group_by(M.YEAR, STATE, DAY.Y, HOUR) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   HOUR.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = HOUR.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, STATE) %>% 
+  complete(HOUR = 0:23, fill = list(PROP.LISTS = 0)) %>% 
+  group_by(M.YEAR, STATE, HOUR) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, STATE, HOUR) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
 
-rm(t_tod_nw, t_tod_sw, t_spread_tod)
+plot_a <- ggplot(data_a, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
+  geom_point(size = 2, position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.2, width = 0.6, position = position_dodge(0.8)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  scale_x_continuous(limits = c(-1, 24), breaks = 0:23) +
+  labs(title = "National level",
+       x = "Time of day (hours)", y = "Proportion of lists")
 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 16, height = 8, units = "in")
+
+
+plot_b <- ggplot(data_b, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  geom_point(size = 2.5, position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.4, width = 0.6, position = position_dodge(0.8)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  scale_x_continuous(limits = c(-1, 24), breaks = 0:23) +
+  labs(title = "State-level",
+       x = "Time of day (hours)", y = "Proportion of lists")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 32, height = 17, units = "in")
 
 ```
-
--   At the national level, there are two peaks in the day that see highest birding activity: early morning and evening.\
--   In 2020, there was a sharp rise in birding activity at 17:00, and dip at 16:00.\
--   In 2021, birding increased at 06:00 and 15:00, and decreased at 16:00.\
--   The increase in evening birding was prominent in Karnataka, Gujarat and Maharashtra.
