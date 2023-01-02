@@ -1684,7 +1684,9 @@ temp2 <- temp0 %>%
   # summarising metrics of interest
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
   summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
-  # threshold of 5 lists in a grid cell for the cell to be considered "covered"
+  # since DUR is two years
+  mutate(CELL.LISTS = ifelse(COVID == "DUR", floor(CELL.LISTS/2), CELL.LISTS)) %>% 
+  # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
   filter(CELL.LISTS >= 5) %>% 
   summarise(NO.CELLS = n_distinct(CELL.ID),
             GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT)) %>% 
@@ -1706,6 +1708,8 @@ temp3 <- temp01 %>%
   complete(COVID, 
            DISTRICT.NAME = dist_cons1$DISTRICT.NAME,
            fill = list(NO.LISTS = 0)) %>% 
+  # since DUR is two years
+  mutate(NO.LISTS = ifelse(COVID == "DUR", floor(NO.LISTS/2), NO.LISTS)) %>% 
   left_join(dist_cons1)
 
 data_spread0 <- temp3 %>% 
@@ -1781,10 +1785,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_a.png"),
 
 # 2. with SEs
 
-set.seed(23) # for bootstrap
-
-# not directly using data_spread0 object because backtransforming after bootstrapping mean 
-# and SE is not wise
 data_spread2 <- data_spread1 %>% 
   # removing NA cells (when both periods of the transition are zero)
   filter(!is.na(VALUE)) %>% 
@@ -1804,7 +1804,7 @@ s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) +
   labs(title = "Net change in birding effort (no. of lists) across districts\nin transition periods",
        x = "Transition", y = "Difference in no. of lists") 
 
-ggsave("03_wrap_figs/10c_s_spread_rawchange.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_b.png"), 
        plot = s_spread_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -1883,7 +1883,7 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
   plot_annotation(title = "Proportional declines in no. of lists per district in transition periods (only when N1 >= 10)",
                   subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_mapprop.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_c.png"), 
        plot = s_spread_mapprop,
        dpi = 300, width = 14, height = 15, units = "in")
 
