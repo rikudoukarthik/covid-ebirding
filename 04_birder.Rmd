@@ -1627,6 +1627,7 @@ grid_dist_base <- grid_dist_base0 %>% st_join(gridmapg1_IN)
 # Will explore patterns with existing.
 
 # for number of lists where no threshold for district consideration
+set.seed(31)
 grid_dist_links1 <- grid_dist_base %>% 
   st_drop_geometry() %>% 
   # Ensuring that a grid cell is only linked with one district
@@ -1667,35 +1668,40 @@ dist_cons <- temp0 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRIC
 
 
 temp1 <- temp0 %>% 
-  # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  # average gridcov across two DUR years
+  group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT) %>% 
   summarise(NO.CELLS = n_distinct(CELL.ID),
-            GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT)) %>% 
+            GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT),
+            COVID = COVID) %>% 
+  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(GRID.COV = mean(GRID.COV)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
   complete(COVID, 
            DISTRICT.NAME = dist_cons$DISTRICT.NAME,
            fill = list(GRID.COV = 0)) %>% 
-  dplyr::select(-NO.CELLS, -NO.CELLS.TOT) %>% 
+  dplyr::select(-NO.CELLS.TOT) %>% 
   left_join(dist_cons)
 
 # for grid coverage per district with threshold
 temp2 <- temp0 %>% 
-  # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
-  summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
-  # since DUR is two years
-  mutate(CELL.LISTS = ifelse(COVID == "DUR", floor(CELL.LISTS/2), CELL.LISTS)) %>% 
+  # average gridcov across two DUR years
+  group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
+  summarise(CELL.LISTS = n_distinct(GROUP.ID),
+            COVID = COVID) %>% 
   # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
   filter(CELL.LISTS >= 5) %>% 
   summarise(NO.CELLS = n_distinct(CELL.ID),
-            GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT)) %>% 
+            GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT),
+            COVID = COVID) %>% 
+  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
   complete(COVID, 
            DISTRICT.NAME = dist_cons$DISTRICT.NAME,
            fill = list(GRID.COV.T = 0)) %>% 
-  dplyr::select(-NO.CELLS, -NO.CELLS.TOT) %>% 
+  dplyr::select(-NO.CELLS.TOT) %>% 
   left_join(dist_cons)
 
 # for number of lists per district
@@ -1916,9 +1922,9 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
                fill = "#ACACAC", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_grid(METRIC.LABEL ~ T.LABEL, switch = "y") +
-  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu"),
-                    breaks = c(-40, -25, -10, 0, 10, 25, 40),
-                    values = scales::rescale(c(-100, -40, -25, -10, 0, 10, 25, 40, 100)), 
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+                    breaks = c(-40, -25, -10, -1, 1, 10, 25, 40),
+                    values = scales::rescale(c(-100, -40, -25, -10, -1, 1, 10, 25, 40, 100)), 
                     limits = c(-100, 100),
                     na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
@@ -1926,14 +1932,12 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
        title = "Change in grid coverage per district in transition periods",
        subtitle = "Grey: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_map.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_a.png"), 
        plot = s_spread_gridcov_map,
        dpi = 300, width = 14, height = 14, units = "in")
 
 
 # 2. with SEs
-
-set.seed(23) # for bootstrap
 
 data_spread5 <- data_spread4 %>% 
   # removing NA cells (when both periods of the transition are zero)
@@ -1955,7 +1959,7 @@ s_spread_gridcov_rawchange <- ggplot(data_spread5, aes(x = T.LABEL, y = VALUE)) 
   labs(title = "Net change in grid coverage across districts\nin transition periods",
        x = "Transition", y = "Difference in grid coverage") 
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_rawchange.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_b.png"), 
        plot = s_spread_gridcov_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -2007,7 +2011,7 @@ s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_a.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c1.png"), 
        plot = s_spread_gridcov_mapprop_a,
        dpi = 300, width = 14, height = 14, units = "in")
 
@@ -2030,16 +2034,19 @@ s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district (with threshold) in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_b.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"), 
        plot = s_spread_gridcov_mapprop_b,
        dpi = 300, width = 14, height = 14, units = "in")
 
+# all these values are zero in one of the two transition periods.
+
 ```
 
--   In terms of pure no. of lists, birding effort overall decreased *after the pandemic*. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
--   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that aside from a few districts in MP, UP and Bihar area there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual indiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT.
--   Overall grid coverage across all districts did not increase during the pandemic (either stayed the same or decreased slightly, judging from CI), while it did so after. As a result, the changes in grid coverage for BEF-DUR and DUR-AFT are notably different. However, when grid coverage is defined with a threshold of 5 lists, the patterns are much more similar: looks like grid coverage during the pandemic was very similar to that before, while there was a slight (not major) increase in overall coverage after the pandemic. Looking into this deeper, it is clear that major worrisome changes (\>50% change in coverage) are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
--   Like with no. of lists, in some central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are a similar number of districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which might be suggesting that some of this is due to annual variability.
+-   In terms of pure no. of lists, overall birding effort was not notably affected by the pandemic. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
+-   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual idiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT. The presence of many more yellow districts in the reverse direction than in the forward direction points to the general increase in birding efforts. 
+-   Overall grid coverage across all districts increased during the pandemic, while it either increased (without threshold) or stayed the same (with threshold) after. Looking into this deeper, it is clear that major worrisome changes are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
+-   Like with no. of lists, in some East-Central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are more districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which suggests that there is general growth.
+-   With the threshold for coverage, the only declines that remain are the ones where one of the periods has zero coverage. Again, there is very little overlap of these districts, and there are no major spatial clusters. It also looks like several districts were covered during the pandemic that weren't covered before or after!
 
 ### Temporal spread
 
