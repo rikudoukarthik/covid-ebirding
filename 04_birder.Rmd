@@ -1474,15 +1474,14 @@ tictoc::tic(glue("GLMM for India"))
 model_a <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() #
+tictoc::toc() # 114 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
 prediction <- split_par_boot(model = model_a, 
                              new_data = data0_a, 
-                             new_data_string = "data0_a", 
-                             mode = "extra")
-tictoc::toc() # 
+                             new_data_string = "data0_a")
+tictoc::toc() # 2494 sec (41 min)
 
 
 for (i in 1:length(data0_a$MONTH)) {
@@ -1518,6 +1517,7 @@ for (i in 1:4) { # for each state
   gridmapg1_ST_temp <- gridmapg1_ST %>% filter(STATE == anal_states[, i])
     
   data_b <- data0_MY_slice_G %>% 
+    filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
     dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
     # threshold to consider cell "covered"
@@ -1527,7 +1527,7 @@ for (i in 1:4) { # for each state
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
   model_b <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                   data = data_a, family = binomial(link = "cloglog"),
+                   data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
 
@@ -1575,7 +1575,7 @@ save(data0_a, data_a, model_a, data0_b, data_b, model_b,
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
-       x = "Month", y = "Predicted hotspot birding proportion") +
+       x = "Month", y = "Predicted proportion of grid cells covered") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
@@ -1588,7 +1588,7 @@ plot_b <- ggplot(data0_b,
                  aes(MONTH, PRED, colour = M.YEAR)) +
   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
   labs(title = "State-level models",
-       x = "Month", y = "Predicted hotspot birding proportion") +
+       x = "Month", y = "Predicted proportion of grid cells covered") +
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
