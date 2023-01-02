@@ -1601,91 +1601,114 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns. For grid coverage, only those districts that have a minimum of 5 grid cells will be considered.
 
-```{r s_spread, cache=TRUE, message=FALSE}
+```{r d09c_s_spread, cache=TRUE, message=FALSE}
+
+anal_name <- "d09c_s_spread"
+
+##### Preparing data ####
 
 gridmapg1_IN <- gridmapg1_IN %>% 
   # setting CRS for join in next step
   st_set_crs(value = st_crs(districtmap))
 
 # creating object linking grid cells to districts
-grid_dist <- districtmap %>% 
+grid_dist_base0 <- districtmap %>% 
   st_as_sf() %>% 
   dplyr::select(dtname) %>% 
   rename(DISTRICT.NAME = dtname) %>% 
-  st_join(gridmapg1_IN)
+# some districts have two different rows (two different polygons) so need to combine
+# them into one polygon
+  group_by(DISTRICT.NAME) %>% 
+  summarise() # dplyr-sf magic :) 
+# https://gis.stackexchange.com/questions/421651/merging-two-multipolygon-shapefiles-and-removing-one-of-overlapping-polygons-usi
+
+grid_dist_base <- grid_dist_base0 %>% st_join(gridmapg1_IN)
 # losing some districts and grid cells, but doesn't matter. 
 # Will explore patterns with existing.
 
-# Ensuring that a grid cell is only linked with one district
-grid_dist_links <- grid_dist %>% 
+# for number of lists where no threshold for district consideration
+grid_dist_links1 <- grid_dist_base %>% 
   st_drop_geometry() %>% 
+  # Ensuring that a grid cell is only linked with one district
   group_by(CELL.ID) %>% 
   slice_sample() %>% 
   group_by(DISTRICT.NAME) %>% 
   mutate(NO.CELLS.TOT = n_distinct(CELL.ID)) %>% 
   ungroup()
 
-# # distribution of number of cells covered, across districts
-# x <- grid_dist_links %>% 
-#   group_by(DISTRICT.NAME) %>% 
-#   summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
-#   group_by(NO.CELLS) %>% 
-#   summarise(NO.DISTRICTS = n())
+grid_dist_links <- grid_dist_links1 %>% 
+  # considering only districts with at least 5 grid cells for grid coverage
+  filter(NO.CELLS.TOT >= 5)
 
-grid_dist <- grid_dist %>% 
-  right_join(grid_dist_links)
+grid_dist1 <- grid_dist_base %>% right_join(grid_dist_links1)
+grid_dist <- grid_dist_base %>% right_join(grid_dist_links)
 
+
+temp01 <- data0_MY_slice_G %>% 
+  # combining the two DUR years
+  mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
+                           M.YEAR %in% 2019:2020 ~ "DUR",
+                           M.YEAR == 2021 ~ "AFT")) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
+  dplyr::select(-DISTRICT) %>% # removing to avoid confusion 
+  inner_join(grid_dist1) 
 
 temp0 <- data0_MY_slice_G %>% 
-  # selecting only nine months (AFT has only nine)
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  # combining the two DUR periods
-  mutate(COVID = as.character(COVID)) %>% 
-  mutate(COVID = case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
-                           TRUE ~ COVID)) %>% 
+  # combining the two DUR years
+  mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
+                           M.YEAR %in% 2019:2020 ~ "DUR",
+                           M.YEAR == 2021 ~ "AFT")) %>% 
   mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
-  # although data has fewer cells than grid_dist, using inner so only those cells with 
-  # established district links will be considered (removes some cells and districts)
   dplyr::select(-DISTRICT) %>% # removing to avoid confusion
   inner_join(grid_dist)
 
-# considering only districts with at least 5 grid cells for grid coverage
+dist_cons1 <- temp01 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRICT.NAME)
+dist_cons <- temp0 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRICT.NAME)
+
+
 temp1 <- temp0 %>% 
-  filter(NO.CELLS.TOT >= 5) %>% 
   # summarising metrics of interest
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
+  summarise(NO.CELLS = n_distinct(CELL.ID),
+            GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
-           fill = list(NO.CELLS = 0)) %>% 
-  mutate(GRID.COV = 100*NO.CELLS/NO.CELLS.TOT) %>% 
-  # moving COVID to columns
-  dplyr::select(-NO.CELLS)
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons$DISTRICT.NAME,
+           fill = list(GRID.COV = 0)) %>% 
+  dplyr::select(-NO.CELLS, -NO.CELLS.TOT) %>% 
+  left_join(dist_cons)
 
 # for grid coverage per district with threshold
 temp2 <- temp0 %>% 
-  filter(NO.CELLS.TOT >= 5) %>% 
   # summarising metrics of interest
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
   summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
   # threshold of 5 lists in a grid cell for the cell to be considered "covered"
   filter(CELL.LISTS >= 5) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
+  summarise(NO.CELLS = n_distinct(CELL.ID),
+            GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
-           fill = list(NO.CELLS = 0)) %>% 
-  mutate(GRID.COV.T = 100*NO.CELLS/NO.CELLS.TOT) %>% 
-  # moving COVID to columns
-  dplyr::select(-NO.CELLS)
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons$DISTRICT.NAME,
+           fill = list(GRID.COV.T = 0)) %>% 
+  dplyr::select(-NO.CELLS, -NO.CELLS.TOT) %>% 
+  left_join(dist_cons)
 
-
-data_spread0 <- temp0 %>% 
-  # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+# for number of lists per district
+temp3 <- temp01 %>% 
+  # summarising metrics of interest (more districts for no.lists than for coverage)
+  group_by(COVID, DISTRICT.NAME) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons1$DISTRICT.NAME,
            fill = list(NO.LISTS = 0)) %>% 
+  left_join(dist_cons1)
+
+data_spread0 <- temp3 %>% 
   left_join(temp1) %>% 
   left_join(temp2) %>% 
   pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
@@ -1695,13 +1718,16 @@ data_spread0 <- temp0 %>%
   filter(!(is.na(VALUE))) %>% 
   pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
   # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
+  # number of lists proportional change also has threshold of 10 lists (in function)
   mutate(RAW.CHANGE1 = s_spread_change(BEF, DUR),
          RAW.CHANGE2 = s_spread_change(DUR, AFT),
          PROP.CHANGE1a = s_spread_propchange(METRIC, BEF, DUR),
          PROP.CHANGE1b = s_spread_propchange(METRIC, DUR, AFT),
          PROP.CHANGE2a = s_spread_propchange(METRIC, DUR, BEF),
          PROP.CHANGE2b = s_spread_propchange(METRIC, AFT, DUR)) %>% 
-  left_join(grid_dist)
+  # for district geometry
+  left_join(grid_dist_base0)
+
 
 transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
                                T.LABEL = c("Before to During", "During to After",
@@ -1747,7 +1773,7 @@ s_spread_map <- ggplot(data_spread1) +
 # not considered can be either because both time periods are zero, or if generally no 
 # district-grid cell link present
 
-ggsave("03_wrap_figs/10c_s_spread_map.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_a.png"), 
        plot = s_spread_map,
        dpi = 300, width = 14, height = 8, units = "in")
 
