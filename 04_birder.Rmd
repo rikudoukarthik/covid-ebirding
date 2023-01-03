@@ -63,12 +63,12 @@ anal_name <- "d01_group_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup()
@@ -108,7 +108,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -121,7 +121,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
@@ -211,12 +211,12 @@ anal_name <- "d02_fidelity_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
   # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
@@ -262,7 +262,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -275,7 +275,7 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
@@ -373,12 +373,12 @@ anal_name <- "d03_time_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
   # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
@@ -421,7 +421,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -434,7 +434,7 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
@@ -534,12 +534,12 @@ anal_name <- "d04_hotspot"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
   ungroup()
@@ -578,7 +578,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -591,7 +591,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
@@ -687,12 +687,12 @@ anal_name <- "d05_protocol"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
                                            EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
@@ -731,7 +731,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -744,7 +744,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
@@ -841,12 +841,12 @@ anal_name <- "d06_distance"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DISTANCE = log(EFFORT.DISTANCE.KM)) %>% 
@@ -888,7 +888,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -901,7 +901,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1001,12 +1001,12 @@ anal_name <- "d07_duration"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
   # because no other distribution family fits 
@@ -1047,7 +1047,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -1060,7 +1060,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
@@ -1159,12 +1159,12 @@ anal_name <- "d08_length"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(LENGTH = NO.SP) %>%
   ungroup()
@@ -1202,7 +1202,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -1215,7 +1215,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(LENGTH = NO.SP) %>%
@@ -1323,12 +1323,12 @@ anal_name <- "d09a_s_UNU"
 
 ##### Final analysis: national GLMMs ####
 
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   distinct(M.YEAR, MONTH, COUNTY, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
   ungroup()
 
@@ -1365,12 +1365,12 @@ data0_a <- data0_a %>%
 
 ##### Final analysis: national GLMMs (without nested random effect) ####
 
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR, CELL.ID)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_b <- data0_MY_slice_G %>% 
+data_b <- data0_MY_d_slice_G %>% 
   distinct(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
   ungroup()
 
@@ -1455,12 +1455,12 @@ anal_name <- "d09b_s_cover"
 
 ##### Final analysis: national GLMMs ####
 
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
   # threshold to consider cell "covered"
@@ -1500,7 +1500,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -1514,7 +1514,7 @@ for (i in 1:4) { # for each state
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   gridmapg1_ST_temp <- gridmapg1_ST %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
     dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
@@ -1643,7 +1643,7 @@ grid_dist1 <- grid_dist_base %>% right_join(grid_dist_links1)
 grid_dist <- grid_dist_base %>% right_join(grid_dist_links)
 
 
-temp01 <- data0_MY_slice_G %>% 
+temp01 <- data0_MY_d_slice_G %>% 
   # combining the two DUR years
   mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
                            M.YEAR %in% 2019:2020 ~ "DUR",
@@ -1652,7 +1652,7 @@ temp01 <- data0_MY_slice_G %>%
   dplyr::select(-DISTRICT) %>% # removing to avoid confusion 
   inner_join(grid_dist1) 
 
-temp0 <- data0_MY_slice_G %>% 
+temp0 <- data0_MY_d_slice_G %>% 
   # combining the two DUR years
   mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
                            M.YEAR %in% 2019:2020 ~ "DUR",
@@ -2071,7 +2071,7 @@ met_week <- function(dates) {
 }
 
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   mutate(WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       # start week from Monday
@@ -2092,7 +2092,7 @@ data_a <- data0_MY_slice_G %>%
                    CI.U = stats::quantile(PROP.LISTS, 0.975),
                    PROP.LISTS = median(PROP.LISTS)) 
 
-data_b <- data0_MY_slice_G %>% 
+data_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   mutate(STATE = factor(STATE, levels = anal_states[1,]),
          WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
@@ -2149,7 +2149,7 @@ anal_name <- "d10b_t_tod"
 
 ##### Change in ToD spread ####
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   mutate(DAY.Y = yday(OBSERVATION.DATE)) %>% 
   group_by(M.YEAR, DAY.Y) %>% 
   mutate(TOT.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER))) %>%
@@ -2166,7 +2166,7 @@ data_a <- data0_MY_slice_G %>%
                    CI.U = stats::quantile(PROP.LISTS, 0.975),
                    PROP.LISTS = median(PROP.LISTS)) 
 
-data_b <- data0_MY_slice_G %>% 
+data_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   mutate(STATE = factor(STATE, levels = anal_states[1,]),
          DAY.Y = yday(OBSERVATION.DATE)) %>% 

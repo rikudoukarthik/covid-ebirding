@@ -78,7 +78,7 @@ if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") &
   print("MODIS data is ready to use!")
 }
 
-# #  Getting EBD data + filtering and preparing for current use (35 mins on server) ###
+# #  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
 # tictoc::tic("Preparing data for analyses")
 # rawdatapath <- "data/ebd_IN_prv_relMay-2022.txt"
 # senspath <- "data/ebd_sensitive_relMay-2022_IN.txt"
@@ -92,7 +92,7 @@ if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") &
 #                    maxvel = 20, minsut = 2)
 # tictoc::toc()
 
-load("data/data0_MY_slice.RData")
+load("data/data0_MY_d_slice.RData")
 load("data/maps.RData")
 
 
@@ -130,10 +130,10 @@ totcells_states <- gridmapg1_ST %>%
 ```{r setup2, include=FALSE}
 
 # timeline metadata
-timeline <- data0_MY_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
+timeline <- data0_MY_d_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
 
 # finding main state of birders (mainly for observer-level metrics)
-obs_mainstates <- data0_MY_slice_S %>% 
+obs_mainstates <- data0_MY_d_slice_S %>% 
   group_by(OBSERVER.ID, STATE) %>% 
   summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   arrange(desc(LISTS)) %>% 
@@ -143,7 +143,7 @@ obs_mainstates <- data0_MY_slice_S %>%
   select(-LISTS)
 
 # choosing only months with data from all 3 COVID categories
-month_compar <- data0_MY_slice_G %>% 
+month_compar <- data0_MY_d_slice_G %>% 
   group_by(MONTH) %>% 
   mutate(COVID = factor(case_when(as.character(COVID) %in% c("DUR_20","DUR_21") ~ "DUR",
                                   TRUE ~ as.character(COVID)),

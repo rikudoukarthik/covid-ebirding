@@ -10,7 +10,7 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 ```{r b_setup, cache=TRUE, message=FALSE}
 
-load("data/data0_MY.RData")
+load("data/data0_MY_b.RData")
 
 ### bird species to analyse/compare ####
 
@@ -99,7 +99,7 @@ eBird_users <- read.delim("data/ebd_users_relMay-2022.txt",
 #   left_join(eBird_users)
 
 # getting overall checklist leaders from data
-prolific_a <- data0_MY_slice_S %>% 
+prolific_a <- data0_MY_b_slice_S %>% 
   group_by(OBSERVER.ID, LOCALITY.ID, LOCALITY) %>% 
   summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   ungroup() %>% 
@@ -110,7 +110,7 @@ prolific_a <- data0_MY_slice_S %>%
   
 
 # getting checklist leaders with equal effort across years from data
-prolific_b <- data0_MY_slice_S %>% 
+prolific_b <- data0_MY_b_slice_S %>% 
   group_by(OBSERVER.ID, LOCALITY.ID, LOCALITY, M.YEAR, MONTH) %>% 
   summarise(MONTH.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   filter(MONTH.LISTS >= 15) %>% # 200 per year roughly translates to 16 per month
@@ -187,7 +187,7 @@ ggsave("03_wrap_figs/b1_KA4_model.png", b1_KA4_graph,
 
 ```{r b_koch_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_MY_slice_G %>% 
+birds_monthly <- data0_MY_b_slice_G %>% 
   filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(COVID, M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -250,7 +250,7 @@ No prominent effect of the pandemic. Biggest change is in wetland birds.
 
 ```{r b_koch_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(COUNTY == "Ernakulam", CELL.ID %in% city_koch) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -315,7 +315,7 @@ No prominent effects directly attributable to the pandemic. Most patterns even o
 
 ```{r b_koch_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_MY_slice_G %>% 
+birds_monthly <- data0_MY_b_slice_G %>% 
   filter(STATE == "Kerala") %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -377,7 +377,7 @@ ggsave("03_wrap_figs/b_koch_03_spatial_m.png", b_koch_03_spatial_m,
 
 
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(STATE == "Kerala") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -460,7 +460,7 @@ ggsave("03_wrap_figs/b2_KL4_model.png", b2_KL4_graph,
 
 ```{r b_pune_01_monthly, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_MY_slice_G %>% 
+birds_monthly <- data0_MY_b_slice_G %>% 
   filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(COVID, M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -524,7 +524,7 @@ Many non-urban and wetland bird species showed a slight decrease in reporting fr
 
 ```{r b_pune_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(COUNTY == "Pune", CELL.ID %in% city_pune) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -590,7 +590,7 @@ There is no clear direction of change with the pandemic in Pune city. What happe
 
 ```{r b_pune_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_MY_slice_G %>% 
+birds_monthly <- data0_MY_b_slice_G %>% 
   filter(STATE == "Maharashtra") %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -653,7 +653,7 @@ ggsave("03_wrap_figs/b_pune_03_spatial_m.png", b_pune_03_spatial_m,
 
 
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(STATE == "Maharashtra") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -739,7 +739,7 @@ Not enough lists in each month to analyse at this scale.
 
 ```{r b_guwa_02_annual, cache=TRUE, message=FALSE}
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(COUNTY == "Kamrup Metropolitan", CELL.ID %in% city_guwa) %>% 
   group_by(M.YEAR, MONTH) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -804,7 +804,7 @@ Non-urban and wetland species do not show an impact, while some urban species di
 
 ```{r b_guwa_03_spatial, cache=TRUE, message=FALSE}
 
-birds_monthly <- data0_MY_slice_G %>% 
+birds_monthly <- data0_MY_b_slice_G %>% 
   filter(STATE == "Assam") %>% 
   group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
@@ -866,7 +866,7 @@ ggsave("03_wrap_figs/b_guwa_03_spatial_m.png", b_guwa_03_spatial_m,
 
 
 
-birds <- data0_MY_slice_G %>% 
+birds <- data0_MY_b_slice_G %>% 
   filter(STATE == "Assam") %>% 
   group_by(M.YEAR, MONTH, CELL.ID) %>% 
   summarise(GROUP.ID = GROUP.ID,
@@ -961,19 +961,19 @@ Not modelling for each species separately because small data size.
 species_prolific <- species_list %>% distinct(COMMON.NAME, SP.CATEGORY)
 
 # to join for presence-absence of various species
-temp1 <- data0_MY %>% 
+temp1 <- data0_MY_b %>% 
   right_join(prolific) %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
   summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
   ungroup()
 
 # to later join checklist metadata
-temp2 <- data0_MY_slice_S %>% 
+temp2 <- data0_MY_b_slice_S %>% 
   right_join(prolific) %>% 
   select(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER)
 
 # join patches with patch-specific species
-temp3 <- data0_MY %>% 
+temp3 <- data0_MY_b %>% 
   right_join(prolific) %>% 
   group_by(LOCALITY.ID) %>% 
   filter(COMMON.NAME %in% species_prolific$COMMON.NAME) %>% 
@@ -1031,7 +1031,7 @@ data_prolific <- data_prolific %>%
   right_join(filt) %>% 
   arrange(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
   # joining list length, year and month metadata
-  left_join(data0_MY_slice_S %>% distinct(SAMPLING.EVENT.IDENTIFIER, NO.SP, M.YEAR, MONTH)) %>%
+  left_join(data0_MY_b_slice_S %>% distinct(SAMPLING.EVENT.IDENTIFIER, NO.SP, M.YEAR, MONTH)) %>%
   # joining species info
   left_join(species_prolific) %>% 
   # filtering out locations where both species categories do not exist (after species filters)
