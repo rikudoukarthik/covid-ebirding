@@ -1206,3 +1206,124 @@ bird_model_state <- function(data_full = data0_MY,
   tictoc::toc()
   
   }
+
+### ggplot for non-model bird reporting patterns -----------------
+
+gg_b_nonmodel <- function(data, region) {
+  
+  # cur_city_list should already be in environment
+  
+  require(tidyverse)
+  require(patchwork)
+  
+  if (region == "city"){
+    plot_title <- glue("{unique(cur_city_list$CITY)} city")
+  } else if (region == "state"){
+    plot_title <- glue("{unique(cur_city_list$STATE)} state")
+  }
+  
+  ((ggplot(filter(data, SP.CATEGORY == "U"), 
+           aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+      geom_point(size = 2, position = position_dodge(0.8)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+      scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+      facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                 strip.position = "left", scales = "free_y") +
+      labs(title = "Urban species",
+           x = "Month", y = "Reporting frequency")) /
+      (ggplot(filter(data, SP.CATEGORY == "R"), 
+              aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+         geom_point(size = 2, position = position_dodge(0.8)) +
+         geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                       size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+         scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+         facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                    strip.position = "left", scales = "free_y") +
+         labs(title = "Non-urban species",
+              x = "Month", y = "Reporting frequency"))) +
+    plot_layout(guides = "collect", heights = c(4, 4)) +
+    plot_annotation(title = plot_title) &
+    theme(strip.text = element_text(size = 7))
+  
+}
+
+### iterative code for overall bird reporting patterns -----------------
+
+b01_overall_monthly <- function(state_name) {
+  
+  # anal_name, city_list and species_list need to be in environment
+  # sliced and non-sliced data as well
+  
+  cur_city_list <- city_list %>% filter(STATE == state_name)
+  cur_species_list <- species_list %>% filter(STATE == state_name)
+  
+  assign("cur_city_list", cur_city_list, envir = .GlobalEnv)
+  assign("cur_species_list", cur_species_list, envir = .GlobalEnv)
+  
+  
+  data_a <- data0_MY_slice_G %>% 
+    filter(COUNTY == unique(cur_city_list$COUNTY), 
+           CELL.ID %in% cur_city_list$CELLS) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+              TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+    ungroup() %>% 
+    left_join(data0_MY) %>% 
+    filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(TOT.LISTS = min(TOT.LISTS),
+              NO.LISTS = n_distinct(GROUP.ID),
+              REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
+    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+              CI.U = stats::quantile(REP.FREQ, 0.975),
+              REP.FREQ = median(REP.FREQ)) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_a completed.")
+  
+  data_b <- data0_MY_slice_G %>% 
+    filter(STATE == unique(cur_city_list$STATE)) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+              TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+    ungroup() %>% 
+    left_join(data0_MY) %>% 
+    filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(TOT.LISTS = min(TOT.LISTS),
+              NO.LISTS = n_distinct(GROUP.ID),
+              REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
+    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+              CI.U = stats::quantile(REP.FREQ, 0.975),
+              REP.FREQ = median(REP.FREQ)) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_b completed.")
+  
+  assign("data_a", data_a, envir = .GlobalEnv)
+  assign("data_b", data_b, envir = .GlobalEnv)
+  
+  
+  plot_a <- gg_b_nonmodel(data_a, "city")
+  plot_b <- gg_b_nonmodel(data_b, "state")
+  
+  assign("plot_a", plot_a, envir = .GlobalEnv)
+  assign("plot_b", plot_b, envir = .GlobalEnv)
+  
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+         dpi = 300, width = 16, height = 15, units = "in")
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+         dpi = 300, width = 16, height = 15, units = "in")
+  
+  print("plot_a and plot_b created and written to disk.")
+  
+}
