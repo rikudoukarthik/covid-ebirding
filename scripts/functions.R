@@ -1209,7 +1209,7 @@ bird_model_state <- function(data_full = data0_MY,
 
 ### ggplot for non-model bird reporting patterns -----------------
 
-gg_b_nonmodel <- function(data, region) {
+gg_b_nonmodel <- function(data, region, time) {
   
   # cur_city_list should already be in environment
   
@@ -1222,29 +1222,55 @@ gg_b_nonmodel <- function(data, region) {
     plot_title <- glue("{unique(cur_city_list$STATE)} state")
   }
   
-  ((ggplot(filter(data, SP.CATEGORY == "U"), 
-           aes(MONTH, REP.FREQ, colour = M.YEAR)) +
-      geom_point(size = 2, position = position_dodge(0.8)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.25, width = 0.6, position = position_dodge(0.8)) +
-      scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
-      facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
-                 strip.position = "left", scales = "free_y") +
-      labs(title = "Urban species",
-           x = "Month", y = "Reporting frequency")) /
-      (ggplot(filter(data, SP.CATEGORY == "R"), 
-              aes(MONTH, REP.FREQ, colour = M.YEAR)) +
-         geom_point(size = 2, position = position_dodge(0.8)) +
-         geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                       size = 1.25, width = 0.6, position = position_dodge(0.8)) +
-         scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
-         facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
-                    strip.position = "left", scales = "free_y") +
-         labs(title = "Non-urban species",
-              x = "Month", y = "Reporting frequency"))) +
-    plot_layout(guides = "collect", heights = c(4, 4)) +
-    plot_annotation(title = plot_title) &
-    theme(strip.text = element_text(size = 7))
+  if (time == "monthly") {
+    
+    ((ggplot(filter(data, SP.CATEGORY == "U"), 
+             aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+        geom_point(size = 2, position = position_dodge(0.8)) +
+        geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                      size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+        scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+        facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                   strip.position = "left", scales = "free_y") +
+        labs(title = "Urban species",
+             x = "Month", y = "Reporting frequency")) /
+       (ggplot(filter(data, SP.CATEGORY == "R"), 
+               aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+          geom_point(size = 2, position = position_dodge(0.8)) +
+          geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                        size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+          scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+          facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                     strip.position = "left", scales = "free_y") +
+          labs(title = "Non-urban species",
+               x = "Month", y = "Reporting frequency"))) +
+      plot_layout(guides = "collect", heights = c(4, 4)) +
+      plot_annotation(title = plot_title) &
+      theme(strip.text = element_text(size = 7))
+    
+  } else if (time == "yearly") {
+    
+    ((ggplot(filter(data, SP.CATEGORY == "U"), aes(M.YEAR, REP.FREQ)) +
+        geom_point(size = 3) +
+        geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                      size = 1.25, width = 0.3) +
+        facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                   strip.position = "left", scales = "free_y") +
+        labs(title = "Urban species",
+             x = "Month", y = "Reporting frequency")) /
+       (ggplot(filter(data, SP.CATEGORY == "R"), aes(M.YEAR, REP.FREQ)) +
+          geom_point(size = 3) +
+          geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                        size = 1.25, width = 0.3) +
+          facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                     strip.position = "left", scales = "free_y") +
+          labs(title = "Non-urban species",
+               x = "Month", y = "Reporting frequency"))) +
+      plot_layout(guides = "collect", heights = c(4, 4)) +
+      plot_annotation(title = plot_title) &
+      theme(strip.text = element_text(size = 7))
+    
+  }
   
 }
 
@@ -1311,8 +1337,8 @@ b01_overall_monthly <- function(state_name) {
   assign("data_b", data_b, envir = .GlobalEnv)
   
   
-  plot_a <- gg_b_nonmodel(data_a, "city")
-  plot_b <- gg_b_nonmodel(data_b, "state")
+  plot_a <- gg_b_nonmodel(data_a, region = "city", time = "monthly")
+  plot_b <- gg_b_nonmodel(data_b, region = "state", time = "monthly")
   
   assign("plot_a", plot_a, envir = .GlobalEnv)
   assign("plot_b", plot_b, envir = .GlobalEnv)
@@ -1323,6 +1349,54 @@ b01_overall_monthly <- function(state_name) {
   
   ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
          dpi = 300, width = 16, height = 15, units = "in")
+  
+  print("plot_a and plot_b created and written to disk.")
+  
+}
+
+
+b01_overall_annual <- function(state_name) {
+  
+  data_a <- data_a %>% 
+    mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
+    group_by(COMMON.NAME, M.YEAR) %>% 
+    summarise(REP.FREQ = mean(REP.FREQ),
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = REP.FREQ - 1.96*SE,
+              CI.U = REP.FREQ + 1.96*SE) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_a completed.")
+  
+  data_b <- data_b %>% 
+    mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
+    group_by(COMMON.NAME, M.YEAR) %>% 
+    summarise(REP.FREQ = mean(REP.FREQ),
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = REP.FREQ - 1.96*SE,
+              CI.U = REP.FREQ + 1.96*SE) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_b completed.")
+  
+  assign("data_a", data_a, envir = .GlobalEnv)
+  assign("data_b", data_b, envir = .GlobalEnv)
+  
+  
+  plot_a <- gg_b_nonmodel(data_a, region = "city", time = "yearly")
+  plot_b <- gg_b_nonmodel(data_b, region = "state", time = "yearly")
+  
+  assign("plot_a", plot_a, envir = .GlobalEnv)
+  assign("plot_b", plot_b, envir = .GlobalEnv)
+  
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+         dpi = 300, width = 10, height = 12, units = "in")
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+         dpi = 300, width = 10, height = 12, units = "in")
   
   print("plot_a and plot_b created and written to disk.")
   

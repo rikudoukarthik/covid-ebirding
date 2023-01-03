@@ -133,78 +133,26 @@ rm(prolific_a, prolific_b)
 
 ## Overall species reporting
 
-```{r b01_overall_s1a_m, cache=TRUE, message=FALSE}
+```{r b01_overall_s1, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s1a_m"
 
 b01_overall_monthly("Karnataka")
 
+
+anal_name <- "b01_overall_s1b_y"
+
+b01_overall_annual("Karnataka")
+
 ```
 
 Nothing conclusively due to the pandemic or in one particular direction. Do these slight patterns persist at the annual level (considering SoIB scale of migratory year)?
 
-```{r b1_KA2_annual, cache=TRUE, message=FALSE}
+What happens when these patterns in urban areas are averaged across space?
 
-birds <- data0_MY_slice_G %>% 
-  filter(COUNTY == "Bangalore", CELL.ID %in% city_bang) %>% 
-  group_by(M.YEAR, MONTH) %>% 
-  summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
-  summarise(TOT.LISTS = min(TOT.LISTS),
-            NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
-            # not bootstrapping here cos only averaging across 12 months
-            # using binomial confidence
-            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
-  summarise(REP.FREQ = mean(REP.FREQ),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = REP.FREQ - 1.96*SE,
-            CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species)
+At the larger spatial scale, pandemic effects are restricted to the two months, mostly in 2020. Some urban species increased in frequency while most decreased (surprisingly) and some did not change. Most non-urban species decreased in frequency, and so did wetland species. 
 
-
-((ggplot(filter(birds, SP.CATEGORY == "U"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Urban species",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, SP.CATEGORY == "R"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Non-urban species",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, SP.CATEGORY == "W"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Wetland species",
-       x = "Migratory year", y = "Reporting frequency"))) +
-plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Bengaluru city") -> b_bang_02_annual
-
-
-ggsave("03_wrap_figs/b_bang_02_annual.png", b_bang_02_annual,
-       width = 10, height = 14, units = "in", dpi = 300)
-
-
-```
+At the annual level:
 
 Urban species show a wide range of patterns, often contradictory. Non-urban species do not seem to have been necessarily affected by the pandemic, but have shown a consistent increase over the years (from even before the pandemic). So, pandemic is unlikely to have had a major impact.
 
@@ -212,75 +160,7 @@ A lot of the patterns seemingly significant at the level of migratory year are n
 
 What happens when these patterns in urban areas are averaged across space?
 
-```{r b1_KA3_spatial, cache=TRUE, message=FALSE}
-
-
-
-
-birds <- data0_MY_slice_G %>% 
-  filter(STATE == "Karnataka") %>% 
-  group_by(M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(GROUP.ID = GROUP.ID,
-            TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(data0) %>% 
-  filter(COMMON.NAME %in% species$COMMON.NAME) %>% 
-  group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-  summarise(TOT.LISTS = min(TOT.LISTS),
-            NO.LISTS = n_distinct(GROUP.ID),
-            REP.FREQ = round(NO.LISTS/TOT.LISTS, 4),
-            # not bootstrapping here cos only averaging across 12 months
-            # using binomial confidence
-            SE = sqrt((REP.FREQ)*(1 - REP.FREQ)/TOT.LISTS)) %>% 
-  summarise(REP.FREQ = mean(REP.FREQ),
-            SE = sqrt(sum((SE)^2))/n()) %>% 
-  summarise(REP.FREQ = mean(REP.FREQ),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = REP.FREQ - 1.96*SE,
-            CI.U = REP.FREQ + 1.96*SE) %>% 
-  left_join(species)
-
-
-((ggplot(filter(birds, SP.CATEGORY == "U"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Urban species",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, SP.CATEGORY == "R"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Non-urban species",
-       x = "Migratory year", y = "Reporting frequency")) /
-(ggplot(filter(birds, SP.CATEGORY == "W"), 
-       aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette) +
-  facet_wrap(~COMMON.NAME, dir = "h", ncol = 3, strip.position = "left", scales = "free_y") +
-  theme(strip.text = element_text(size = 7)) +
-  labs(title = "Wetland species",
-       x = "Migratory year", y = "Reporting frequency"))) +
-plot_layout(guides = "collect", heights = c(4, 4, 1)) +
-plot_annotation(title = "Karnataka state") -> b_bang_03_spatial_a
-
-
-ggsave("03_wrap_figs/b_bang_03_spatial_a.png", b_bang_03_spatial_a,
-       width = 10, height = 14, units = "in", dpi = 300)
-
-
-```
-
-At the larger spatial scale, pandemic effects are restricted to the two months, mostly in 2020. Some urban species increased in frequency while most decreased (surprisingly) and some did not change. Most non-urban species decreased in frequency, and so did wetland species. But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed.
+But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed.
 
 Thus, there is no clear direction of change. Even the slight patterns seen in these visualisations may not have a large effect size.
 
