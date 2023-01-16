@@ -11,6 +11,7 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 ```{r b_setup, cache=TRUE, message=FALSE}
 
 load("data/data0_MY_b.RData")
+load("data/data0_MY_b_slice.RData")
 
 ### bird species to analyse/compare ####
 
@@ -146,30 +147,71 @@ b01_overall_annual("Karnataka")
 
 ```
 
-Nothing conclusively due to the pandemic or in one particular direction. Do these slight patterns persist at the annual level (considering SoIB scale of migratory year)?
-
-What happens when these patterns in urban areas are averaged across space?
-
-At the larger spatial scale, pandemic effects are restricted to the two months, mostly in 2020. Some urban species increased in frequency while most decreased (surprisingly) and some did not change. Most non-urban species decreased in frequency, and so did wetland species. 
+Nothing conclusively due to the pandemic or in one particular direction, at the scale of Bengaluru city. At the scale of the entire state though, some non-urban species showed lower reporting only during April of 2020 (first lockdown).
 
 At the annual level:
 
-Urban species show a wide range of patterns, often contradictory. Non-urban species do not seem to have been necessarily affected by the pandemic, but have shown a consistent increase over the years (from even before the pandemic). So, pandemic is unlikely to have had a major impact.
+Urban species show a wide range of patterns, often contradictory. But most species show a decrease during the pandemic year, which is contrary to the prediction of a pandemic effect. Most non-urban species saw a decline in reporting in the pandemic year in Bengaluru city. Both these patterns soften out when averaged across space, i.e., at the level of the entire state of Karnataka.
 
-A lot of the patterns seemingly significant at the level of migratory year are not necessarily related to COVID. Many bird species had considerably lower reporting frequencies in even before the pandemic, for some reason. This is what is dragging the average for migratory year 2019 down for many species here.
 
-What happens when these patterns in urban areas are averaged across space?
+```{r b01_overall_s1c_model, cache=TRUE, message=FALSE}
 
-But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed.
+anal_name <- "b01_overall_s1c_model"
 
-Thus, there is no clear direction of change. Even the slight patterns seen in these visualisations may not have a large effect size.
+b01_overall_model(state_name = "Karnataka")
 
-```{r b1_KA4_model, cache=TRUE, message=FALSE}
 
-bird_model_state(state = "Karnataka")
+
+
 
 b1_KA4_pred <- birds_pred
 b1_KA4_graph <- birds_graph
+
+  
+  (ggplot(filter(birds_pred, MONTHS.TYPE == "LD"), 
+          aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For the months of April and May",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+      ggplot(filter(birds_pred, MONTHS.TYPE == "NL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For other ten months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+      ggplot(filter(birds_pred, MONTHS.TYPE == "ALL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species category",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For all twelve months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+    plot_layout(guides = "collect") +
+    plot_annotation(title = paste(state, "state"),
+                    subtitle = paste0(
+                      "Predicted reporting frequencies of ",
+                      n_distinct(data_occ$COMMON.NAME), " species (",
+                      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+                      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
+                      " in three separate models")) -> birds_graph
+  
+  assign("birds_pred", birds_pred, envir = .GlobalEnv)
+  assign("birds_graph", birds_graph, envir = .GlobalEnv)
   
 save(b1_KA4_pred, file = "outputs/b1_KA4_pred.RData")
 
