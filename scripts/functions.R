@@ -1020,6 +1020,37 @@ split_par_boot <- function(model,
     
   }
   
+  if (mode == "XXTRA") {
+    
+    count <- 0
+    
+    count <- count + 1
+    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    prediction1 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 40,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+    
+    count <- count + 1
+    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    prediction2 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 40,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+
+    
+    prediction <- rbind(prediction1, prediction2)
+    
+    return(prediction)
+    
+  }
+  
 }
 
 ### raster aggregation -----------------
@@ -1441,10 +1472,10 @@ b01_overall_model <- function(data_full = data0_MY_b,
       
 
       tictoc::tic(glue("Bootstrapped predictions for months type {m}, {unique(birds_pred0$COMMON.NAME)[i]}"))
-      prediction <- split_par_boot(model = model_spec, 
+      prediction <- split_par_boot_test(model = model_spec, 
                                    new_data = birds_pred0_b, 
                                    new_data_string = "birds_pred0_b", 
-                                   mode = "extra")
+                                   mode = "XXTRA")
       tictoc::toc() 
       
       
@@ -1485,7 +1516,7 @@ b01_overall_model <- function(data_full = data0_MY_b,
     mutate(SE = PRED - SE.L) %>% 
     left_join(timeline) %>% 
     # summarising for species categories
-    group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
+    group_by(STATE, MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
     summarise(PRED = mean(PRED),
               # propagating SE across species of a category
               SE = sqrt(sum((SE)^2))/n(),

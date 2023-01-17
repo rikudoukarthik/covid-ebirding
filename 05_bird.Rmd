@@ -997,6 +997,8 @@ Out of the most commonly observed species in each of the "prolific" locations, w
 
 Not modelling for each species separately because small data size.
 
+This is not done for individual states, because focus is individual locations which are anyway spread across the country.
+
 ```{r b5_prolific, cache=TRUE, message=FALSE}
 
 # species list
