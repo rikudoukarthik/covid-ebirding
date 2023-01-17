@@ -1433,7 +1433,7 @@ b01_overall_model <- function(data_full = data0_MY_b,
       
       
       tictoc::tic(glue("GLMM for months type {m}, {unique(birds_pred0$COMMON.NAME)[i]}"))
-      model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+      model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
                             (1|CELL.ID),
                           data = data_spec, family = binomial(link = "cloglog"),
                           nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
@@ -1442,9 +1442,9 @@ b01_overall_model <- function(data_full = data0_MY_b,
 
       tictoc::tic(glue("Bootstrapped predictions for months type {m}, {unique(birds_pred0$COMMON.NAME)[i]}"))
       prediction <- split_par_boot(model = model_spec, 
-                     new_data = birds_pred0_b, 
-                     new_data_string = "birds_pred0_b", 
-                     mode = "extra")
+                                   new_data = birds_pred0_b, 
+                                   new_data_string = "birds_pred0_b", 
+                                   mode = "extra")
       tictoc::toc() 
       
       
@@ -1480,9 +1480,11 @@ b01_overall_model <- function(data_full = data0_MY_b,
   
   birds_pred <- birds_pred %>% 
     mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-           CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-    mutate(SE = PRED - CI.L) %>% 
-    mutate(CI.U = PRED + SE) %>% 
+           # to transform lower bound of SE (not CI.L! think "mean +- SE")
+           SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+    mutate(SE = PRED - SE.L) %>% 
+    mutate(CI.U = PRED + 1.96*SE,
+           CI.L = PRED - 1.96*SE) %>% 
     left_join(timeline)
   
   tictoc::toc()
