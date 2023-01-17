@@ -1483,9 +1483,14 @@ b01_overall_model <- function(data_full = data0_MY_b,
            # to transform lower bound of SE (not CI.L! think "mean +- SE")
            SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
     mutate(SE = PRED - SE.L) %>% 
-    mutate(CI.U = PRED + 1.96*SE,
-           CI.L = PRED - 1.96*SE) %>% 
-    left_join(timeline)
+    left_join(timeline) %>% 
+    # summarising for species categories
+    group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
+    summarise(PRED = mean(PRED),
+              # propagating SE across species of a category
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = PRED - 1.96*SE,
+              CI.U = PRED + 1.96*SE)
   
   tictoc::toc()
   
