@@ -98,9 +98,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -160,11 +162,12 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
-
 
 ##### Saving analysis objects ####
 
@@ -253,10 +256,13 @@ data0_a <- data0_a %>%
   # this step doesn't change even though we log-transform prior to fitting the model
   # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise GLMMs ####
 
@@ -320,9 +326,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -412,9 +420,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -477,9 +487,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -569,9 +581,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -630,9 +644,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -722,9 +738,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -786,9 +804,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -879,9 +899,10 @@ data0_a <- data0_a %>%
   # this step doesn't change even though we log-transform prior to fitting the model
   # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>%
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>%
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise LMMs ####
@@ -944,10 +965,12 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 
 ##### Saving analysis objects ####
@@ -1038,10 +1061,12 @@ data0_a <- data0_a %>%
   # this step doesn't change even though we log-transform prior to fitting the model
   # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>%
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>%
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise LMMs ####
 
@@ -1102,9 +1127,10 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -1193,10 +1219,12 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise GLMMs ####
 
@@ -1256,9 +1284,10 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -1358,10 +1387,13 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: national GLMMs (without nested random effect) ####
 
@@ -1491,9 +1523,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -1557,9 +1591,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
