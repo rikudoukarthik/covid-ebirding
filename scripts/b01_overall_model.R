@@ -103,9 +103,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
   tictoc::toc() 
-  
-  source("scripts/b01_overall_model.R")
-  
+
   
   tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
   prediction <- split_par_boot(model = model_spec, 
