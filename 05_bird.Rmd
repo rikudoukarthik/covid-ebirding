@@ -158,6 +158,15 @@ Urban species show a wide range of patterns, often contradictory. But most speci
 
 anal_name <- "b01_overall_s1c_model"
 
+
+
+
+
+
+state_name <- "Karnataka"
+data_full = data0_MY_b
+data_sliceG = data0_MY_b_slice_G
+
 b01_overall_model(state_name = "Karnataka")
 
 
