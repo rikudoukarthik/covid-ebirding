@@ -98,7 +98,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   
   tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
                         (1|CELL.ID),
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
@@ -174,7 +174,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   
   tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
                         (1|CELL.ID),
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
@@ -252,7 +252,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   
   tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
                         (1|CELL.ID),
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
