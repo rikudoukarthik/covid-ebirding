@@ -13,20 +13,20 @@ cur_species_list <- species_list %>% filter(STATE == state_name)
 ### modelling directly with presence-absence data instead of relative abundance
 
 # to join for presence-absence of various species
-temp1 <- data_full %>% 
+temp1 <- data0_MY_b %>% 
   filter(STATE == state_name) %>% 
   group_by(GROUP.ID, COMMON.NAME) %>% 
   summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
   ungroup()
 
 # to later join checklist metadata
-temp2 <- data_sliceG %>% 
+temp2 <- data0_MY_b_slice_G %>% 
   filter(STATE == state_name) %>% 
   arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
                 M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
 
-data_occ <- data_sliceG %>% 
+data_occ <- data0_MY_b_slice_G %>% 
   filter(STATE == state_name) %>% 
   group_by(GROUP.ID) %>% 
   summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 

@@ -153,21 +153,16 @@ At the annual level:
 
 Urban species show a wide range of patterns, often contradictory. But most species show a decrease during the pandemic year, which is contrary to the prediction of a pandemic effect. Most non-urban species saw a decline in reporting in the pandemic year in Bengaluru city. Both these patterns soften out when averaged across space, i.e., at the level of the entire state of Karnataka.
 
-
 ```{r b01_overall_s1c_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s1c_model"
 
 
-
-
-
+### State 1
 
 state_name <- "Karnataka"
-data_full = data0_MY_b
-data_sliceG = data0_MY_b_slice_G
 
-b01_overall_model(state_name = "Karnataka")
+source("scripts/b01_overall_model.R")
 
 
 
