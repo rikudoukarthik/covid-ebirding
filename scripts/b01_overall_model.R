@@ -68,72 +68,75 @@ birds_pred <- data_occ0 %>%
 print("Completed preparations for modelling. Now starting modelling.")
 
 
-
-
 # month type 1 ------------------------------------------------------------
 
-
+cur_m <- 1
 
 data_mtype <- data_occ0 %>% 
-  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[1])
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
 
 birds_pred0 <- birds_pred %>% 
-  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[1]) 
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m]) 
 
 
-birds_pred0_b <- birds_pred0 %>% 
-  filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[1]) %>% 
-  rename(PRED.LINK2 = PRED.LINK,
-         SE.LINK2 = SE.LINK)
-
-assign("birds_pred0_b", birds_pred0_b, envir = .GlobalEnv)
-
-data_spec <- data_mtype %>% 
-  filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[1]) %>% 
-  # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
-  filter(REPORT == 1) %>% 
-  distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
-  left_join(data_occ)
-
-
-tictoc::tic(glue("GLMM for months type {1}, {unique(birds_pred0$COMMON.NAME)[1]}"))
-model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
-                      (1|CELL.ID),
-                    data = data_spec, family = binomial(link = "cloglog"),
-                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-tictoc::toc() 
-
-source("scripts/b01_overall_model.R")
-
-
-tictoc::tic(glue("Bootstrapped predictions for months type {1}, {unique(birds_pred0$COMMON.NAME)[1]}"))
-prediction <- split_par_boot(model = model_spec, 
-                             new_data = birds_pred0_b, 
-                             new_data_string = "birds_pred0_b", 
-                             mode = "normal")
-tictoc::toc() 
-
-
-count <- 0
-for (j in 1:n_distinct(birds_pred0_b$MONTH)) {
+for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
-  for (k in 1:n_distinct(birds_pred0_b$M.YEAR)) {
+  birds_pred0_b <- birds_pred0 %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    rename(PRED.LINK2 = PRED.LINK,
+           SE.LINK2 = SE.LINK)
+  
+  assign("birds_pred0_b", birds_pred0_b, envir = .GlobalEnv)
+
+
+  data_spec <- data_mtype %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    filter(REPORT == 1) %>% 
+    distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    left_join(data_occ)
+  
+  
+  tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  tictoc::toc() 
+  
+  source("scripts/b01_overall_model.R")
+  
+  
+  tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  prediction <- split_par_boot(model = model_spec, 
+                               new_data = birds_pred0_b, 
+                               new_data_string = "birds_pred0_b", 
+                               mode = "normal")
+  tictoc::toc() 
+  
+  
+  count <- 0
+  for (j in 1:n_distinct(birds_pred0_b$MONTH)) {
     
-    count <- count + 1
-    
-    birds_pred0_b$PRED.LINK2[count] = median(na.omit(prediction[,count]))
-    birds_pred0_b$SE.LINK2[count] = sd(na.omit(prediction[,count]))
-    
+    for (k in 1:n_distinct(birds_pred0_b$M.YEAR)) {
+      
+      count <- count + 1
+      
+      birds_pred0_b$PRED.LINK2[count] = median(na.omit(prediction[,count]))
+      birds_pred0_b$SE.LINK2[count] = sd(na.omit(prediction[,count]))
+      
+    }
   }
+  
+  birds_pred0 <- birds_pred0 %>% 
+    left_join(birds_pred0_b) %>% 
+    mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
+           SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
+    dplyr::select(-PRED.LINK2, -SE.LINK2)
+  
+  assign("birds_pred0", birds_pred0, envir = .GlobalEnv)  
+  
 }
-
-birds_pred0 <- birds_pred0 %>% 
-  left_join(birds_pred0_b) %>% 
-  mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
-         SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
-  dplyr::select(-PRED.LINK2, -SE.LINK2)
-
-assign("birds_pred0", birds_pred0, envir = .GlobalEnv)  
 
 birds_pred <- birds_pred %>% 
   left_join(birds_pred0, by = c("MONTHS.TYPE", "COMMON.NAME", "MONTH", "M.YEAR", "STATE",
@@ -141,3 +144,179 @@ birds_pred <- birds_pred %>%
   mutate(PRED.LINK = coalesce(PRED.LINK.x, PRED.LINK.y),
          SE.LINK = coalesce(SE.LINK.x, SE.LINK.y)) %>% 
   dplyr::select(-PRED.LINK.x, -PRED.LINK.y, -SE.LINK.x, -SE.LINK.y)
+
+
+# month type 2 ------------------------------------------------------------
+
+cur_m <- 2
+
+data_mtype <- data_occ0 %>% 
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
+
+birds_pred0 <- birds_pred %>% 
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m]) 
+
+
+for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
+  
+  birds_pred0_b <- birds_pred0 %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    rename(PRED.LINK2 = PRED.LINK,
+           SE.LINK2 = SE.LINK)
+  
+  assign("birds_pred0_b", birds_pred0_b, envir = .GlobalEnv)
+  
+  
+  data_spec <- data_mtype %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    filter(REPORT == 1) %>% 
+    distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    left_join(data_occ)
+  
+  
+  tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  tictoc::toc() 
+  
+  source("scripts/b01_overall_model.R")
+  
+  
+  tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  prediction <- split_par_boot(model = model_spec, 
+                               new_data = birds_pred0_b, 
+                               new_data_string = "birds_pred0_b", 
+                               mode = "normal")
+  tictoc::toc() 
+  
+  
+  count <- 0
+  for (j in 1:n_distinct(birds_pred0_b$MONTH)) {
+    
+    for (k in 1:n_distinct(birds_pred0_b$M.YEAR)) {
+      
+      count <- count + 1
+      
+      birds_pred0_b$PRED.LINK2[count] = median(na.omit(prediction[,count]))
+      birds_pred0_b$SE.LINK2[count] = sd(na.omit(prediction[,count]))
+      
+    }
+  }
+  
+  birds_pred0 <- birds_pred0 %>% 
+    left_join(birds_pred0_b) %>% 
+    mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
+           SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
+    dplyr::select(-PRED.LINK2, -SE.LINK2)
+  
+  assign("birds_pred0", birds_pred0, envir = .GlobalEnv)  
+  
+}
+
+birds_pred <- birds_pred %>% 
+  left_join(birds_pred0, by = c("MONTHS.TYPE", "COMMON.NAME", "MONTH", "M.YEAR", "STATE",
+                                "SP.CATEGORY", "NO.SP")) %>% 
+  mutate(PRED.LINK = coalesce(PRED.LINK.x, PRED.LINK.y),
+         SE.LINK = coalesce(SE.LINK.x, SE.LINK.y)) %>% 
+  dplyr::select(-PRED.LINK.x, -PRED.LINK.y, -SE.LINK.x, -SE.LINK.y)
+
+
+# month type 3 ------------------------------------------------------------
+
+cur_m <- 3
+
+data_mtype <- data_occ0 %>% 
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
+
+birds_pred0 <- birds_pred %>% 
+  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m]) 
+
+
+for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
+  
+  birds_pred0_b <- birds_pred0 %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    rename(PRED.LINK2 = PRED.LINK,
+           SE.LINK2 = SE.LINK)
+  
+  assign("birds_pred0_b", birds_pred0_b, envir = .GlobalEnv)
+  
+  
+  data_spec <- data_mtype %>% 
+    filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
+    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    filter(REPORT == 1) %>% 
+    distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    left_join(data_occ)
+  
+  
+  tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
+                        (1|CELL.ID),
+                      data = data_spec, family = binomial(link = "cloglog"),
+                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  tictoc::toc() 
+  
+  source("scripts/b01_overall_model.R")
+  
+  
+  tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  prediction <- split_par_boot(model = model_spec, 
+                               new_data = birds_pred0_b, 
+                               new_data_string = "birds_pred0_b", 
+                               mode = "normal")
+  tictoc::toc() 
+  
+  
+  count <- 0
+  for (j in 1:n_distinct(birds_pred0_b$MONTH)) {
+    
+    for (k in 1:n_distinct(birds_pred0_b$M.YEAR)) {
+      
+      count <- count + 1
+      
+      birds_pred0_b$PRED.LINK2[count] = median(na.omit(prediction[,count]))
+      birds_pred0_b$SE.LINK2[count] = sd(na.omit(prediction[,count]))
+      
+    }
+  }
+  
+  birds_pred0 <- birds_pred0 %>% 
+    left_join(birds_pred0_b) %>% 
+    mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
+           SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
+    dplyr::select(-PRED.LINK2, -SE.LINK2)
+  
+  assign("birds_pred0", birds_pred0, envir = .GlobalEnv)  
+  
+}
+
+birds_pred <- birds_pred %>% 
+  left_join(birds_pred0, by = c("MONTHS.TYPE", "COMMON.NAME", "MONTH", "M.YEAR", "STATE",
+                                "SP.CATEGORY", "NO.SP")) %>% 
+  mutate(PRED.LINK = coalesce(PRED.LINK.x, PRED.LINK.y),
+         SE.LINK = coalesce(SE.LINK.x, SE.LINK.y)) %>% 
+  dplyr::select(-PRED.LINK.x, -PRED.LINK.y, -SE.LINK.x, -SE.LINK.y)
+
+
+# backtransform, summarise, CIs -----------------------------------------------------
+
+birds_pred <- birds_pred %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  left_join(timeline) %>% 
+  # summarising for species categories
+  group_by(STATE, MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
+  summarise(PRED = mean(PRED),
+            # propagating SE across species of a category
+            SE = sqrt(sum((SE)^2))/n(),
+            CI.L = PRED - 1.96*SE,
+            CI.U = PRED + 1.96*SE)
+
+tictoc::toc()
+
