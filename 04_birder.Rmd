@@ -52,7 +52,7 @@ GLMMs for birder behaviour run only for the following metrics:
 
 These are usually driven by decision at the state level, so since the models are being run for the states individually, no need to consider district.
 
-### Group birding (>2 observer) per observer
+### Group birding (\>2 observer) per observer
 
 ```{r d01_group_po, cache=TRUE, message=FALSE}
 
@@ -63,12 +63,12 @@ anal_name <- "d01_group_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup()
@@ -98,9 +98,11 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -108,7 +110,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -121,7 +123,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
@@ -160,11 +162,12 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
-
 
 ##### Saving analysis objects ####
 
@@ -211,14 +214,16 @@ anal_name <- "d02_fidelity_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+  dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
+  # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
+  # value in our response variable); so will run LMM instead
   ungroup() 
 # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
 # our aim is to see, from the people who were birding, how many sites did a birder 
@@ -226,11 +231,11 @@ data_a <- data0_MY_slice_S %>%
 # number of sites is the focus here, not the individual observer (anyway a random effect)
 
 
-tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() # 15 sec
+tictoc::tic(glue("LMM for India"))
+model_a <- lmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                 data = data_a, 
+                 control = lmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 6 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -238,7 +243,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "normal")
-tictoc::toc() # 791 sec (13)
+tictoc::toc() # 476 sec (8 min)
 
 for (i in 1:length(data0_a$MONTH)) {
   
@@ -248,17 +253,22 @@ for (i in 1:length(data0_a$MONTH)) {
 }
 
 data0_a <- data0_a %>% 
+  # this step doesn't change even though we log-transform prior to fitting the model
+  # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -271,11 +281,11 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-    dplyr::summarise(NO.SITES = n_distinct(CELL.ID)) %>% 
+    dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
     ungroup() 
   # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
   # our aim is to see, from the people who were birding, how many sites did a birder 
@@ -283,10 +293,10 @@ for (i in 1:4) { # for each state
   # number of sites is the focus here, not the individual observer (anyway a random effect)
   
   
-  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, family = poisson,
-                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::tic(glue("LMM for {anal_states[, i]}"))
+  model_b <- lmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
   
   
@@ -316,9 +326,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -369,25 +381,27 @@ anal_name <- "d03_time_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_S %>% 
+data0_a <- data0_MY_d_slice_S %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_S %>% 
+data_a <- data0_MY_d_slice_S %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-  dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
+  dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
+  # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
+  # value in our response variable); so will run LMM instead
   ungroup() 
 # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
 # our aim is to see, from the people who were birding, how much time was spent?
 
 
 
-tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, family = poisson,
-                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() # 10 sec
+tictoc::tic(glue("LMM for India"))
+model_a <- lmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                data = data_a, 
+                control = lmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 6 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -395,7 +409,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "normal")
-tictoc::toc() # 814 sec (13 min)
+tictoc::toc() # 471 sec (8 min)
 
 for (i in 1:length(data0_a$MONTH)) {
   
@@ -406,16 +420,18 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_S %>% 
+data0_b <- data0_MY_d_slice_S %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -428,20 +444,20 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_slice_S %>% 
+  data_b <- data0_MY_d_slice_S %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
-    dplyr::summarise(BIRDING.TIME = sum(DURATION.MINUTES)) %>% 
+    dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
     ungroup()
   # not filling zeroes for M.YEAR-MONTH combos where observer had no list, because
   # our aim is to see, from the people who were birding, how much time was spent?
   
   
-  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, family = poisson,
-                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::tic(glue("LMM for {anal_states[, i]}"))
+  model_b <- lmer(BIRDING.TIME ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc()
   
   
@@ -471,9 +487,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -528,12 +546,12 @@ anal_name <- "d04_hotspot"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
   ungroup()
@@ -563,16 +581,18 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -585,7 +605,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
@@ -624,9 +644,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -681,12 +703,12 @@ anal_name <- "d05_protocol"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
                                            EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
@@ -716,16 +738,18 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -738,7 +762,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
@@ -780,9 +804,11 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         CI.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -835,12 +861,12 @@ anal_name <- "d06_distance"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DISTANCE = log(EFFORT.DISTANCE.KM)) %>% 
@@ -873,16 +899,17 @@ data0_a <- data0_a %>%
   # this step doesn't change even though we log-transform prior to fitting the model
   # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>%
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>%
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -895,7 +922,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -938,10 +965,12 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 
 ##### Saving analysis objects ####
@@ -995,12 +1024,12 @@ anal_name <- "d07_duration"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
   # because no other distribution family fits 
@@ -1032,16 +1061,18 @@ data0_a <- data0_a %>%
   # this step doesn't change even though we log-transform prior to fitting the model
   # since the output of prediction is on log scale either way. 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>%
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>%
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -1054,7 +1085,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
@@ -1096,9 +1127,10 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
@@ -1153,12 +1185,12 @@ anal_name <- "d08_length"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_slice_G %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_slice_G %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(LENGTH = NO.SP) %>%
   ungroup()
@@ -1187,16 +1219,18 @@ for (i in 1:length(data0_a$MONTH)) {
 
 data0_a <- data0_a %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
+
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -1209,7 +1243,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
     
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(LENGTH = NO.SP) %>%
@@ -1250,9 +1284,10 @@ for (i in 1:4) { # for each state
 
 data0_b <- data0_b %>% 
   mutate(PRED = exp(PRED.LINK),
-         CI.L = exp(PRED.LINK - SE.LINK)) %>% 
-  mutate(SE = PRED - CI.L) %>% 
-  mutate(CI.U = PRED + SE) %>% 
+         SE.L = exp(PRED.LINK - SE.LINK)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -1307,390 +1342,417 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
     -   Raw change in grid coverage per district
     -   Proportional change in grid coverage per district (only declines)
 
-```{r s_UNU, cache=TRUE, message=FALSE}
+```{r d09a_s_UNU, cache=TRUE, message=FALSE}
 
-##### Proportion of urban lists per grid cell ####
-
-temp <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% # state is meaningless cos CELL.ID
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
-  ungroup()
-
-urban_lists <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
-  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID)) %>% 
-  left_join(temp) %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>%
-  dplyr::summarise(U.LISTS = replace_na(U.LISTS, 0),
-                   PROP.U = U.LISTS/TOT.LISTS,
-                   SE = sqrt((PROP.U)*(1 - PROP.U)/TOT.LISTS)) %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.U = mean(PROP.U),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.U - 1.96*SE,
-                   CI.U = PROP.U + 1.96*SE)
-
-rm(temp)
-
-
-ggplot(urban_lists, aes(MONTH, PROP.U, colour = COVID)) + 
-  scale_x_continuous(breaks = 1:12,
-                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
-                                "Sep", "Oct", "Nov", "Dec")) + 
-  annotate("rect", xmin = 2.5, xmax = 9.5, ymin = -Inf, ymax = Inf, 
-            fill = "#E0DDE3", col = NA, alpha = 0.5) +
-  geom_point(size = 4, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.7, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette,
-                      name = "Period", 
-                      labels = c("Before", "During (2020)", "During (2021)", "After")) +
-  labs(title = "2020 lockdown restricted birders to urban areas",
-       x = "Month", y = "Proportion of urban lists per grid cell") -> s_UNU
-
-s_UNU
-
-
-ggsave("03_wrap_figs/10a_s_UNU.png", 
-       plot = s_UNU,
-       width = 13, height = 7, units = "in")
-
-
-##### Final analysis: GLMM of urban birding using weighted proportions ####
+anal_name <- "d09a_s_UNU"
 
 # https://github.com/lme4/lme4/issues/281
-# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation
-# So, need to include random effects in prediction.
+# Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation (Jensen's inequality effects)
+# So, need to include random effects in prediction, and need to predict at response scale.
 
-data_urban <- data0_MY_slice_G %>% 
-  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
-  filter(URBAN == 1) %>% 
-  dplyr::summarise(U.LISTS = n_distinct(GROUP.ID)) %>% 
-  right_join(data0_MY_slice_G) %>% 
-  group_by(M.YEAR, MONTH, COUNTY, CELL.ID) %>% 
-  dplyr::summarise(TOT.LISTS = n_distinct(GROUP.ID),
-                   U.LISTS = replace_na(min(U.LISTS), 0),
-                   PROP.U = round(U.LISTS/TOT.LISTS, 4)) %>% 
+##### Final analysis: national GLMMs ####
+
+data0_a <- data0_MY_d_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
+
+data_a <- data0_MY_d_slice_G %>% 
+  distinct(M.YEAR, MONTH, COUNTY, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
   ungroup()
+
+county_cell <- data_a %>% distinct(COUNTY, CELL.ID)
+
+tictoc::tic(glue("GLMM for India"))
+model_a <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 924 sec (15 min)
+
+
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_a, 
+                             new_data = data0_a, 
+                             new_data_string = "data0_a", 
+                             mode = "extra")
+tictoc::toc() # 32920 sec (9.14 h)
+
+
+for (i in 1:length(data0_a$MONTH)) {
   
-counties <- data_urban %>% distinct(COUNTY, CELL.ID)
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
 
-# no MONTH main effect unlike in birds model
-tictoc::tic("UNU GLMM using weighted proportions")
-model_urban <- glmer(PROP.U ~ M.YEAR + M.YEAR:MONTH + (1|COUNTY/CELL.ID), 
-                      weights = TOT.LISTS,
-                      data = data_urban, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) # 119 sec
-tictoc::toc()
+}
 
-# dataframe with empty column to populate with looped values
-# total rows: product of distinct values of predictors
-urban1 <- data_urban %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
-  filter(!is.na(COUNTY)) %>% 
-  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
-                               type = "response")) %>% 
-  group_by(M.YEAR, MONTH) %>% 
-  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
-            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
-  summarise(PROP.U.PRED = mean(PROP.U.PRED),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.U.PRED - 1.96*SE,
-            CI.U = PROP.U.PRED + 1.96*SE)
-
-urban2 <- data_urban %>% 
-  tidyr::expand(nesting(MONTH, M.YEAR, COUNTY, CELL.ID)) %>% 
-  filter(!is.na(COUNTY)) %>% 
-  mutate(PROP.U.PRED = predict(model_urban, data.frame(MONTH, M.YEAR, COUNTY, CELL.ID),
-                               type = "response")) %>% 
-  filter(MONTH %in% 4:5) %>% 
-  group_by(M.YEAR, MONTH) %>% 
-  summarise(SE = sd(PROP.U.PRED)/sqrt(n()),
-            PROP.U.PRED = mean(PROP.U.PRED)) %>% 
-  summarise(PROP.U.PRED = mean(PROP.U.PRED),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.U.PRED - 1.96*SE,
-            CI.U = PROP.U.PRED + 1.96*SE)
+data0_a <- data0_a %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
+  left_join(timeline)
 
 
-ggplot(urban2, aes(M.YEAR, PROP.U.PRED)) +
-    labs(title = "For the months of April and May",
-         x = "Migratory year", y = "Predicted urban birding proportion") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+##### Final analysis: national GLMMs (without nested random effect) ####
 
-ggplot(urban1, aes(M.YEAR, PROP.U.PRED)) +
-    labs(title = "For all months",
-         x = "Migratory year", y = "Predicted urban birding proportion") +
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))
+data0_b <- data0_MY_d_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR, CELL.ID)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
 
+data_b <- data0_MY_d_slice_G %>% 
+  distinct(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
+  ungroup()
+
+tictoc::tic(glue("GLMM for India"))
+model_b <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_b, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 303 sec (5 min)
+
+
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_b, 
+                             new_data = data0_b, 
+                             new_data_string = "data0_b", 
+                             mode = "extra",
+                             re_form = ~ (1|CELL.ID),
+                             pred_type = "response")
+tictoc::toc() # 9028 sec (150 min)
+
+
+for (i in 1:length(data0_b$MONTH)) {
+  
+  data0_b$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_b$SE.LINK[i] <- sd(na.omit(prediction[,i]))
+
+}
+
+data0_b <- data0_b %>% 
+  mutate(PRED = PRED.LINK,
+         SE = SE.LINK) %>% 
+  mutate(CI.L = PRED - 1.96*SE,
+         CI.U = PRED + 1.96*SE) %>% 
+  left_join(timeline)
+
+
+##### Saving analysis objects ####
+
+save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+##### Graphs ####
+
+plot_a <- ggplot(data0_a, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models",
+       x = "Month", y = "Predicted urban birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+# plot_b <- ggplot(data0_b, 
+#                  aes(MONTH, PRED, colour = M.YEAR)) +
+#   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+#   labs(title = "State-level models",
+#        x = "Month", y = "Predicted list length") +
+#   geom_point(size = 3, position = position_dodge(0.5)) +
+#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+#                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+plot_b <- ggplot(data0_b, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models (without nested random effects)",
+       x = "Month", y = "Predicted urban birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 11, height = 6, units = "in")
 
 ```
 
-```{r s_cover, cache=TRUE, message=FALSE}
+```{r d09b_s_cover, cache=TRUE, message=FALSE}
 
-##### Proportion of total grid cells covered ####
+anal_name <- "d09b_s_cover"
 
-cover_sw <- data0_MY_slice_G %>% 
-  group_by(STATE) %>% 
-  mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE, CELL.ID) %>% 
-  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
-                   N.LISTS = n_distinct(GROUP.ID)) %>% 
-  filter(N.LISTS >= 10) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
-                   NO.CELLS = n_distinct(CELL.ID),
-                   PROP.CELLS = NO.CELLS/TOT.CELLS,
-                   SE = sqrt((PROP.CELLS)*(1 - PROP.CELLS)/TOT.CELLS),
-                   CI.L = PROP.CELLS - 1.96*SE,
-                   CI.U = PROP.CELLS + 1.96*SE)
+##### Final analysis: national GLMMs ####
 
-cover_nw <- data0_MY_slice_G %>% 
-  ungroup() %>% 
-  mutate(TOT.CELLS = n_distinct(CELL.ID)) %>% 
-  group_by(COVID, M.YEAR, MONTH, CELL.ID) %>% 
-  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
-                   N.LISTS = n_distinct(GROUP.ID)) %>% 
-  filter(N.LISTS >= 10) %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(TOT.CELLS = min(TOT.CELLS),
-                   NO.CELLS = n_distinct(CELL.ID),
-                   PROP.CELLS = NO.CELLS/TOT.CELLS,
-                   SE = sqrt((PROP.CELLS)*(1 - PROP.CELLS)/TOT.CELLS),
-                   CI.L = PROP.CELLS - 1.96*SE,
-                   CI.U = PROP.CELLS + 1.96*SE)
+data0_a <- data0_MY_d_slice_G %>% 
+  tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA)
+
+data_a <- data0_MY_d_slice_G %>% 
+  group_by(M.YEAR, MONTH, CELL.ID) %>% 
+  dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
+  # threshold to consider cell "covered"
+  group_by(M.YEAR, MONTH) %>% 
+  complete(CELL.ID = gridmapg1_IN$CELL.ID, fill = list(COVERED = 0)) %>% 
+  ungroup()
+
+tictoc::tic(glue("GLMM for India"))
+model_a <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                 data = data_a, family = binomial(link = "cloglog"),
+                 nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+tictoc::toc() # 114 sec
 
 
-((ggplot(cover_nw, aes(MONTH, PROP.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Month", y = "Birded proportion")) /
-((ggplot(filter(cover_sw, STATE == "Kerala"), 
-        aes(MONTH, PROP.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "Birded proportion")) |
-(ggplot(filter(cover_sw, STATE == "Karnataka"), 
-        aes(MONTH, PROP.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "Birded proportion"))) /
-((ggplot(filter(cover_sw, STATE == "Maharashtra"), 
-        aes(MONTH, PROP.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "Birded proportion")) |
-(ggplot(filter(cover_sw, STATE == "Assam"), 
-        aes(MONTH, PROP.CELLS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Month", y = "Birded proportion")))) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in spatial coverage of monthly birding with the pandemic",
-         subtitle = "Proportion of total grid cells (24kmx24km) having birding activity") -> s_cover
-
-s_cover
-
-ggsave("03_wrap_figs/11a_s_cover.png", 
-       plot = s_cover,
-       width = 9, height = 9, units = "in")
+tictoc::tic(glue("Bootstrapped predictions for India"))
+prediction <- split_par_boot(model = model_a, 
+                             new_data = data0_a, 
+                             new_data_string = "data0_a")
+tictoc::toc() # 2494 sec (41 min)
 
 
-rm(cover_sw, cover_nw, s_cover)
+for (i in 1:length(data0_a$MONTH)) {
+  
+  data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
+  data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
 
+}
+
+data0_a <- data0_a %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
+  left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0 <- data0_MY_slice_G %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
-  mutate(PRED = NA,
+  mutate(PRED.LINK = NA,
+         SE.LINK = NA,
          STATE = factor(STATE, levels = anal_states[1,])) %>% 
   arrange(STATE)
 
-count <- 0
+
 for (i in 1:4) { # for each state
   
-  data_a <- data0_MY_slice_G %>% 
+  data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
+  gridmapg1_ST_temp <- gridmapg1_ST %>% filter(STATE == anal_states[, i])
+    
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    select(M.YEAR, MONTH, CELL.ID, GROUP.ID) %>% 
-    tidyr::complete(M.YEAR, MONTH, CELL.ID) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
-    dplyr::summarise(COVERED = if_else(n_distinct(GROUP.ID) >= 10, 1, 0))
+    dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
+    # threshold to consider cell "covered"
+    group_by(M.YEAR, MONTH) %>% 
+    complete(CELL.ID = gridmapg1_ST_temp$CELL.ID, fill = list(COVERED = 0)) %>% 
+    ungroup()
   
-  tictoc::tic(glue::glue("GLMM for {anal_states[, i]}"))
-  model_a <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
-                   data = data_a, family = binomial(link = "cloglog"),
-                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))  
-  tictoc::toc()
+  tictoc::tic(glue("GLMM for {anal_states[, i]}"))
+  model_b <- glmer(COVERED ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+                   data = data_b, family = binomial(link = "cloglog"),
+                   nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
+  tictoc::toc() #
+
+
+  tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
+  prediction <- boot_conf_GLMM(model_b,
+                               new_data = data0_b2,
+                               new_data_string = "data0_b2",
+                               nsim = 1000)
+  tictoc::toc() #
   
-  for (j in 1:n_distinct(data0$MONTH)) {
-    for (k in 1:n_distinct(data0$M.YEAR)) {
-      count <- count + 1
-      
-      data0$PRED[count] = predict(model_a,
-                                  data.frame(MONTH = data0$MONTH[count],
-                                             M.YEAR = data0$M.YEAR[count]),
-                                  re.form = NA, type = "response")
-    }
+  
+  for (j in 1:length(data0_b2$MONTH)) {
+    
+    data0_b2$PRED.LINK[j] <- median(na.omit(prediction[,j]))
+    data0_b2$SE.LINK[j] <- sd(na.omit(prediction[,j]))
+    
   }
+  
+  data0_b <- data0_b %>% 
+    left_join(data0_b2, by = c("STATE", "MONTH", "M.YEAR")) %>% 
+    transmute(MONTH = MONTH,
+              M.YEAR = M.YEAR,
+              STATE = STATE,
+              PRED.LINK = ifelse(!is.na(PRED.LINK.y), PRED.LINK.y, PRED.LINK.x),
+              SE.LINK = ifelse(!is.na(SE.LINK.y), SE.LINK.y, SE.LINK.x))
+  
 } 
 
-data0 <- data0 %>% 
+data0_b <- data0_b %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         # to transform lower bound of SE (not CI.L! think "mean +- SE")
+         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+  mutate(SE = PRED - SE.L) %>% 
+  mutate(CI.U = PRED + 1.96*SE,
+         CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
 
-(ggplot(filter(data0, STATE == anal_states$a), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$a,
-       x = "Month", y = "Predicted grid cell coverage") +
+##### Saving analysis objects ####
+
+save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+##### Graphs ####
+
+plot_a <- ggplot(data0_a, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  labs(title = "National-level models",
+       x = "Month", y = "Predicted proportion of grid cells covered") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+plot_b <- ggplot(data0_b, 
+                 aes(MONTH, PRED, colour = M.YEAR)) +
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  labs(title = "State-level models",
+       x = "Month", y = "Predicted proportion of grid cells covered") +
   geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$b), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$b,
-       x = "Month", y = "Predicted grid cell coverage") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$c), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$c,
-       x = "Month", y = "Predicted grid cell coverage") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period")) /
-(ggplot(filter(data0, STATE == anal_states$d), 
-       aes(MONTH, PRED, colour = COVID)) +
-  labs(title = anal_states$d,
-       x = "Month", y = "Predicted grid cell coverage") +
-  geom_point(size = 3, position = position_dodge(0.5)) +
-  # geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-  #               size = 1.5, width = 0.2, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Period"))
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1.5, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
 
 ```
 
 For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns. For grid coverage, only those districts that have a minimum of 5 grid cells will be considered.
 
-```{r s_spread, cache=TRUE, message=FALSE}
+```{r d09c_s_spread, cache=TRUE, message=FALSE}
 
-load("data/maps_gridmapg1_IN.RData") # all cells within India
+anal_name <- "d09c_s_spread"
+
+##### Preparing data ####
 
 gridmapg1_IN <- gridmapg1_IN %>% 
   # setting CRS for join in next step
   st_set_crs(value = st_crs(districtmap))
 
 # creating object linking grid cells to districts
-grid_dist <- districtmap %>% 
+grid_dist_base0 <- districtmap %>% 
   st_as_sf() %>% 
   dplyr::select(dtname) %>% 
   rename(DISTRICT.NAME = dtname) %>% 
-  st_join(gridmapg1_IN)
+# some districts have two different rows (two different polygons) so need to combine
+# them into one polygon
+  group_by(DISTRICT.NAME) %>% 
+  summarise() # dplyr-sf magic :) 
+# https://gis.stackexchange.com/questions/421651/merging-two-multipolygon-shapefiles-and-removing-one-of-overlapping-polygons-usi
+
+grid_dist_base <- grid_dist_base0 %>% st_join(gridmapg1_IN)
 # losing some districts and grid cells, but doesn't matter. 
 # Will explore patterns with existing.
 
-# Ensuring that a grid cell is only linked with one district
-grid_dist_links <- grid_dist %>% 
+# for number of lists where no threshold for district consideration
+set.seed(31)
+grid_dist_links1 <- grid_dist_base %>% 
   st_drop_geometry() %>% 
+  # Ensuring that a grid cell is only linked with one district
   group_by(CELL.ID) %>% 
   slice_sample() %>% 
   group_by(DISTRICT.NAME) %>% 
   mutate(NO.CELLS.TOT = n_distinct(CELL.ID)) %>% 
   ungroup()
 
-# # distribution of number of cells covered, across districts
-# x <- grid_dist_links %>% 
-#   group_by(DISTRICT.NAME) %>% 
-#   summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
-#   group_by(NO.CELLS) %>% 
-#   summarise(NO.DISTRICTS = n())
+grid_dist_links <- grid_dist_links1 %>% 
+  # considering only districts with at least 5 grid cells for grid coverage
+  filter(NO.CELLS.TOT >= 5)
 
-grid_dist <- grid_dist %>% 
-  right_join(grid_dist_links)
+grid_dist1 <- grid_dist_base %>% right_join(grid_dist_links1)
+grid_dist <- grid_dist_base %>% right_join(grid_dist_links)
 
 
-temp0 <- data0_MY_slice_G %>% 
-  # selecting only nine months (AFT has only nine)
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  # combining the two DUR periods
-  mutate(COVID = as.character(COVID)) %>% 
-  mutate(COVID = case_when(COVID %in% c("DUR_20","DUR_21") ~ "DUR",
-                           TRUE ~ COVID)) %>% 
+temp01 <- data0_MY_d_slice_G %>% 
+  # combining the two DUR years
+  mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
+                           M.YEAR %in% 2019:2020 ~ "DUR",
+                           M.YEAR == 2021 ~ "AFT")) %>% 
   mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
-  # although data has fewer cells than grid_dist, using inner so only those cells with 
-  # established district links will be considered (removes some cells and districts)
+  dplyr::select(-DISTRICT) %>% # removing to avoid confusion 
+  inner_join(grid_dist1) 
+
+temp0 <- data0_MY_d_slice_G %>% 
+  # combining the two DUR years
+  mutate(COVID = case_when(M.YEAR == 2018 ~ "BEF",
+                           M.YEAR %in% 2019:2020 ~ "DUR",
+                           M.YEAR == 2021 ~ "AFT")) %>% 
+  mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT"))) %>% 
   dplyr::select(-DISTRICT) %>% # removing to avoid confusion
   inner_join(grid_dist)
 
-# considering only districts with at least 5 grid cells for grid coverage
+dist_cons1 <- temp01 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRICT.NAME)
+dist_cons <- temp0 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRICT.NAME)
+
+
 temp1 <- temp0 %>% 
-  filter(NO.CELLS.TOT >= 5) %>% 
-  # summarising metrics of interest
+  # average gridcov across two DUR years
+  group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(NO.CELLS = n_distinct(CELL.ID),
+            GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT),
+            COVID = COVID) %>% 
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
+  summarise(GRID.COV = mean(GRID.COV)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
-           fill = list(NO.CELLS = 0)) %>% 
-  mutate(GRID.COV = 100*NO.CELLS/NO.CELLS.TOT) %>% 
-  # moving COVID to columns
-  dplyr::select(-NO.CELLS)
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons$DISTRICT.NAME,
+           fill = list(GRID.COV = 0)) %>% 
+  dplyr::select(-NO.CELLS.TOT) %>% 
+  left_join(dist_cons)
 
 # for grid coverage per district with threshold
 temp2 <- temp0 %>% 
-  filter(NO.CELLS.TOT >= 5) %>% 
-  # summarising metrics of interest
-  group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
-  summarise(CELL.LISTS = n_distinct(GROUP.ID)) %>% 
-  # threshold of 5 lists in a grid cell for the cell to be considered "covered"
+  # average gridcov across two DUR years
+  group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
+  summarise(CELL.LISTS = n_distinct(GROUP.ID),
+            COVID = COVID) %>% 
+  # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
   filter(CELL.LISTS >= 5) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID)) %>% 
-  ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
-           fill = list(NO.CELLS = 0)) %>% 
-  mutate(GRID.COV.T = 100*NO.CELLS/NO.CELLS.TOT) %>% 
-  # moving COVID to columns
-  dplyr::select(-NO.CELLS)
-
-
-data_spread0 <- temp0 %>% 
-  # summarising metrics of interest
+  summarise(NO.CELLS = n_distinct(CELL.ID),
+            GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT),
+            COVID = COVID) %>% 
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
+  summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
+  ungroup() %>% 
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons$DISTRICT.NAME,
+           fill = list(GRID.COV.T = 0)) %>% 
+  dplyr::select(-NO.CELLS.TOT) %>% 
+  left_join(dist_cons)
+
+# for number of lists per district
+temp3 <- temp01 %>% 
+  # summarising metrics of interest (more districts for no.lists than for coverage)
+  group_by(COVID, DISTRICT.NAME) %>% 
   summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup() %>% 
-  complete(COVID, nesting(DISTRICT.NAME, NO.CELLS.TOT),
+  # only considering districts covered at least once in the four years
+  complete(COVID, 
+           DISTRICT.NAME = dist_cons1$DISTRICT.NAME,
            fill = list(NO.LISTS = 0)) %>% 
+  # since DUR is two years
+  mutate(NO.LISTS = ifelse(COVID == "DUR", floor(NO.LISTS/2), NO.LISTS)) %>% 
+  left_join(dist_cons1)
+
+data_spread0 <- temp3 %>% 
   left_join(temp1) %>% 
   left_join(temp2) %>% 
   pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
@@ -1700,13 +1762,16 @@ data_spread0 <- temp0 %>%
   filter(!(is.na(VALUE))) %>% 
   pivot_wider(names_from = "COVID", values_from = "VALUE") %>% 
   # calculating change (produces NA for x == 0 & y == 0 which need to be removed)
+  # number of lists proportional change also has threshold of 10 lists (in function)
   mutate(RAW.CHANGE1 = s_spread_change(BEF, DUR),
          RAW.CHANGE2 = s_spread_change(DUR, AFT),
          PROP.CHANGE1a = s_spread_propchange(METRIC, BEF, DUR),
          PROP.CHANGE1b = s_spread_propchange(METRIC, DUR, AFT),
          PROP.CHANGE2a = s_spread_propchange(METRIC, DUR, BEF),
          PROP.CHANGE2b = s_spread_propchange(METRIC, AFT, DUR)) %>% 
-  left_join(grid_dist)
+  # for district geometry
+  left_join(grid_dist_base0)
+
 
 transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
                                T.LABEL = c("Before to During", "During to After",
@@ -1752,7 +1817,7 @@ s_spread_map <- ggplot(data_spread1) +
 # not considered can be either because both time periods are zero, or if generally no 
 # district-grid cell link present
 
-ggsave("03_wrap_figs/10c_s_spread_map.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_a.png"), 
        plot = s_spread_map,
        dpi = 300, width = 14, height = 8, units = "in")
 
@@ -1760,10 +1825,6 @@ ggsave("03_wrap_figs/10c_s_spread_map.png",
 
 # 2. with SEs
 
-set.seed(23) # for bootstrap
-
-# not directly using data_spread0 object because backtransforming after bootstrapping mean 
-# and SE is not wise
 data_spread2 <- data_spread1 %>% 
   # removing NA cells (when both periods of the transition are zero)
   filter(!is.na(VALUE)) %>% 
@@ -1783,7 +1844,7 @@ s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) +
   labs(title = "Net change in birding effort (no. of lists) across districts\nin transition periods",
        x = "Transition", y = "Difference in no. of lists") 
 
-ggsave("03_wrap_figs/10c_s_spread_rawchange.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_b.png"), 
        plot = s_spread_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -1862,7 +1923,7 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
   plot_annotation(title = "Proportional declines in no. of lists per district in transition periods (only when N1 >= 10)",
                   subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_mapprop.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_c.png"), 
        plot = s_spread_mapprop,
        dpi = 300, width = 14, height = 15, units = "in")
 
@@ -1895,9 +1956,9 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
                fill = "#ACACAC", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
   facet_grid(METRIC.LABEL ~ T.LABEL, switch = "y") +
-  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu"),
-                    breaks = c(-40, -25, -10, 0, 10, 25, 40),
-                    values = scales::rescale(c(-100, -40, -25, -10, 0, 10, 25, 40, 100)), 
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+                    breaks = c(-40, -25, -10, -1, 1, 10, 25, 40),
+                    values = scales::rescale(c(-100, -40, -25, -10, -1, 1, 10, 25, 40, 100)), 
                     limits = c(-100, 100),
                     na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
@@ -1905,14 +1966,12 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
        title = "Change in grid coverage per district in transition periods",
        subtitle = "Grey: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_map.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_a.png"), 
        plot = s_spread_gridcov_map,
        dpi = 300, width = 14, height = 14, units = "in")
 
 
 # 2. with SEs
-
-set.seed(23) # for bootstrap
 
 data_spread5 <- data_spread4 %>% 
   # removing NA cells (when both periods of the transition are zero)
@@ -1934,7 +1993,7 @@ s_spread_gridcov_rawchange <- ggplot(data_spread5, aes(x = T.LABEL, y = VALUE)) 
   labs(title = "Net change in grid coverage across districts\nin transition periods",
        x = "Transition", y = "Difference in grid coverage") 
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_rawchange.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_b.png"), 
        plot = s_spread_gridcov_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -1986,7 +2045,7 @@ s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_a.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c1.png"), 
        plot = s_spread_gridcov_mapprop_a,
        dpi = 300, width = 14, height = 14, units = "in")
 
@@ -2009,16 +2068,19 @@ s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district (with threshold) in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave("03_wrap_figs/10c_s_spread_gridcov_mapprop_b.png", 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"), 
        plot = s_spread_gridcov_mapprop_b,
        dpi = 300, width = 14, height = 14, units = "in")
 
+# all these values are zero in one of the two transition periods.
+
 ```
 
--   In terms of pure no. of lists, birding effort overall decreased *after the pandemic*. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
--   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that aside from a few districts in MP, UP and Bihar area there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual idiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT.
--   Overall grid coverage across all districts did not increase during the pandemic (either stayed the same or decreased slightly, judging from CI), while it did so after. As a result, the changes in grid coverage for BEF-DUR and DUR-AFT are notably different. However, when grid coverage is defined with a threshold of 5 lists, the patterns are much more similar: looks like grid coverage during the pandemic was very similar to that before, while there was a slight (not major) increase in overall coverage after the pandemic. Looking into this deeper, it is clear that major worrisome changes (\>50% change in coverage) are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
--   Like with no. of lists, in some central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are a similar number of districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which might be suggesting that some of this is due to annual variability.
+-   In terms of pure no. of lists, overall birding effort was not notably affected by the pandemic. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
+-   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual idiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT. The presence of many more yellow districts in the reverse direction than in the forward direction points to the general increase in birding efforts.
+-   Overall grid coverage across all districts increased during the pandemic, while it either increased (without threshold) or stayed the same (with threshold) after. Looking into this deeper, it is clear that major worrisome changes are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
+-   Like with no. of lists, in some East-Central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are more districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which suggests that there is general growth.
+-   With the threshold for coverage, the only declines that remain are the ones where one of the periods has zero coverage. Again, there is very little overlap of these districts, and there are no major spatial clusters. It also looks like several districts were covered during the pandemic that weren't covered before or after!
 
 ### Temporal spread
 
@@ -2026,358 +2088,163 @@ Not "per observer", as this metric from data POV.
 
 Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
 
-Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect).
+Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect; response has more than 2 values).
 
-```{r t_spread_1, cache=TRUE, message=FALSE}
+```{r d10a_t_dow, cache=TRUE, message=FALSE}
+
+anal_name <- "d10a_t_dow"
 
 ##### Change in DoW spread ####
 
-t_dow_sw <- data0_MY_slice_G %>% 
-  filter(MONTH %in% month_compar$MONTH) %>% 
+met_week <- function(dates) {
+  require(lubridate)
+  
+  normalyear <- c((0:363 %/% 7 + 1), 52)
+  leapyear   <- c(normalyear[1:59], 9, normalyear[60:365])
+  yearday    <- yday(dates)
+  
+  return(ifelse(leap_year(dates), leapyear[yearday], normalyear[yearday])) 
+}
+
+
+data_a <- data0_MY_d_slice_G %>% 
+  mutate(WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
   mutate(DAY.W = wday(OBSERVATION.DATE, 
                       # start week from Monday
-                      week_start = getOption("lubridate.week.start", 1))) %>% 
-  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
-  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, DAY.W, STATE, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = min(NO.LISTS),
+                      week_start = getOption("lubridate.week.start", 1)),
+         DAY.W.LABEL = wday(OBSERVATION.DATE, 
+                            week_start = getOption("lubridate.week.start", 1),
+                            label = T)) %>% 
+  group_by(M.YEAR, WEEK.Y) %>% 
+  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(M.YEAR, WEEK.Y, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
                    DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
-                   PROP.LISTS = DAY.LISTS/NO.LISTS,
-                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
-  group_by(COVID, DAY.W, STATE) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.LISTS - 1.96*SE,
-                   CI.U = PROP.LISTS + 1.96*SE)
+                   PROP.LISTS = DAY.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
-t_dow_nw <- t_dow_sw %>% 
-  group_by(COVID, DAY.W) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.LISTS - 1.96*SE,
-            CI.U = PROP.LISTS + 1.96*SE)
-
-(ggplot(t_dow_nw, 
-       aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Day", y = "Proportion of lists")) /
-((ggplot(filter(t_dow_sw, STATE == "Kerala"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Day", y = "Proportion of lists")) |
-ggplot(filter(t_dow_sw, STATE == "Karnataka"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Day", y = "Proportion of lists")) /
-((ggplot(filter(t_dow_sw, STATE == "Maharashtra"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Day", y = "Proportion of lists")) |
-ggplot(filter(t_dow_sw, STATE == "Assam"), 
-         aes(as.factor(DAY.W), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Day", y = "Proportion of lists")) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
-                subtitle = "Y-axis shows average proportion of checklists from respective days of the week on X-axis") -> t_spread_dow
-
-t_spread_dow
-
-ggsave("03_wrap_figs/13_t_spread_dow.png", 
-       plot = t_spread_dow,
-       width = 9, height = 9, units = "in")
+data_b <- data0_MY_d_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(STATE = factor(STATE, levels = anal_states[1,]),
+         WEEK.Y = met_week(OBSERVATION.DATE)) %>% 
+  mutate(DAY.W = wday(OBSERVATION.DATE, 
+                      # start week from Monday
+                      week_start = getOption("lubridate.week.start", 1)),
+         DAY.W.LABEL = wday(OBSERVATION.DATE, 
+                            week_start = getOption("lubridate.week.start", 1),
+                            label = T)) %>% 
+  group_by(M.YEAR, STATE, WEEK.Y) %>% 
+  mutate(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
+  group_by(M.YEAR, STATE, WEEK.Y, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   DAY.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = DAY.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, STATE, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, STATE, DAY.W, DAY.W.LABEL) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
 
-rm(t_dow_sw, t_dow_nw, t_spread_dow)
+plot_a <- ggplot(data_a, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
+  geom_point(size = 3, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.25, width = 0.4, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  labs(title = "National level",
+       x = "Day of week", y = "Proportion of lists")
 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 11, height = 6, units = "in")
+
+
+plot_b <- ggplot(data_b, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  geom_point(size = 3.5, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.5, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  labs(title = "State-level",
+       x = "Day of week", y = "Proportion of lists")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 22, height = 13, units = "in")
 
 ```
 
--   At the national level, birding on Saturdays has decreased, and been balanced by more birding on Wednesdays, while Sunday birding seems to have also increased.\
--   In Kerala, birding seems to have increased during Thursday--Saturday and decreased on Sunday.\
--   In Karnataka there hasn't been much of a change with the pandemic, and there is still a heavy weekend bias in birding activity (Saturday and Sunday levels being similar).\
--   In Gujarat and Maharashtra, Sundays see more birding than Saturdays, but there has been no major impact of the pandemic.\
--   This might mean that the national level patterns might be driven by changes in states with generally low birding activity.
+```{r d10b_t_tod, cache=TRUE, message=FALSE}
 
-```{r t_spread_2, cache=TRUE, message=FALSE}
+anal_name <- "d10b_t_tod"
 
 ##### Change in ToD spread ####
 
-t_tod_sw <- data0_MY_slice_G %>% 
-  filter(MONTH %in% month_compar$MONTH) %>% 
-  group_by(COVID, STATE, M.YEAR, MONTH) %>% 
-  mutate(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  group_by(COVID, STATE, HOUR, M.YEAR, MONTH) %>% 
-  dplyr::summarise(NO.LISTS = min(NO.LISTS),
-                   TIME.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
-                   PROP.LISTS = TIME.LISTS/NO.LISTS,
-                   SE = sqrt((PROP.LISTS)*(1 - PROP.LISTS)/NO.LISTS)) %>% 
-  group_by(COVID, STATE, HOUR) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-                   SE = sqrt(sum((SE)^2))/n(),
-                   CI.L = PROP.LISTS - 1.96*SE,
-                   CI.U = PROP.LISTS + 1.96*SE)
+data_a <- data0_MY_d_slice_G %>% 
+  mutate(DAY.Y = yday(OBSERVATION.DATE)) %>% 
+  group_by(M.YEAR, DAY.Y) %>% 
+  mutate(TOT.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER))) %>%
+  group_by(M.YEAR, DAY.Y, HOUR) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   HOUR.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = HOUR.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR) %>% 
+  complete(HOUR = 0:23, fill = list(PROP.LISTS = 0)) %>% 
+  group_by(M.YEAR, HOUR) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, HOUR) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
-t_tod_nw <- t_tod_sw %>%
-  group_by(COVID, HOUR) %>% 
-  dplyr::summarise(PROP.LISTS = mean(PROP.LISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.LISTS - 1.96*SE,
-            CI.U = PROP.LISTS + 1.96*SE)
-
-
-(ggplot(t_tod_nw, 
-       aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Time of day (hours)", y = "Proportion of lists")) /
-((ggplot(filter(t_tod_sw, STATE == "Kerala"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Time of day (hours)", y = "Proportion of lists")) |
-ggplot(filter(t_tod_sw, STATE == "Karnataka"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Time of day (hours)", y = "Proportion of lists")) /
-((ggplot(filter(t_tod_sw, STATE == "Maharashtra"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Time of day (hours)", y = "Proportion of lists")) |
-ggplot(filter(t_tod_sw, STATE == "Assam"), 
-         aes(as.factor(HOUR), PROP.LISTS, colour = COVID)) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Time of day (hours)", y = "Proportion of lists")) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in temporal spread of checklists with the pandemic (September to March)",
-                subtitle = "Y-axis shows average proportion of checklists from respective times of the day on X-axis") -> t_spread_tod
-
-t_spread_tod
-
-ggsave("03_wrap_figs/14_t_spread_tod.png", 
-       plot = t_spread_tod,
-       width = 13, height = 9, units = "in")
+data_b <- data0_MY_d_slice_G %>% 
+  filter(STATE %in% anal_states[1,]) %>% 
+  mutate(STATE = factor(STATE, levels = anal_states[1,]),
+         DAY.Y = yday(OBSERVATION.DATE)) %>% 
+  group_by(M.YEAR, STATE, DAY.Y) %>% 
+  mutate(TOT.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER))) %>%
+  group_by(M.YEAR, STATE, DAY.Y, HOUR) %>% 
+  dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
+                   HOUR.LISTS = replace_na(n_distinct(SAMPLING.EVENT.IDENTIFIER)),
+                   PROP.LISTS = HOUR.LISTS/TOT.LISTS) %>% 
+  group_by(M.YEAR, STATE) %>% 
+  complete(HOUR = 0:23, fill = list(PROP.LISTS = 0)) %>% 
+  group_by(M.YEAR, STATE, HOUR) %>% 
+  dplyr::summarise(PROP.LISTS = boot_conf(PROP.LISTS)) %>% 
+  group_by(M.YEAR, STATE, HOUR) %>% 
+  dplyr::summarise(CI.L = stats::quantile(PROP.LISTS, 0.025), # Obtain the CIs
+                   CI.U = stats::quantile(PROP.LISTS, 0.975),
+                   PROP.LISTS = median(PROP.LISTS)) 
 
 
-rm(t_tod_nw, t_tod_sw, t_spread_tod)
+plot_a <- ggplot(data_a, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
+  geom_point(size = 2, position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.2, width = 0.6, position = position_dodge(0.8)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  scale_x_continuous(limits = c(-1, 24), breaks = 0:23) +
+  labs(title = "National level",
+       x = "Time of day (hours)", y = "Proportion of lists")
 
+ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+       dpi = 300, width = 16, height = 8, units = "in")
+
+
+plot_b <- ggplot(data_b, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
+  facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
+  geom_point(size = 2.5, position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                size = 1.4, width = 0.6, position = position_dodge(0.8)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+  scale_x_continuous(limits = c(-1, 24), breaks = 0:23) +
+  labs(title = "State-level",
+       x = "Time of day (hours)", y = "Proportion of lists")
+
+ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+       dpi = 300, width = 32, height = 17, units = "in")
 
 ```
-
--   At the national level, there are two peaks in the day that see highest birding activity: early morning and evening.\
--   In 2020, there was a sharp rise in birding activity at 17:00, and dip at 16:00.\
--   In 2021, birding increased at 06:00 and 15:00, and decreased at 16:00.\
--   The increase in evening birding was prominent in Karnataka, Gujarat and Maharashtra.
-
-### Media
-
-Not "per observer", as this metric from data POV.
-
-```{r media, cache=TRUE, message=FALSE}
-
-temp1 <- data0_MY_slice_G %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup() 
-
-temp2 <- data0_MY_slice_G %>% 
-  filter(HAS.MEDIA == 1) %>% 
-  group_by(COVID, M.YEAR, MONTH, STATE) %>% 
-  dplyr::summarise(NO.MLISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>%
-  ungroup()
-
-media_sw <- temp1 %>% 
-  left_join(temp2) %>% 
-  mutate(NO.MLISTS = replace_na(NO.MLISTS, 0),
-         PROP.MLISTS = NO.MLISTS/NO.LISTS,
-         SE = sqrt((PROP.MLISTS)*(1 - PROP.MLISTS)/NO.LISTS),
-         CI.L = PROP.MLISTS - 1.96*SE,
-         CI.U = PROP.MLISTS + 1.96*SE) 
-
-rm(list = c("temp1","temp2"))
-
-media_nw <- media_sw %>% 
-  group_by(COVID, M.YEAR, MONTH) %>% 
-  dplyr::summarise(PROP.MLISTS = mean(PROP.MLISTS),
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PROP.MLISTS - 1.96*SE,
-            CI.U = PROP.MLISTS + 1.96*SE) 
-
-
-(ggplot(media_nw, aes(MONTH, PROP.MLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Month", y = "Proportion of media lists")) /
-((ggplot(filter(media_sw, STATE == "Kerala"), 
-         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "Proportion of media lists")) |
-(ggplot(filter(media_sw, STATE == "Karnataka"), 
-         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "Proportion of media lists"))) /
-((ggplot(filter(media_sw, STATE == "Maharashtra"), 
-         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "Proportion of media lists")) |
-(ggplot(filter(media_sw, STATE == "Assam"), 
-         aes(MONTH, PROP.MLISTS, colour = COVID)) + 
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Month", y = "Proportion of media lists"))) +
-plot_layout(guides= "collect") +
-plot_annotation(title = "Change in proportion of media lists with the pandemic",
-                subtitle = "Y-axis shows proportion of checklists that contain uploaded media") -> media
-
-media
-
-ggsave("03_wrap_figs/15_media.png", plot = media,
-       width = 9, height = 9, units = "in")
-
-rm(list = c("media_nw","media_sw","media"))
-
-```
-
--   There is no major difference in proportion of media lists before, during and after the pandemic.
-
-### New birders
-
-```{r new, cache=TRUE, message=FALSE}
-
-load("data/new_obsr_data.RData")
-
-# not new to the state, but new overall, just grouped by state of first eBirding
-new_obsr_sw <- new_obsr_data %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH, STATE) %>% 
-  dplyr::summarise(NEW = n_distinct(OBSERVER.ID)) %>% 
-  ungroup()
-
-set.seed(765)
-new_obsr_nw <- new_obsr_sw %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  dplyr::summarise(NEW = boot_conf(x = NEW)) %>% 
-  group_by(COVID, LE.YEAR, LE.MONTH) %>% 
-  dplyr::summarise(SE = sd(NEW),
-                   NEW = mean(NEW),
-                   CI.L = NEW - 1.96*SE,
-                   CI.U = NEW + 1.96*SE)
-
-
-(ggplot(new_obsr_nw, aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_y_log10() +
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.25, width = 0.4, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "National level",
-         x = "Month", y = "New eBirders")) /
-((ggplot(filter(new_obsr_sw, STATE == "Kerala"), 
-         aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_y_log10() +
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Kerala",
-         x = "Month", y = "New eBirders")) |
-(ggplot(filter(new_obsr_sw, STATE == "Karnataka"), 
-         aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_y_log10() +
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Karnataka",
-         x = "Month", y = "New eBirders"))) /
-((ggplot(filter(new_obsr_sw, STATE == "Maharashtra"), 
-         aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_y_log10() +
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Maharashtra",
-         x = "Month", y = "New eBirders")) |
-(ggplot(filter(new_obsr_sw, STATE == "Assam"), 
-         aes(LE.MONTH, NEW, colour = COVID)) + 
-    scale_y_log10() +
-    scale_x_continuous(breaks = 1:12) + 
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    scale_colour_manual(values = covid_palette) +
-    labs(title = "Assam",
-         x = "Month", y = "New eBirders"))) +
-plot_layout(guides = "collect") +
-plot_annotation(title = "Change in eBirder growth with the pandemic",
-                subtitle = "Y-axis shows average number of new eBirders") -> new
-
-new # plot
-
-ggsave("03_wrap_figs/16_new.png", plot = new,
-       width = 9, height = 9, units = "in")
-
-
-rm(list = c("new_obsr_nw","new_obsr_sw","new"))
-
-```
-
--   At the national level, the pandemic has seen a greater number of monthly new eBirders than before, presumably due to greater frequency and impact of outreach initiatives.\
--   While Kerala and Karnataka both have seen increases in monthly new eBirders with the pandemic, the increase is more striking in Karnataka than in Kerala.

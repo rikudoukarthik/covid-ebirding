@@ -330,7 +330,14 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     mutate(CATEGORY = case_when(GA.1 == 1 ~ "GA.1", 
                                 GA.2 == 1 ~ "GA.2", 
                                 TRUE ~ "NG"))
-  filtGA <- groupaccs %>% filter(CATEGORY == "GA.1") %>% dplyr::select(OBSERVER.ID)
+  # for bird analyses
+  filtGA_b <- groupaccs %>% 
+    filter(CATEGORY == "GA.1") %>% 
+    dplyr::select(OBSERVER.ID)
+  # for birder/data analyses
+  filtGA_d <- groupaccs %>% 
+    filter(CATEGORY == "GA.1" | CATEGORY == "GA.2") %>% 
+    dplyr::select(OBSERVER.ID)
   
   
   ### COVID classification
@@ -394,7 +401,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
            M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
 
   # filtering
-  new_obsr_data <- new_obsr_data %>% anti_join(filtGA)
+  new_obsr_data <- new_obsr_data %>% anti_join(filtGA_d)
   save(new_obsr_data, file = "data/new_obsr_data.RData")
   
   print("Obtained new observer data")
@@ -410,11 +417,13 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     summarise(NO.SP = n_distinct(COMMON.NAME))
   
-  data0_MY <- data %>% 
+  ## for bird analyses (group acc filter different) ####
+  
+  data0_MY_b <- data %>% 
     # this data (including latter months of 2018 only needed for bird behaviour section)
     # so will later save separate data filtering out 2018 months
     filter(M.YEAR >= 2018) %>%
-    anti_join(filtGA) %>% # removing data from group accounts
+    anti_join(filtGA_b) %>% # removing data from group accounts
     # creating COVID factor
     left_join(covidclass) %>% 
     # adding UNU information for every GROUP.ID
@@ -437,7 +446,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ### exclude records based on various criteria 
   
   # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
-  temp1 <- data0_MY %>%
+  temp1 <- data0_MY_b %>%
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
@@ -446,7 +455,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     distinct(GROUP.ID)
   
   # getting list of GROUP.IDs inside IN boundary for pelagic filter
-  temp2 <- data0_MY %>% 
+  temp2 <- data0_MY_b %>% 
     ungroup() %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
     terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
@@ -455,14 +464,14 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     dplyr::select(GROUP.ID) 
 
   # speed and distance filter for travelling lists
-  temp3 <- data0_MY %>%
+  temp3 <- data0_MY_b %>%
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Traveling") %>%
     group_by(GROUP.ID) %>% slice(1) %>%
     filter((SPEED > maxvel) | (EFFORT.DISTANCE.KM > 50)) %>%
     distinct(GROUP.ID)
   
   # true completeness + other filters
-  data0_MY <- data0_MY %>%
+  data0_MY_b <- data0_MY_b %>%
     # nocturnal filter
     mutate(NOCT.FILTER = case_when((!is.na(HOUR) & ((HOUR <= 4 & HOUR.END <= 4) | 
                                                       (HOUR >= 20 & HOUR.END <= 28))) ~ 0, 
@@ -479,39 +488,145 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   
   # making month and year ordered factors
-  data0_MY <- data0_MY %>% 
+  data0_MY_b <- data0_MY_b %>% 
     mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
            MONTH = factor(MONTH, levels = seq(1, 12, by = 1)),
            M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
   
   
   # sliced data which is what is required for analyses
-  data0_MY_slice_S <- data0_MY %>% 
+  data0_MY_b_slice_S <- data0_MY_b %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     slice(1) %>% 
     ungroup()
-  data0_MY_slice_G <- data0_MY %>% 
+  data0_MY_b_slice_G <- data0_MY_b %>% 
     group_by(GROUP.ID) %>% 
     slice(1) %>%
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData") # Ashwin's maps data
+  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
-  lists_grids <- data0_MY_slice_G %>% 
+  lists_grids <- data0_MY_b_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
     joinmapvars() %>% 
     # 25x25 grid cells
     rename(CELL.ID = GRIDG1)
 
-  data0_MY <- data0_MY %>% left_join(lists_grids)
-  data0_MY_slice_S <- data0_MY_slice_S %>% left_join(lists_grids)
-  data0_MY_slice_G <- data0_MY_slice_G %>% left_join(lists_grids)
+  data0_MY_b <- data0_MY_b %>% left_join(lists_grids)
+  data0_MY_b_slice_S <- data0_MY_b_slice_S %>% left_join(lists_grids)
+  data0_MY_b_slice_G <- data0_MY_b_slice_G %>% left_join(lists_grids)
   
-  save(data0_MY, file = "data/data0_MY.RData")
-  save(data0_MY_slice_S, data0_MY_slice_G, file = "data/data0_MY_slice.RData")
+  save(data0_MY_b, file = "data/data0_MY_b.RData")
+  save(data0_MY_b_slice_S, data0_MY_b_slice_G, file = "data/data0_MY_b_slice.RData")
   
-  print("Completed main data filtering!")
+  print("Complete main data filtering for bird analyses!")
+  
+  
+  ## for birder analyses (group acc filter different) ####
+  
+  data0_MY_d <- data %>% 
+    # this data (including latter months of 2018 only needed for bird behaviour section)
+    # so will later save separate data filtering out 2018 months
+    filter(M.YEAR >= 2018) %>%
+    anti_join(filtGA_d) %>% # removing data from group accounts
+    # creating COVID factor
+    left_join(covidclass) %>% 
+    # adding UNU information for every GROUP.ID
+    left_join(lists_UNU) %>% 
+    mutate(COVID = factor(COVID,
+                          levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
+    # NO.SP column
+    left_join(temp0) %>% 
+    mutate(NO.SP = replace_na(NO.SP, 0),
+           DATETIME = as_datetime(paste(OBSERVATION.DATE,
+                                        TIME.OBSERVATIONS.STARTED)),
+           HOUR = hour(DATETIME),
+           MIN = minute(DATETIME),
+           SPEED = EFFORT.DISTANCE.KM*60/DURATION.MINUTES, # kmph
+           SUT = NO.SP*60/DURATION.MINUTES, # species per hour
+           # calculate hour checklist ended
+           HOUR.END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60))
+  
+  
+  ### exclude records based on various criteria 
+  
+  # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
+  temp1 <- data0_MY_d %>%
+    filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
+    group_by(GROUP.ID) %>% slice(1) %>%
+    filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
+             (DURATION.MINUTES < 3) | 
+             (SUT < minsut & NO.SP <= 3)) %>%
+    distinct(GROUP.ID)
+  
+  # getting list of GROUP.IDs inside IN boundary for pelagic filter
+  temp2 <- data0_MY_d %>% 
+    ungroup() %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
+    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
+    terra::intersect(india) %>% 
+    terra::as.data.frame() %>% 
+    dplyr::select(GROUP.ID) 
+  
+  # speed and distance filter for travelling lists
+  temp3 <- data0_MY_d %>%
+    filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Traveling") %>%
+    group_by(GROUP.ID) %>% slice(1) %>%
+    filter((SPEED > maxvel) | (EFFORT.DISTANCE.KM > 50)) %>%
+    distinct(GROUP.ID)
+  
+  # true completeness + other filters
+  data0_MY_d <- data0_MY_d %>%
+    # nocturnal filter
+    mutate(NOCT.FILTER = case_when((!is.na(HOUR) & ((HOUR <= 4 & HOUR.END <= 4) | 
+                                                      (HOUR >= 20 & HOUR.END <= 28))) ~ 0, 
+                                   TRUE ~ 1)) %>% 
+    filter((ALL.SPECIES.REPORTED == 1) & 
+             (NOCT.FILTER == 1) &
+             # true completeness
+             !(GROUP.ID %in% temp1$GROUP.ID |
+                 GROUP.ID %in% temp3$GROUP.ID |
+                 (ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Incidental")) &
+             # pelagic filter
+             (GROUP.ID %in% temp2$GROUP.ID)) %>% 
+    dplyr::select(-BREEDING.CODE, -SPEED, -SUT, -MIN, -DATETIME, -HOUR.END, -NOCT.FILTER)
+  
+  
+  # making month and year ordered factors
+  data0_MY_d <- data0_MY_d %>% 
+    mutate(M.YEAR = factor(M.YEAR, levels = seq(2018, 2021, by = 1)),
+           MONTH = factor(MONTH, levels = seq(1, 12, by = 1)),
+           M.MONTH = factor(M.MONTH, levels = seq(1, 12, by = 1)))
+  
+  
+  # sliced data which is what is required for analyses
+  data0_MY_d_slice_S <- data0_MY_d %>% 
+    group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
+    slice(1) %>% 
+    ungroup()
+  data0_MY_d_slice_G <- data0_MY_d %>% 
+    group_by(GROUP.ID) %>% 
+    slice(1) %>%
+    ungroup()
+  
+  # adding map variables (CELL.ID) to main data
+  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
+  
+  lists_grids <- data0_MY_d_slice_G %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
+    joinmapvars() %>% 
+    # 25x25 grid cells
+    rename(CELL.ID = GRIDG1)
+  
+  data0_MY_d <- data0_MY_d %>% left_join(lists_grids)
+  data0_MY_d_slice_S <- data0_MY_d_slice_S %>% left_join(lists_grids)
+  data0_MY_d_slice_G <- data0_MY_d_slice_G %>% left_join(lists_grids)
+  
+  save(data0_MY_d, file = "data/data0_MY_d.RData")
+  save(data0_MY_d_slice_S, data0_MY_d_slice_G, file = "data/data0_MY_d_slice.RData")
+  
+  print("Completed main data filtering for birder analyses!")
   
   
   
@@ -567,7 +682,8 @@ boot_conf_GLMM = function(model,
                           new_data, # separately specify dataframe with vars for model
                           new_data_string, # string for clusterExport()
                           re_form = NA,
-                          nsim = 1000)
+                          nsim = 1000,
+                          pred_type = "link")
 {
 
   require(tidyverse)
@@ -576,7 +692,8 @@ boot_conf_GLMM = function(model,
   require(parallel) # to parallelise bootstrap step
 
   pred_fun <- function(model) {
-    predict(model, newdata = new_data, re.form = re_form, allow.new.levels = TRUE)
+    predict(model, newdata = new_data, type = pred_type, re.form = re_form, 
+            allow.new.levels = TRUE)
     # not specifying type = "response" because will later transform prediction along with SE
   }
   
@@ -606,7 +723,8 @@ split_par_boot <- function(model,
                            new_data, # separately specify dataframe with vars for model
                            new_data_string, # string for clusterExport()
                            re_form = NA, 
-                           mode = "normal") {
+                           mode = "normal",
+                           pred_type = "link") {
   
   if (mode == "extra") {
     
@@ -614,140 +732,180 @@ split_par_boot <- function(model,
     prediction1 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction2 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction3 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction4 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction5 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction6 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction7 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction8 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction9 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 50)
+                                  nsim = 50,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction10 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction11 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction12 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction13 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction14 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction15 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction16 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction17 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction18 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction19 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
     prediction20 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 50)
+                                   nsim = 50,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/20 sets of 50 simulations completed"))
     
@@ -767,76 +925,127 @@ split_par_boot <- function(model,
     prediction1 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction2 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction3 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction4 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction5 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction6 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction7 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction8 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction9 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 100)
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     prediction10 <- boot_conf_GLMM(model, 
                                    new_data, 
                                    new_data_string, 
-                                   nsim = 100)
+                                   nsim = 100,
+                                   re_form = re_form,
+                                   pred_type = pred_type)
     count <- count + 1
     print(glue("{count}/10 sets of 100 simulations completed"))
     
     
     prediction <- rbind(prediction1, prediction2, prediction3, prediction4, prediction5,
                         prediction6, prediction7, prediction8, prediction9, prediction10)
+    
+    return(prediction)
+    
+  }
+  
+  if (mode == "XXTRA") {
+    
+    count <- 0
+    
+    count <- count + 1
+    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    prediction1 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 40,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+    
+    count <- count + 1
+    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    prediction2 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 40,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+
+    
+    prediction <- rbind(prediction1, prediction2)
     
     return(prediction)
     
@@ -965,40 +1174,233 @@ poly2omit0nb <- function(data) {
 }
 
 
-### state-level modelling of bird repfreq -----------------
+### ggplot for non-model bird reporting patterns -----------------
 
-bird_model_state <- function(data_full = data0_MY, 
-                             data_sliceG = data0_MY_slice_G, 
-                             state) {
+gg_b_nonmodel <- function(data, region, time) {
   
-  tictoc::tic("Total time elapsedfor bird_model_state():")
+  # cur_city_list should already be in environment
+  
+  require(tidyverse)
+  require(patchwork)
+  
+  if (region == "city"){
+    plot_title <- glue("{unique(cur_city_list$CITY)} city")
+  } else if (region == "state"){
+    plot_title <- glue("{unique(cur_city_list$STATE)} state")
+  }
+  
+  if (time == "monthly") {
+    
+    ((ggplot(filter(data, SP.CATEGORY == "U"), 
+             aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+        geom_point(size = 2, position = position_dodge(0.8)) +
+        geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                      size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+        scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+        facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                   strip.position = "left", scales = "free_y") +
+        labs(title = "Urban species",
+             x = "Month", y = "Reporting frequency")) /
+       (ggplot(filter(data, SP.CATEGORY == "R"), 
+               aes(MONTH, REP.FREQ, colour = M.YEAR)) +
+          geom_point(size = 2, position = position_dodge(0.8)) +
+          geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                        size = 1.25, width = 0.6, position = position_dodge(0.8)) +
+          scale_colour_manual(values = covid_palette, name = "Migratory\nyear") +
+          facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                     strip.position = "left", scales = "free_y") +
+          labs(title = "Non-urban species",
+               x = "Month", y = "Reporting frequency"))) +
+      plot_layout(guides = "collect", heights = c(4, 4)) +
+      plot_annotation(title = plot_title) &
+      theme(strip.text = element_text(size = 7))
+    
+  } else if (time == "yearly") {
+    
+    ((ggplot(filter(data, SP.CATEGORY == "U"), aes(M.YEAR, REP.FREQ)) +
+        geom_point(size = 3) +
+        geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                      size = 1.25, width = 0.3) +
+        facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                   strip.position = "left", scales = "free_y") +
+        labs(title = "Urban species",
+             x = "Month", y = "Reporting frequency")) /
+       (ggplot(filter(data, SP.CATEGORY == "R"), aes(M.YEAR, REP.FREQ)) +
+          geom_point(size = 3) +
+          geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                        size = 1.25, width = 0.3) +
+          facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
+                     strip.position = "left", scales = "free_y") +
+          labs(title = "Non-urban species",
+               x = "Month", y = "Reporting frequency"))) +
+      plot_layout(guides = "collect", heights = c(4, 4)) +
+      plot_annotation(title = plot_title) &
+      theme(strip.text = element_text(size = 7))
+    
+  }
+  
+}
+
+### iterative code for overall bird reporting patterns -----------------
+
+b01_overall_monthly <- function(state_name) {
+  
+  # anal_name, city_list and species_list need to be in environment
+  # sliced and non-sliced data as well
+  
+  cur_city_list <- city_list %>% filter(STATE == state_name)
+  cur_species_list <- species_list %>% filter(STATE == state_name)
+  
+  assign("cur_city_list", cur_city_list, envir = .GlobalEnv)
+  assign("cur_species_list", cur_species_list, envir = .GlobalEnv)
+  
+  
+  data_a <- data0_MY_slice_G %>% 
+    filter(COUNTY == unique(cur_city_list$COUNTY), 
+           CELL.ID %in% cur_city_list$CELLS) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+              TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+    ungroup() %>% 
+    left_join(data0_MY) %>% 
+    filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(TOT.LISTS = min(TOT.LISTS),
+              NO.LISTS = n_distinct(GROUP.ID),
+              REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
+    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+              CI.U = stats::quantile(REP.FREQ, 0.975),
+              REP.FREQ = median(REP.FREQ)) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_a completed.")
+  
+  data_b <- data0_MY_slice_G %>% 
+    filter(STATE == unique(cur_city_list$STATE)) %>% 
+    group_by(M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+              TOT.LISTS = n_distinct(GROUP.ID)) %>% 
+    ungroup() %>% 
+    left_join(data0_MY) %>% 
+    filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
+    summarise(TOT.LISTS = min(TOT.LISTS),
+              NO.LISTS = n_distinct(GROUP.ID),
+              REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
+    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
+    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+              CI.U = stats::quantile(REP.FREQ, 0.975),
+              REP.FREQ = median(REP.FREQ)) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_b completed.")
+  
+  assign("data_a", data_a, envir = .GlobalEnv)
+  assign("data_b", data_b, envir = .GlobalEnv)
+  
+  
+  plot_a <- gg_b_nonmodel(data_a, region = "city", time = "monthly")
+  plot_b <- gg_b_nonmodel(data_b, region = "state", time = "monthly")
+  
+  assign("plot_a", plot_a, envir = .GlobalEnv)
+  assign("plot_b", plot_b, envir = .GlobalEnv)
+  
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+         dpi = 300, width = 16, height = 15, units = "in")
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+         dpi = 300, width = 16, height = 15, units = "in")
+  
+  print("plot_a and plot_b created and written to disk.")
+  
+}
+
+
+b01_overall_annual <- function(state_name) {
+  
+  data_a <- data_a %>% 
+    mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
+    group_by(COMMON.NAME, M.YEAR) %>% 
+    summarise(REP.FREQ = mean(REP.FREQ),
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = REP.FREQ - 1.96*SE,
+              CI.U = REP.FREQ + 1.96*SE) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_a completed.")
+  
+  data_b <- data_b %>% 
+    mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
+    group_by(COMMON.NAME, M.YEAR) %>% 
+    summarise(REP.FREQ = mean(REP.FREQ),
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = REP.FREQ - 1.96*SE,
+              CI.U = REP.FREQ + 1.96*SE) %>% 
+    left_join(cur_species_list) %>% 
+    select(-STATE)
+  
+  print("data_b completed.")
+  
+  assign("data_a", data_a, envir = .GlobalEnv)
+  assign("data_b", data_b, envir = .GlobalEnv)
+  
+  
+  plot_a <- gg_b_nonmodel(data_a, region = "city", time = "yearly")
+  plot_b <- gg_b_nonmodel(data_b, region = "state", time = "yearly")
+  
+  assign("plot_a", plot_a, envir = .GlobalEnv)
+  assign("plot_b", plot_b, envir = .GlobalEnv)
+  
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+         dpi = 300, width = 10, height = 12, units = "in")
+  
+  ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+         dpi = 300, width = 10, height = 12, units = "in")
+  
+  print("plot_a and plot_b created and written to disk.")
+  
+}
+
+### iterative code for overall bird reporting models -----------------
+
+b01_overall_model <- function(data_full = data0_MY_b, 
+                              data_sliceG = data0_MY_b_slice_G, 
+                              state_name) {
+  
+  tictoc::tic("Total time elapsed for bird_model_state():")
   
   require(lme4)
   
-  species <- species_list %>% filter(STATE == state)
-
+  cur_species_list <- species_list %>% filter(STATE == state_name)
+  
   ### modelling directly with presence-absence data instead of relative abundance
   
   # to join for presence-absence of various species
   temp1 <- data_full %>% 
-    filter(STATE == state) %>% 
+    filter(STATE == state_name) %>% 
     group_by(GROUP.ID, COMMON.NAME) %>% 
     summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
     ungroup()
   
   # to later join checklist metadata
-  temp2 <- data_full %>% 
-    filter(STATE == state) %>% 
+  temp2 <- data_sliceG %>% 
+    filter(STATE == state_name) %>% 
     arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
-    group_by(GROUP.ID) %>% 
-    slice(1) %>% ungroup() %>% 
     dplyr::select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-           M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+                  M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
   
   data_occ <- data_sliceG %>% 
-    filter(STATE == state) %>% 
+    filter(STATE == state_name) %>% 
     group_by(GROUP.ID) %>% 
-    summarise(COMMON.NAME = species$COMMON.NAME) %>% 
+    summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 
     left_join(temp1) %>% 
     # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
     mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
@@ -1008,7 +1410,7 @@ bird_model_state <- function(data_full = data0_MY,
     left_join(temp2, by = "GROUP.ID") %>% 
     arrange(GROUP.ID) %>% 
     # species categories
-    left_join(species) %>% 
+    left_join(cur_species_list) %>% 
     ungroup()
   
   data_occ0 <- bind_rows("LD" = data_occ %>% filter(MONTH %in% 4:5), 
@@ -1021,29 +1423,37 @@ bird_model_state <- function(data_full = data0_MY,
     distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
     group_by(MONTHS.TYPE, MONTH) %>% 
     summarise(NO.SP.MED = floor(median(NO.SP)))
-
+  
   # dataframe with empty column to populate with looped values
   # total rows: product of distinct values of predictors
   birds_pred <- data_occ0 %>% 
     group_by(MONTHS.TYPE) %>% 
     tidyr::expand(COMMON.NAME, nesting(MONTH), M.YEAR) %>% 
-    left_join(species) %>% 
-    mutate(REP.FREQ.PRED = NA)
+    left_join(cur_species_list) %>% 
+    # joining median list length
+    left_join(median_length) %>% 
+    rename(NO.SP = NO.SP.MED) %>% 
+    mutate(PRED.LINK = NA,
+           SE.LINK = NA)
   
   print("Completed preparations for modelling. Now starting modelling.")
   
-  
-  count <- 0
   for (m in 1:n_distinct(birds_pred$MONTHS.TYPE)) {
     
     data_mtype <- data_occ0 %>% 
       filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m])
     
     birds_pred0 <- birds_pred %>% 
-      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m]) %>% 
-      rename(REP.FREQ.PRED2 = REP.FREQ.PRED)
-
+      filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[m]) 
+    
     for (i in 1:n_distinct(birds_pred0$COMMON.NAME)) {
+      
+      birds_pred0_b <- birds_pred0 %>% 
+        filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[i]) %>% 
+        rename(PRED.LINK2 = PRED.LINK,
+               SE.LINK2 = SE.LINK)
+      
+      assign("birds_pred0_b", birds_pred0_b, envir = .GlobalEnv)
       
       data_spec <- data_mtype %>% 
         filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[i]) %>% 
@@ -1053,93 +1463,67 @@ bird_model_state <- function(data_full = data0_MY,
         left_join(data_occ)
       
       
-      model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+      tictoc::tic(glue("GLMM for months type {m}, {unique(birds_pred0$COMMON.NAME)[i]}"))
+      model_spec <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + 
                             (1|CELL.ID),
                           data = data_spec, family = binomial(link = "cloglog"),
                           nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+      tictoc::toc() 
       
-      for (j in 1:n_distinct(birds_pred0$MONTH)) {
+
+      tictoc::tic(glue("Bootstrapped predictions for months type {m}, {unique(birds_pred0$COMMON.NAME)[i]}"))
+      prediction <- split_par_boot_test(model = model_spec, 
+                                   new_data = birds_pred0_b, 
+                                   new_data_string = "birds_pred0_b", 
+                                   mode = "XXTRA")
+      tictoc::toc() 
+      
+      
+      count <- 0
+      for (j in 1:n_distinct(birds_pred0_b$MONTH)) {
         
-        for (k in 1:n_distinct(birds_pred0$M.YEAR)) {
+        for (k in 1:n_distinct(birds_pred0_b$M.YEAR)) {
+
           count <- count + 1
           
-          birds_pred0$REP.FREQ.PRED2[count] = predict(
-            model_spec,
-            data.frame(COMMON.NAME = birds_pred0$COMMON.NAME[count],
-                       MONTH = birds_pred0$MONTH[count],
-                       M.YEAR = birds_pred0$M.YEAR[count],
-                       NO.SP = median_length$NO.SP.MED[birds_pred0$MONTH[count]]),
-            re.form = NA, 
-            type = "response")
+          birds_pred0_b$PRED.LINK2[count] = median(na.omit(prediction[,count]))
+          birds_pred0_b$SE.LINK2[count] = sd(na.omit(prediction[,count]))
           
-          print(glue::glue("Months type {m}: Completed predictions for {birds_pred0$COMMON.NAME[count]} in
-                     month {birds_pred0$MONTH[count]}, migratory year {birds_pred0$M.YEAR[count]}"))
         }
       }
+
+      birds_pred0 <- birds_pred0 %>% 
+        left_join(birds_pred0_b) %>% 
+        mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
+               SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
+        dplyr::select(-PRED.LINK2, -SE.LINK2)
+      
     } 
     
     birds_pred <- birds_pred %>% 
-      left_join(birds_pred0) %>% 
-      mutate(REP.FREQ.PRED = coalesce(REP.FREQ.PRED, REP.FREQ.PRED2)) %>% 
-      dplyr::select(-REP.FREQ.PRED2)
+      left_join(birds_pred0, by = c("MONTHS.TYPE", "COMMON.NAME", "MONTH", "M.YEAR", "STATE",
+                                    "SP.CATEGORY", "NO.SP")) %>% 
+      mutate(PRED.LINK = coalesce(PRED.LINK.x, PRED.LINK.y),
+             SE.LINK = coalesce(SE.LINK.x, SE.LINK.y)) %>% 
+      dplyr::select(-PRED.LINK.x, -PRED.LINK.y, -SE.LINK.x, -SE.LINK.y)
     
-    # resetting counter for next MONTHS.TYPE
-    count <- 0
   }
   
   birds_pred <- birds_pred %>% 
-    group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
-    summarise(SE = sd(REP.FREQ.PRED)/sqrt(n()),
-              REP.FREQ.PRED = mean(REP.FREQ.PRED),
-              CI.L = REP.FREQ.PRED - 1.96*SE,
-              CI.U = REP.FREQ.PRED + 1.96*SE)
-
-
-  (ggplot(filter(birds_pred, MONTHS.TYPE == "LD"), 
-          aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For the months of April and May",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-    ggplot(filter(birds_pred, MONTHS.TYPE == "NL"), 
-             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For other ten months",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-    ggplot(filter(birds_pred, MONTHS.TYPE == "ALL"), 
-             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For all twelve months",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
-    plot_layout(guides = "collect") +
-    plot_annotation(title = paste(state, "state"),
-                    subtitle = paste0(
-                      "Predicted reporting frequencies of ",
-                      n_distinct(data_occ$COMMON.NAME), " species (",
-                      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
-                      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
-                      " in three separate models")) -> birds_graph
-  
-  assign("birds_pred", birds_pred, envir = .GlobalEnv)
-  assign("birds_graph", birds_graph, envir = .GlobalEnv)
+    mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+           # to transform lower bound of SE (not CI.L! think "mean +- SE")
+           SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
+    mutate(SE = PRED - SE.L) %>% 
+    left_join(timeline) %>% 
+    # summarising for species categories
+    group_by(STATE, MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
+    summarise(PRED = mean(PRED),
+              # propagating SE across species of a category
+              SE = sqrt(sum((SE)^2))/n(),
+              CI.L = PRED - 1.96*SE,
+              CI.U = PRED + 1.96*SE)
   
   tictoc::toc()
   
-  }
+}
+
