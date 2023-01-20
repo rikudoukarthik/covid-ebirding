@@ -438,6 +438,9 @@ prolific_pred <- data_prolific0 %>%
   group_by(MONTHS.TYPE, LOCALITY.ID) %>% 
   tidyr::expand(nesting(MONTH), M.YEAR, SP.CATEGORY) %>% 
   ungroup() %>% 
+  # joining median list length
+  left_join(median_length) %>% 
+  rename(NO.SP = NO.SP.MED) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
@@ -452,6 +455,7 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
     rename(PRED.LINK2 = PRED.LINK,
            SE.LINK2 = SE.LINK)
   
+  count <- 0
   for (l in 1:n_distinct(prolific_pred0$LOCALITY.ID)) {
     
     data_loc <- data_mtype %>% 
@@ -469,9 +473,8 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
                                  new_data = prolific_pred0, 
                                  new_data_string = "prolific_pred0", 
                                  mode = "normal")
-    tictoc::toc() 
+    tictoc::toc()
 
-    count <- 0
     for (i in 1:n_distinct(prolific_pred0$MONTH)) {
       
       for (j in 1:n_distinct(prolific_pred0$M.YEAR)) {
@@ -479,7 +482,7 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
         for (k in 1:n_distinct(prolific_pred0$SP.CATEGORY)) {
           
           count <- count + 1
-          
+
           prolific_pred0$PRED.LINK2[count] = median(na.omit(prediction[,count]))
           prolific_pred0$SE.LINK2[count] = sd(na.omit(prediction[,count]))
           
@@ -506,6 +509,11 @@ prolific_points <- prolific_pred %>%
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
   left_join(timeline) %>% 
+  # averaging across months of year
+  group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
+  summarise(PRED = mean(PRED),
+            # propagating SE across species of a category
+            SE = sqrt(sum((SE)^2))/n()) %>% 
   # to make lines connect per location
   group_by(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY) %>% 
   arrange(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
@@ -519,9 +527,6 @@ prolific_pred <- prolific_points %>%
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PRED - 1.96*SE,
             CI.U = PRED + 1.96*SE)
-
-
-tictoc::toc()
 
 
 
