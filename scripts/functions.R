@@ -1276,6 +1276,63 @@ gg_b_nonmodel <- function(data, region, time) {
   
 }
 
+### ggplot for model bird reporting patterns -----------------
+
+gg_b_model <- function(data) {
+  
+
+  require(tidyverse)
+  require(patchwork)
+  
+  plot_title <- glue("{state_name} state")
+  plot_subtitle <- paste0(
+    "Predicted reporting frequencies of ",
+    n_distinct(data_occ$COMMON.NAME), " species (",
+    n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+    n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
+    " in three separate models")
+
+  
+  (ggplot(filter(data, MONTHS.TYPE == "LD"), 
+          aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species\ncategory",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For the months of April and May",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+    ggplot(filter(data, MONTHS.TYPE == "NL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species\ncategory",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For other ten months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+    ggplot(filter(data, MONTHS.TYPE == "ALL"), 
+             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
+      scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                         name = "Species\ncategory",
+                         labels = c("Rural", "Urban")) +
+      scale_y_continuous(limits = c(0.1, 1.0)) +
+      labs(title = "For all twelve months",
+           x = "Migratory year", y = "Predicted reporting frequency") +
+      geom_point(size = 3, position = position_dodge(0.5)) +
+      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+    plot_layout(guides = "collect") +
+    plot_annotation(title = plot_title,
+                    subtitle = plot_subtitle) 
+  
+
+}
+
 ### iterative code for overall bird reporting patterns -----------------
 
 b01_overall_monthly <- function(state_name) {

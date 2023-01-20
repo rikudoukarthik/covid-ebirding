@@ -166,61 +166,15 @@ source("scripts/b01_overall_model.R")
 
 
 
+birds_plot <- gg_b_model(birds_pred)
 
-
-b1_KA4_pred <- birds_pred
-b1_KA4_graph <- birds_graph
 
   
-  (ggplot(filter(birds_pred, MONTHS.TYPE == "LD"), 
-          aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For the months of April and May",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-      ggplot(filter(birds_pred, MONTHS.TYPE == "NL"), 
-             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For other ten months",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-      ggplot(filter(birds_pred, MONTHS.TYPE == "ALL"), 
-             aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-      scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                         name = "Species category",
-                         labels = c("Rural", "Urban")) +
-      scale_y_continuous(limits = c(0.1, 1.0)) +
-      labs(title = "For all twelve months",
-           x = "Migratory year", y = "Predicted reporting frequency") +
-      geom_point(size = 3, position = position_dodge(0.5)) +
-      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                    size = 1.5, width = 0.2, position = position_dodge(0.5))) +
-    plot_layout(guides = "collect") +
-    plot_annotation(title = paste(state, "state"),
-                    subtitle = paste0(
-                      "Predicted reporting frequencies of ",
-                      n_distinct(data_occ$COMMON.NAME), " species (",
-                      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
-                      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
-                      " in three separate models")) -> birds_graph
-  
-  assign("birds_pred", birds_pred, envir = .GlobalEnv)
-  assign("birds_graph", birds_graph, envir = .GlobalEnv)
-  
-save(b1_KA4_pred, file = "outputs/b1_KA4_pred.RData")
+save(b1_KA4_pred, 
+     file = glue("outputs/{anal_name}.RData"))
 
-ggsave("03_wrap_figs/b1_KA4_model.png", b1_KA4_graph,
-       width = 21, height = 6, units = "in", dpi = 300)
+ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
+       dpi = 300, width = 21, height = 6, units = "in")
 
 ```
 

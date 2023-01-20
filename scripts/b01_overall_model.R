@@ -4,7 +4,7 @@
 
 
 
-tictoc::tic("Total time elapsed for bird_model_state():")
+tictoc::tic("Total time elapsed for b01_overall_model():")
 
 require(lme4)
 
