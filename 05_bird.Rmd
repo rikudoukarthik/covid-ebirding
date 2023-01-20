@@ -164,7 +164,7 @@ source("scripts/b01_overall_model.R")
 
 
 
-birds_plot <- gg_b_model(birds_pred)
+birds_plot <- gg_b_model(birds_pred, type = "overall")
 
 
   
@@ -211,7 +211,7 @@ source("scripts/b01_overall_model.R")
 
 
 
-birds_plot <- gg_b_model(birds_pred)
+birds_plot <- gg_b_model(birds_pred, type = "overall")
 
 
   
@@ -254,7 +254,7 @@ source("scripts/b01_overall_model.R")
 
 
 
-birds_plot <- gg_b_model(birds_pred)
+birds_plot <- gg_b_model(birds_pred, type = "overall")
 
 
   
@@ -296,7 +296,7 @@ source("scripts/b01_overall_model.R")
 
 
 
-birds_plot <- gg_b_model(birds_pred)
+birds_plot <- gg_b_model(birds_pred, type = "overall")
 
 
   
@@ -525,75 +525,15 @@ tictoc::toc()
 
 
 
+# graphs ------------------------------------------------------------
 
+save(prolific_pred, 
+     file = glue("outputs/{anal_name}.RData"))
 
+prolific_plot <- gg_b_model(prolific_pred, type = "prolific", prolific_points)
 
-(ggplot(filter(prolific, MONTHS.TYPE == "LD"), 
-        aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 1.0)) +
-    labs(title = "For the months of April and May",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    # data points
-    geom_point(data = filter(prolific_points, MONTHS.TYPE == "LD"), 
-               aes(group = PATH.GROUP),
-               size = 3, alpha = 0.25,
-               position = position_dodge(0.25)) + 
-    geom_path(data = filter(prolific_points, MONTHS.TYPE == "LD"), 
-              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
-              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-    # main points
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(filter(prolific, MONTHS.TYPE == "NL"), 
-         aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 1.0)) +
-    labs(title = "For other ten months",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    # data points
-    geom_point(data = filter(prolific_points, MONTHS.TYPE == "NL"), 
-               aes(group = PATH.GROUP),
-               size = 3, alpha = 0.25,
-               position = position_dodge(0.25)) + 
-    geom_path(data = filter(prolific_points, MONTHS.TYPE == "NL"), 
-              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
-              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-    # main points
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-  ggplot(filter(prolific, MONTHS.TYPE == "ALL"), 
-         aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
-    scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                       name = "Species category",
-                       labels = c("Rural", "Urban")) +
-    scale_y_continuous(limits = c(0.1, 1.0)) +
-    labs(title = "For all twelve months",
-         x = "Migratory year", y = "Predicted reporting frequency") +
-    # data points
-    geom_point(data = filter(prolific_points, MONTHS.TYPE == "ALL"), 
-               aes(group = PATH.GROUP),
-               size = 3, alpha = 0.25,
-               position = position_dodge(0.25)) + 
-    geom_path(data = filter(prolific_points, MONTHS.TYPE == "ALL"), 
-              aes(x = as.numeric(M.YEAR), y = REP.FREQ.PRED, group = PATH.GROUP),
-              size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-    # main points
-    geom_point(size = 3, position = position_dodge(0.5)) +
-    geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                  size = 1.5, width = 0.2, position = position_dodge(0.5))) +
-  plot_layout(guides = "collect") +
-  plot_annotation(title = "Change in bird species reporting from three separate monthwise models",
-                  subtitle = "Predicted reporting frequencies of common urban and rural species, from locations with consistent effort.") -> b5_prolific
-
-ggsave("03_wrap_figs/b5_prolific.png", b5_prolific,
-       width = 21, height = 6, units = "in", dpi = 300)
+ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = prolific_plot,
+       dpi = 300, width = 21, height = 6, units = "in")
 
 ```
 
