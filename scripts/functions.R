@@ -1020,32 +1020,67 @@ split_par_boot <- function(model,
     
   }
   
-  if (mode == "XXTRA") {
+  if (mode == "normal_low") {
+    
+    # only 500 sims in total
     
     count <- 0
     
     count <- count + 1
-    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    tictoc::tic((glue("{count}/5 sets of 100 simulations completed")))
     prediction1 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 40,
+                                  nsim = 100,
                                   re_form = re_form,
                                   pred_type = pred_type)
     tictoc::toc()
     
     count <- count + 1
-    tictoc::tic(glue("{count}/25 sets of 40 simulations completed"))
+    tictoc::tic((glue("{count}/5 sets of 100 simulations completed")))
     prediction2 <- boot_conf_GLMM(model, 
                                   new_data, 
                                   new_data_string, 
-                                  nsim = 40,
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+    
+    
+    count <- count + 1
+    tictoc::tic((glue("{count}/5 sets of 100 simulations completed")))
+    prediction3 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+    
+    
+    count <- count + 1
+    tictoc::tic((glue("{count}/5 sets of 100 simulations completed")))
+    prediction4 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 100,
+                                  re_form = re_form,
+                                  pred_type = pred_type)
+    tictoc::toc()
+    
+    
+    count <- count + 1
+    tictoc::tic((glue("{count}/5 sets of 100 simulations completed")))
+    prediction5 <- boot_conf_GLMM(model, 
+                                  new_data, 
+                                  new_data_string, 
+                                  nsim = 100,
                                   re_form = re_form,
                                   pred_type = pred_type)
     tictoc::toc()
 
     
-    prediction <- rbind(prediction1, prediction2)
+    prediction <- rbind(prediction1, prediction2, prediction3, prediction4, prediction5)
     
     return(prediction)
     
