@@ -542,11 +542,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = prolific_plot,
 
 ```
 
-The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area.
-
-When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain.
-
-Need to run the model separately for the three time periods because the results from both are greatly different. Because we know that the time periods are different in such a way, we should not ignore this and let the single global model average out and skew the existing patterns.
+The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area. When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain. Need to run the model separately for the three time periods because the results from both are greatly different. Because we know that the time periods are different in such a way, we should not ignore this and let the single global model average out and skew the existing patterns.
 
 The months of April and May seem to generally (even in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. The different patches under consideration all show considerably more variation (inferred from CIs) during these months than other times of the year. There is slightly more variability in rural species than in urban ones. There is also considerable variation between the patches in how reporting changed from year to year. While some increased in MY 2019, others decreased.
 

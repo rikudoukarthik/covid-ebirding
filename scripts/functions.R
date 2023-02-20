@@ -1259,7 +1259,7 @@ gg_b_nonmodel <- function(data, region, time) {
         facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
                    strip.position = "left", scales = "free_y") +
         labs(title = "Urban species",
-             x = "Month", y = "Reporting frequency")) /
+             x = "Migratory year", y = "Reporting frequency")) /
        (ggplot(filter(data, SP.CATEGORY == "R"), aes(M.YEAR, REP.FREQ)) +
           geom_point(size = 3) +
           geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
@@ -1267,7 +1267,7 @@ gg_b_nonmodel <- function(data, region, time) {
           facet_wrap(~ COMMON.NAME, dir = "h", ncol = 3, 
                      strip.position = "left", scales = "free_y") +
           labs(title = "Non-urban species",
-               x = "Month", y = "Reporting frequency"))) +
+               x = "Migratory year", y = "Reporting frequency"))) +
       plot_layout(guides = "collect", heights = c(4, 4)) +
       plot_annotation(title = plot_title) &
       theme(strip.text = element_text(size = 7))
@@ -1429,14 +1429,14 @@ b01_overall_monthly <- function(state_name) {
   assign("cur_species_list", cur_species_list, envir = .GlobalEnv)
   
   
-  data_a <- data0_MY_slice_G %>% 
+  data_a <- data0_MY_b_slice_G %>% 
     filter(COUNTY == unique(cur_city_list$COUNTY), 
            CELL.ID %in% cur_city_list$CELLS) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
     summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
               TOT.LISTS = n_distinct(GROUP.ID)) %>% 
     ungroup() %>% 
-    left_join(data0_MY) %>% 
+    left_join(data0_MY_b) %>% 
     filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
     summarise(TOT.LISTS = min(TOT.LISTS),
@@ -1452,13 +1452,13 @@ b01_overall_monthly <- function(state_name) {
   
   print("data_a completed.")
   
-  data_b <- data0_MY_slice_G %>% 
+  data_b <- data0_MY_b_slice_G %>% 
     filter(STATE == unique(cur_city_list$STATE)) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
     summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
               TOT.LISTS = n_distinct(GROUP.ID)) %>% 
     ungroup() %>% 
-    left_join(data0_MY) %>% 
+    left_join(data0_MY_b) %>% 
     filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
     summarise(TOT.LISTS = min(TOT.LISTS),
@@ -1497,6 +1497,8 @@ b01_overall_monthly <- function(state_name) {
 
 
 b01_overall_annual <- function(state_name) {
+  
+  # previous needs to be run before this for data objects!
   
   data_a <- data_a %>% 
     mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
