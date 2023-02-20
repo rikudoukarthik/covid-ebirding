@@ -281,9 +281,9 @@ b01_overall_annual("Assam")
 
 ```
 
-Non-urban and wetland species do not show an impact, while some urban species did have slightly higher frequencies in migratory year 2019. However, confidence intervals are mostly overlapping and effect size is likely small.
+Small spatial scale (city) for Assam has only one grid cell, so no variation and no CIs.
 
-Very minor suggestions of changes during the 2 month period in a few species, but overall no pattern. At the annual scale, wetland species show some differences, but others show no overall change in reporting frequency due to the pandemic.
+There is absolutely no overall pattern at any of the scales suggesting any effect of the pandemic on bird reporting (either positive or negative). 
 
 ```{r b01_overall_s4c_model, cache=TRUE, message=FALSE}
 
