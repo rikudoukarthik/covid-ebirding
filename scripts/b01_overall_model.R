@@ -28,6 +28,7 @@ temp2 <- data0_MY_b_slice_G %>%
 
 data_occ <- data0_MY_b_slice_G %>% 
   filter(STATE == state_name) %>% 
+  # getting species of interest
   group_by(GROUP.ID) %>% 
   summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 
   left_join(temp1) %>% 
@@ -42,6 +43,7 @@ data_occ <- data0_MY_b_slice_G %>%
   left_join(cur_species_list) %>% 
   ungroup()
 
+# for the three different models
 data_occ0 <- bind_rows("LD" = data_occ %>% filter(MONTH %in% 4:5), 
                        "NL" = data_occ %>% filter(!(MONTH %in% 4:5)), 
                        "ALL" = data_occ, 
@@ -50,6 +52,7 @@ data_occ0 <- bind_rows("LD" = data_occ %>% filter(MONTH %in% 4:5),
 # getting median list length for prediction later
 median_length <- data_occ0 %>% 
   distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+  # interested in seasonality so not concerned with M.YEAR
   group_by(MONTHS.TYPE, MONTH) %>% 
   summarise(NO.SP.MED = floor(median(NO.SP)))
 
@@ -57,6 +60,7 @@ median_length <- data_occ0 %>%
 # total rows: product of distinct values of predictors
 birds_pred <- data_occ0 %>% 
   group_by(MONTHS.TYPE) %>% 
+  # nest month within species cos all species not present all-year
   tidyr::expand(COMMON.NAME, nesting(MONTH), M.YEAR) %>% 
   left_join(cur_species_list) %>% 
   # joining median list length
@@ -91,9 +95,10 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
 
   data_spec <- data_mtype %>% 
     filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
-    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    # using only CELL.ID-MONTH (space-time) combos in which species occurs
     filter(REPORT == 1) %>% 
     distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    # joining both presences and absences for space-time combos of interest
     left_join(data_occ)
   
   
@@ -128,6 +133,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   birds_pred0 <- birds_pred0 %>% 
     left_join(birds_pred0_b) %>% 
+    # coalesce takes first non-NA so retains NA for non-current species
     mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
            SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
     dplyr::select(-PRED.LINK2, -SE.LINK2)
@@ -167,9 +173,10 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   data_spec <- data_mtype %>% 
     filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
-    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    # using only CELL.ID-MONTH (space-time) combos in which species occurs
     filter(REPORT == 1) %>% 
     distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    # joining both presences and absences for space-time combos of interest
     left_join(data_occ)
   
   
@@ -179,7 +186,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
   tictoc::toc() 
-
+  
   
   tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
   prediction <- split_par_boot(model = model_spec, 
@@ -204,6 +211,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   birds_pred0 <- birds_pred0 %>% 
     left_join(birds_pred0_b) %>% 
+    # coalesce takes first non-NA so retains NA for non-current species
     mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
            SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
     dplyr::select(-PRED.LINK2, -SE.LINK2)
@@ -243,9 +251,10 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   data_spec <- data_mtype %>% 
     filter(COMMON.NAME == unique(birds_pred0$COMMON.NAME)[cur_sp]) %>% 
-    # filtering for CELL.ID-MONTH (space-time) combos in which species occurs
+    # using only CELL.ID-MONTH (space-time) combos in which species occurs
     filter(REPORT == 1) %>% 
     distinct(COMMON.NAME, CELL.ID, MONTH) %>% 
+    # joining both presences and absences for space-time combos of interest
     left_join(data_occ)
   
   
@@ -255,7 +264,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
                       data = data_spec, family = binomial(link = "cloglog"),
                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
   tictoc::toc() 
-
+  
   
   tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
   prediction <- split_par_boot(model = model_spec, 
@@ -280,6 +289,7 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   birds_pred0 <- birds_pred0 %>% 
     left_join(birds_pred0_b) %>% 
+    # coalesce takes first non-NA so retains NA for non-current species
     mutate(PRED.LINK = coalesce(PRED.LINK, PRED.LINK2),
            SE.LINK = coalesce(SE.LINK, SE.LINK2)) %>% 
     dplyr::select(-PRED.LINK2, -SE.LINK2)
