@@ -160,6 +160,7 @@ state_name <- "Karnataka"
 
 
 source("scripts/b01_overall_model.R")
+# 341 mins
 
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
@@ -175,7 +176,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
--   Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction.
+-   Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction. (Still true after final models?)
 -   However, at the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding.
 -   The crucial months like April and May show higher urban species reporting frequency overall.
 -   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species. The slight suggestion (still insignificant) of a change in MY2019 during the peak period completely disappears at the larger temporal scale.
