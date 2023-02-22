@@ -1,0 +1,21 @@
+# Statistical validation of data metrics
+
+From exploratory analyses to simple confidence values, propagating errors from state level to national level.
+
+All the metrics with their standard errors were first calculated at the state level, then propagated to the national level (errors propagated following errorpropagation), in order to highlight the high variability across scales, regions, governments, etc.
+
+# Temporal spread
+
+From calculation of metric to result presentation to interpretation
+
+# Spatial spread
+
+Detailed description of the various metrics analysed here, how they were calculated, what they can mean (i.e., not interpretation of results we got, unlike in temporal spread above)
+
+# Overall bird reporting: non-model analyses
+
+Detail on how the metric was calculated (not much), all/most results.
+
+# Bootstrapping for confidence from GLMMs
+
+From model to final CIs
