@@ -1,7 +1,6 @@
 ---
 title: "Birds in the time of COVID: Pandemic effects illuminated by birdwatchers, and implications for citizen science inference"
 author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
-date: "21/01/2022"
 bibliography: covid-ebirding.json
 link-citations: yes
 output: 
@@ -83,9 +82,11 @@ Did the pandemic create spatial clusters of positive or negative change in birdi
 
 ### Statistical validation
 
-For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see `Supplementary Materials`). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models `(nested within district for the urban bias model??)`. The metric of birding distance was tested using an LMM (not GLMM), with the effort distance response variable log-transformed (natural) to ensure normality. The various models of data metrics and their specifications are listed in `table1`. There was no model run for temporal spread due to it being a visual metric and its model specifications being very different from those of other metrics `(S3)`.
+For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see `Supplementary Materials`). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models `(nested within district for the urban bias model??; table1)`. All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser.
 
-link, optimiser, bootstrap predictions
+Some metrics like observer-level site fidelity, observer-level birding time, birding distance, list duration and list length were either whole number of continuous numerical variables that did not include zero in its possible values. For these, since GLMMs with binomial or Poisson error distributions are not appropriate, we instead fitted LMMs (Linear Mixed Models) with the same fixed and random effects specifications and using BOBYQA optimiser, after first log-transforming (natural) the response variables to ensure normality. The various models of data metrics and their specifications are listed in `table1`. There was no model run for temporal spread due to it being a visual metric and its model specifications being very different from those of other metrics `(S3)`.
+
+bootstrap predictions
 
 diagnostics
 
@@ -135,25 +136,41 @@ Our eBird dataset contained `How many numbers of lists after filtering?` after a
 
 ## Changes to data
 
-Most changes to data quantity and quality were restricted to a few months around the major lockdowns. The only noticeable long-lasting effects of the pandemic were in group birding per observer, hotspot birding and birding protocol, which were all restricted to the lockdown months in 2020 but in 2021 decreased across a large part of the year. Moreover, birding distance at the national level showed a consistent decrease after MY 2018, including in MY 2021 after the pandemic.
+Most changes to data quantity and quality were restricted to a few months around the major lockdowns. The only noticeable long-lasting effects of the pandemic were in group birding per observer, hotspot birding and birding protocol, which were all restricted to the lockdown months in 2020 but in 2021 decreased across a large part of the year `(fig)`. Moreover, birding distance `(fig S)` at the national level showed a consistent decrease after MY 2018, including in MY 2021 after the pandemic.
+
+`fig: group birding per observer, hotspot birding, birding protocol`
 
 All other metrics of birder behaviour, spatial coverage, spatial spread and urban bias changed for a few months but remained unaffected at the large temporal scale of year. `(refer to YEAR coefficients in a couple of the model summaries in the supplementary, showing that there were no long-lasting effects)` Moreover, there was no observable decline at all in overall birding effort in terms of time spent birding by an average observer `(model)` or overall area covered by birders `(model)`. In fact, there are even suggestions of a slight increase in these metrics over the years `(graphs)`. Importantly, there was no spatial clustering or concentration of the fine-scale changes to overall birding effort `(graphs of spatial spread; one each of no. lists, prop. lists, grid coverage with threshold)`.
 
-## Consistency across spatial units
+`fig: graphs of birding time, spatial coverage`
 
-The long-term declines in group birding per observer, hotspot birding and birding with travelling protocol were only present at the national level. At the level of individual states, these patterns were highly variable `(group birding per observer state-level)`.
+`fig: graphs of spatial spread; one each of`
 
-## Consistency across pandemic years
+### Consistency across spatial units
 
-## What happened during the peak pandemic months?
+The long-term declines in group birding per observer, hotspot birding and birding with travelling protocol were only present at the national level. At the level of individual states, these patterns were highly variable `(fig S)`.
+
+`(fig S: group birding per observer state-level)`.
+
+### Consistency across pandemic years
+
+### What happened during the peak pandemic months?
 
 There were unsurprising changes to several metrics during the peak pandemic months. Group birding per observer decreased considerably `(refer)`, while site fidelity per observer increased `(refer)`. Birding in general became shorter in terms of distance covered, birding duration and list length `(refer)`. Proportions of hotspot birding and travelling protocol lists decreased, whereas urban birding proportion increased. Spatial coverage?
 
 ## Changes in bird reporting patterns
 
-Bird reporting patterns were explored for \_\_ species (urban, rural) at the national level, and \_\_ (), \_\_ (), \_\_ () and \_\_ () species for the states of Karnataka, Kerala, Maharashtra and Assam respectively. While urban species are reported slightly more frequently than rural species in general, the pandemic months in 2020 saw an even further increase in urban species reporting, but this was restricted to the state of Karnataka `(2 months graph of all states and nationwide)`. Notably, this did not translate across the entire pandemic years `(12 months graph of all states and nationwide)`.
+Bird reporting patterns were explored for \_\_ species (urban, rural) at the national level, and \_\_ (), \_\_ (), \_\_ () and \_\_ () species for the states of Karnataka, Kerala, Maharashtra and Assam respectively. While urban species are reported slightly more frequently than rural species in general, the pandemic months in 2020 saw an even further increase in urban species reporting, but this was restricted to the state of Karnataka `(2 months graph of all states)`. Notably, this did not translate across the entire pandemic years `(12 months graph of all states)`.
+
+`fig: 2 months of all states overall models`
 
 Bird reporting with consistent effort during the pandemic months increased for both urban and non-urban species `(2 months panel)`, while there was no change at all during the other months of the year `(10 months panel)`. The resulting pattern of bird reporting at the large temporal scale of year does not have any noticeable urban bias `(12 months panel)`. Moreover, the reporting patterns during the pandemic months were highly variable and often contradictory across the different locations in the country `(2 months panel)`.
+
+`fig: all three panels of prolific models`
+
+### Consistency
+
+### What happened during the peak pandemic months?
 
 # Discussion
 
@@ -163,15 +180,15 @@ We expected some changes to eBird data from the pandemic due to behavioural chan
 
 Indeed, we found that while overall birding effort did not decrease during the pandemic (S number of lists, S number of active/new eBirders, observer-level birding time), birders switched their behaviours in certain expected ways during the peak lockdown periods in India. The most obvious and direct change was due to the various restrictions on movement, travel and social interaction: birders avoided interacting with other birders (group birding per observer), and became more sedentary by limiting travel (observer-level site fidelity) and staying put (birding protocol, hotspots). Checklist-level effort decreased during lockdown, with lists becoming shorter overall (list length, S distance, S duration), but this must not be confused with overall birding effort which did not decrease.
 
-These changes in birder behaviour imply different things for eBird data quality. Since a large majority of the eBirding community is urban, birders becoming more sedentary also meant a clear bias towards urban areas in the data generated during the lockdown. This urban bias was much more prominent during the first lockdown than the second, despite the latter year having been more devastating in terms of COVID-19 cases. This suggests that the novelty of the disease during the first year played an important role. Our results also suggest once again that outside of the peak lockdown months, as soon as restrictions were lifted, birders reverted to their "normal" state of birding behaviours.
+These changes in birder behaviour imply different things for eBird data quality. Since a large majority of the eBirding community is urban, birders becoming more sedentary also meant a clear bias towards urban areas in the data generated during the lockdown. This urban bias was much more prominent during the first lockdown than the second, despite the latter year having been more devastating in terms of COVID-19 cases. This suggests that the novelty of the disease during the first year played an important role. The lower mobility of birders also meant a slight decline in overall spatial coverage of the data during the lockdown (spatial coverage), although the magnitude of this change was not as high as that of some of the other changes. This trend also varied depending on the area (state-level) and scale under consideration. Our results also suggest once again that outside of the peak lockdown months, as soon as restrictions were lifted, birders reverted to their "normal" state of birding behaviours.
 
-The lower mobility of birders also meant a slight decline in overall spatial coverage of the data during the lockdown (spatial coverage), although the magnitude of this change was not as high as that of some of the previous changes in birder behaviour. This trend also varied depending on the area (state-level) and scale under consideration.
-
-Despite the presence of very fine-scale changes in overall birding and checklist-level effort, these were not concentrated in any notable way in space, i.e., major changes were not located all in certain parts of the country (spatial spread) nor strictly in the pandemic months. This means that while there did exist variations in metrics of effort, these were spread throughout the country, were not necessarily due to the pandemic, and were also often contradictory trends that cancelled out at the large scale.
+Despite the presence of these fine-scale changes in overall birding and checklist-level effort, these were not concentrated in any notable way in space, i.e., major changes were not located all in certain parts of the country (spatial spread) `nor strictly in the pandemic months`. This means that while there did exist variations in metrics of effort, these were spread throughout the country, were not necessarily due to the pandemic, and were also often contradictory trends that cancelled out at the large scale.
 
 ## Changes in bird reporting patterns
 
 Given such changes to the data, we wanted to know whether there were complementary (artefactual) changes in bird species reporting patterns. Another possibility was that bird reporting patterns changed as a consequence of true changes in bird abundance or behaviour during the pandemic, which would suggest that birds are able to respond and adapt quickly to changes in the environment.
+
+## Comparison to results from elsewhere
 
 Birds are a great study group for these questions, as they have been researched extensively and are also easier to observe than others. Additionally, their responses are expected to be highly insightful, as they are closely linked to human activity: not only do anthropogenic factors affect habitat availability, suitability, survival and fitness, etc., but many of their behavioural traits are also directly affected by human activity (e.g., song amplitude and frequency, time of vocal activity, etc.). Indeed, during the period of most stringent restrictions in USA, although a few species showed a decline, most increased in abundance in areas that saw a decrease in human activity [@schrimpf2021]. In contrast, species tightly linked to human presence and activity like the Feral Pigeon showed lower abundances [@soh2021].
 
@@ -181,15 +198,17 @@ There is also recent proof that behavioural traits can change rapidly in respons
 
 If the changes in eBird data did lead to artefactual changes in bird species reporting patterns, this would have consequences for the usefulness of eBird data from the pandemic. In all other cases, given that overall birding effort has only been increasing, eBird data would remain valuable.
 
+Bird reporting patterns were much less consistent and unanimous at the small scale. There was high and often contradictory variability in patterns of change across the different parts of the country as well as across different bird species. This meant that there was no notable and clearly directional change in bird reporting during the pandemic, at larger spatial and temporal scales.
+
 ### Importance of scale
 
 Our results highlight the importance of scale, both spatial and temporal, in considering the effects of a major event like the COVID-19 pandemic. At the small scale of states (or even smaller like districts) and months, there were clear and expected changes in birder behaviour and, consequently, to data quality. Most of the changes to data quality reverted to "normal" levels after the lockdown months, hence resulting in very few notable changes at the larger temporal scale of years. This scale is more relevant to most analyses using eBird data.
 
-Bird reporting patterns were much less consistent and unanimous at the small scale. There was high and often contradictory variability in patterns of change across the different parts of the country as well as across different bird species. This meant that there was no notable and clearly directional change in bird reporting during the pandemic, at larger spatial and temporal scales.
+The bird reporting patterns highlight the importance of scale.
 
-## Guidelines for using pandemic eBird data from India
+### Guidelines for using pandemic eBird data from India
 
-## Comparison to results from elsewhere
+Thus, we can conclude that eBird data from India from the pandemic years is still a valuable asset. When formulating a question to be answered using this data, the researcher must first consider the scale (spatial and temporal) of the question. Questions of larger scale can be tackled directly, whereas small-scale questions might benefit from a deep-dive into patterns in the raw data that can potentially create misleading patterns. In the latter cases, the researcher is recommended to conduct similar analyses to the ones in this study in order to first assess the suitability of the data before attempting to answer the question. However, there is still tremendous potential for citizen science data like eBird in exploring large-scale patterns.
 
 # Conclusion
 

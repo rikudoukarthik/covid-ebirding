@@ -1,21 +1,62 @@
-# Statistical validation of data metrics
+---
+title: "Supplementary Material: Birds in the time of COVID: Pandemic effects illuminated by birdwatchers, and implications for citizen science inference"
+author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
+bibliography: covid-ebirding.json
+link-citations: yes
+output: 
+  word_document:
+    number_sections: true
+    reference_docx: rmd_word_template.docx
+---
+
+# Methods
+
+## Statistical validation of data metrics
 
 From exploratory analyses to simple confidence values, propagating errors from state level to national level.
 
-All the metrics with their standard errors were first calculated at the state level, then propagated to the national level (errors propagated following errorpropagation), in order to highlight the high variability across scales, regions, governments, etc.
+All the metrics with their standard errors were first calculated at the state level, then propagated to the national level (errors propagated following error propagation), in order to highlight the high variability across scales, regions, governments, etc.
 
-# Temporal spread
+## Temporal spread
 
-From calculation of metric to result presentation to interpretation
+Calculation of metric
 
-# Spatial spread
+## Spatial spread
 
 Detailed description of the various metrics analysed here, how they were calculated, what they can mean (i.e., not interpretation of results we got, unlike in temporal spread above)
 
-# Overall bird reporting: non-model analyses
+## Overall bird reporting: non-model analyses
 
-Detail on how the metric was calculated (not much), all/most results.
+Detail on how the metric was calculated (not much)
 
-# Bootstrapping for confidence from GLMMs
+## Bootstrapping for confidence from GLMMs
 
 From model to final CIs
+
+# Figures
+
+## Number of lists in each year, Number of eBirders in each year
+
+Line graphs, both in one
+
+## list distance, list duration
+
+National and state graphs
+
+## group birding, hotspot, protocol
+
+State-level graphs
+
+## Temporal spread
+
+result presentation (graph) and interpretation (caption)
+
+## Overall bird reporting
+
+All/most non-model results (graphs)
+
+10 and 12 months graphs of overall bird models
+
+# Table: Model summaries of all data metrics
+
+Tables of model summaries for all the metrics
