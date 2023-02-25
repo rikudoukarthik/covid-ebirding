@@ -82,13 +82,13 @@ Did the pandemic create spatial clusters of positive or negative change in birdi
 
 ### Statistical validation
 
-For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see `Supplementary Materials`). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models `(nested within district for the urban bias model??; table1)`. All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser.
+For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see `S1.1`). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models `(nested within district for the urban bias model??; table1)`. All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser.
 
 Some metrics like observer-level site fidelity, observer-level birding time, birding distance, list duration and list length were either whole number of continuous numerical variables that did not include zero in its possible values. For these, since GLMMs with binomial or Poisson error distributions are not appropriate, we instead fitted LMMs (Linear Mixed Models) with the same fixed and random effects specifications and using BOBYQA optimiser, after first log-transforming (natural) the response variables to ensure normality. The various models of data metrics and their specifications are listed in `table1`. There was no model run for temporal spread due to it being a visual metric and its model specifications being very different from those of other metrics `(S3)`.
 
-bootstrap predictions (cite Bolker vignette)
-
 diagnostics
+
+We used the `bootMer()` function in the lme4 package in order to test the significance of the fitted model results, by obtaining mean and CI estimates using semi-parametric bootstrapping. The bootstrapping was done with 1000 simulations and with parallel core processing (package parallel).
 
 `table1` (a large sideways full-page table)
 
@@ -112,13 +112,13 @@ From the set of species analysed in the previous section, we determined those to
 
 ### Statistical validation
 
-Like with the metrics of data quantity and quality, the bird reporting patterns were first explored using visualisations, then emerging patterns were validated using simple bootstrapping (see `Supplementary Materials`). Eventually, once the specifics of the analyses were finalised, the patterns were statistically tested using GLMMs. Due to strikingly obvious differences in birding conditions between the lockdown and non-lockdown periods (and due to large differences in results from both approaches), we ran three separate models: one for the months of April and May ("lockdown", `ref`), one for the other ten months ("non-lockdown"), and one for all twelve months together ("all"). This also helps determine whether the effects of the pandemic on species reporting were restricted to the strict lockdown period.
+Like with the metrics of data quantity and quality, the bird reporting patterns were first explored using visualisations, then emerging patterns were validated using simple bootstrapping for confidence estimates as in `S1`, except that the bootstrapped values were calculated separately for each spatial scale and propagation was done from the fine temporal scale of month to the scale of migratory year. Eventually, once the specifics of the analyses were finalised, the patterns were statistically tested using GLMMs. Due to strikingly obvious differences in birding conditions between the lockdown and non-lockdown periods (and due to large differences in results from both approaches), we ran three separate models: one for the months of April and May ("lockdown", `ref`), one for the other ten months ("non-lockdown"), and one for all twelve months together ("all"). This also helps determine whether the effects of the pandemic on species reporting were restricted to the strict lockdown period.
 
 For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided in `table3`. All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser, except in a few `(how many?)` of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
 
-bootstrap prediction (cite Bolker vignette)
-
 diagnostics same as birder
+
+Mean and CI estimates were obtained for the fitted models in the same way as in `Section validation 1`, but with 500 simulations instead of 1000, due to computational limitations.
 
 `table3`
 
