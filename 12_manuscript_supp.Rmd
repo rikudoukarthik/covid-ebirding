@@ -11,7 +11,7 @@ output:
 
 # Methods
 
-## Statistical validation of data metrics
+## Exploratory analyses and bootstrapped predictions
 
 From exploratory analyses to simple confidence values, propagating errors from state level to national level.
 
@@ -19,7 +19,13 @@ All the metrics with their standard errors were first calculated at the state le
 
 ## Temporal spread
 
-Calculation of metric
+### Days of the week
+
+For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see S1) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
+
+### Times of the day
+
+For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping (see S1) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
 ## Spatial spread
 

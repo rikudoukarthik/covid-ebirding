@@ -2086,8 +2086,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"),
 
 Not "per observer", as this metric from data POV.
 
-Since month is not considered here (and instead data from multiple months are averaged), it doesn't make sense to keep two years for BEF and AFT---they should instead also be pooled into the averaging.
-
 Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect; response has more than 2 values).
 
 ```{r d10a_t_dow, cache=TRUE, message=FALSE}
