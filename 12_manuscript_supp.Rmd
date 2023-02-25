@@ -13,23 +13,13 @@ output:
 
 ## Exploratory analyses and bootstrapped estimates
 
-We selected the various metrics of data quantity and quality from the available effort metadata associated with every eBird checklist. To check whether these metrics were useful to answer our question, we first explored basic patterns by calculating the metrics for every month and migratory year, for the four individual states of interest (state-level). These calculations produced a mean or median value and associated confidence interval from non-parametric bootstrapping: first the mean of the values in a group were calculated, following which a new sample of the same size as the original one was selected by resampling the original group with replacement, and a new mean was calculated, and so on until this calculation was done 1000 times. The mean of the 1000 sampled means is the group mean while its standard deviation is the standard error. We then calculated CIs from the SEs assuming a Gaussian distribution ($CIs = mean \pm 1.96 SE$) due to the large sample size in our dataset.
+We selected the various metrics of data quantity and quality from the available effort metadata associated with every eBird checklist. To check whether these metrics were useful to answer our question, we first explored basic patterns by calculating the metrics for every month and migratory year, for the four individual states of interest (state-level). These calculations produced a mean or median value and associated confidence interval from non-parametric bootstrapping: first the mean of the values in a group were calculated, following which a new sample of the same size as the original one was selected by resampling the original group with replacement, and a new mean was calculated, and so on until this calculation was done 1000 times. The mean/median of the 1000 sampled means is the group mean/median estimate while its standard deviation is the standard error. We then calculated CIs from the SEs assuming a Gaussian distribution ($CIs = mean \pm 1.96 SE$) due to the large sample size in our dataset.
 
 From the level of states, all the metrics were then calculated for the whole country by averaging the means and propagating the SEs, in order to highlight the high variability across scales, regions, governments, etc. Assuming a Gaussian distribution is necessary to propagate SEs. The error propagation was done as follows:
 
 $$SE_{y} = \frac {\sqrt {\sum_{i=1}^n (SE_{x_{i}}) ^2}} {n}$$
 
 where $n$ is the number of observations/rows in the group.
-
-## Temporal spread
-
-### Days of the week
-
-For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see S1) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
-
-### Times of the day
-
-For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping `(see S1)` to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
 ## Spatial spread
 
@@ -55,13 +45,15 @@ Proportional change in a metric $a$ from period $x$ to period $y$ was calculated
 
 We visualised only the negative values of proportional change, since a general increase in birding effort or grid coverage is not worrisome and is in fact even expected. Here, the values were coloured based on magnitude and once again the high magnitude changes are of interest, but we are also interested in transitions in both directions. For example, if the same districts with high magnitudes of negative proportional change from BEF to DUR have similar values also from AFT to DUR, this would suggest a clear and direct impact of the pandemic in lower birding effort or grid coverage.
 
-## Overall bird reporting: non-model analyses
+## Temporal spread
 
-Detail on how the metric was calculated (not much)
+### Days of the week
 
-## Bootstrapping for confidence from GLMMs
+For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see S1) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
-From model to final CIs
+### Times of the day
+
+For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping `(see S1)` to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
 # Figures
 
@@ -78,6 +70,8 @@ National and state graphs
 State-level graphs
 
 ## Spatial spread
+
+whatever is not in main text
 
 ## Temporal spread
 
