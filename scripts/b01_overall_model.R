@@ -72,6 +72,13 @@ birds_pred <- data_occ0 %>%
 print("Completed preparations for modelling. Now starting modelling.")
 
 
+# for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+# failed to reduce deviance in pwrssUpdate"
+
+fail_spec <- c("Black Drongo", "Jungle Myna", "Common Myna", "Green Bee-eater", 
+               "Spotted Dove", "White-throated Kingfisher")
+
+
 # month type 1 ------------------------------------------------------------
 
 cur_m <- 1
@@ -103,10 +110,23 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   
   tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
-                        (1|CELL.ID),
-                      data = data_spec, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+  # failed to reduce deviance in pwrssUpdate"
+  
+  if (state_name == "Kerala" & 
+      unique(birds_pred0$COMMON.NAME)[cur_sp] %in% fail_spec){
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial,
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  } else {
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial(link = "cloglog"),
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  }
+  
   tictoc::toc() 
 
   
@@ -181,11 +201,25 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
   
   
   tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
-                        (1|CELL.ID),
-                      data = data_spec, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  
+  # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+  # failed to reduce deviance in pwrssUpdate"
+  
+  if (state_name == "Kerala" & 
+      unique(birds_pred0$COMMON.NAME)[cur_sp] %in% fail_spec){
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial,
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  } else {
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial(link = "cloglog"),
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  }
+  
   tictoc::toc() 
+  
   
   
   tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
@@ -258,13 +292,28 @@ for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
     left_join(data_occ)
   
   
-  tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
-  model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
-                        (1|CELL.ID),
-                      data = data_spec, family = binomial(link = "cloglog"),
-                      nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-  tictoc::toc() 
   
+  tictoc::tic(glue("GLMM for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
+  
+  # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+  # failed to reduce deviance in pwrssUpdate"
+  
+  if (state_name == "Kerala" & 
+      unique(birds_pred0$COMMON.NAME)[cur_sp] %in% fail_spec){
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial,
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  } else {
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:NO.SP + MONTH:M.YEAR + 
+                          (1|CELL.ID),
+                        data = data_spec, family = binomial(link = "cloglog"),
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  }
+  
+  tictoc::toc() 
+
+    
   
   tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, {unique(birds_pred0$COMMON.NAME)[cur_sp]}"))
   prediction <- split_par_boot(model = model_spec, 

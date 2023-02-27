@@ -194,11 +194,10 @@ b01_overall_annual("Kerala")
 
 ```
 
-No prominent effect of the pandemic. Biggest change is in wetland birds.
+No prominent effect of the pandemic, except PBF (increased) and SpDo (decreased) in April 2020 for Kerala state. Even at the scale of Kochi, there is no prominent effect, though a lot of species-months combos in Kochi have very little data.
 
-No prominent effects directly attributable to the pandemic. Most patterns even out.
+At the annual level in Kochi, only a few species seem to have been clearly affected by the pandemic. However, overall there is no clear directional pattern. Even with non-urban species, many increased during the pandemic. For the entire state, many patterns even out.
 
-3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the annual scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
 
 ```{r b01_overall_s2c_model, cache=TRUE, message=FALSE}
 
@@ -207,6 +206,7 @@ state_name <- "Kerala"
 
 
 source("scripts/b01_overall_model.R")
+# 402 min
 
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
@@ -417,7 +417,7 @@ data_prolific <- data_prolific %>%
 ### Model run separately for each location, and species variables included in model 
 
 # Lockdown and non-lockdown months modelled separately, since the month variable in
-# model otherwise pulled to a very different average (as seen in third panel in graph here)
+# model otherwise pulled to a very different average 
 
 
 data_prolific0 <- bind_rows("LD" = data_prolific %>% filter(MONTH %in% 4:5), 
@@ -514,7 +514,7 @@ prolific_points <- prolific_pred %>%
   summarise(PRED = mean(PRED),
             # propagating SE across species of a category
             SE = sqrt(sum((SE)^2))/n()) %>% 
-  # to make lines connect per location
+  # to make lines connect per location                      
   group_by(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY) %>% 
   arrange(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
   mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
