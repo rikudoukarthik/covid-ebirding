@@ -1294,40 +1294,51 @@ gg_b_model <- function(data, type, data_points) {
       n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
       " in three separate monthwise models")
     
+    # different y lims for different states
+    if (state_name == "Karnataka") {
+      plot_ylims <- c(0.13, 0.35)
+    } else if (state_name == "Kerala") {
+      plot_ylims <- c(0.05, 0.22)
+    } else if (state_name == "Maharashtra") {
+      plot_ylims <- c(0.175, 0.35)
+    } else if (state_name == "Assam") {
+      plot_ylims <- c(0.1, 0.5)
+    }
+    
     
     model_plot <- (ggplot(filter(data, MONTHS.TYPE == "LD"), 
                           aes(M.YEAR, PRED, col = SP.CATEGORY)) +
                      scale_color_manual(values = c("#8F85C1", "#A3383C"),
                                         name = "Species\ncategory",
                                         labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     scale_y_continuous(limits = plot_ylims) +
                      labs(title = "For the months of April and May",
                           x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
                      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
                      ggplot(filter(data, MONTHS.TYPE == "NL"), 
                             aes(M.YEAR, PRED, col = SP.CATEGORY)) +
                      scale_color_manual(values = c("#8F85C1", "#A3383C"),
                                         name = "Species\ncategory",
                                         labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     scale_y_continuous(limits = plot_ylims) +
                      labs(title = "For other ten months",
                           x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
                      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
                      ggplot(filter(data, MONTHS.TYPE == "ALL"), 
                             aes(M.YEAR, PRED, col = SP.CATEGORY)) +
                      scale_color_manual(values = c("#8F85C1", "#A3383C"),
                                         name = "Species\ncategory",
                                         labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     scale_y_continuous(limits = plot_ylims) +
                      labs(title = "For all twelve months",
                           x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
                      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+                                   size = 1, width = 0.15, position = position_dodge(0.5))) +
       plot_layout(guides = "collect") +
       plot_annotation(title = plot_title,
                       subtitle = plot_subtitle) 

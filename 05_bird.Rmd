@@ -162,17 +162,20 @@ state_name <- "Karnataka"
 source("scripts/b01_overall_model.R")
 # 341 mins
 
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
+
+
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-# saving modelled data
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
 # saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
@@ -208,17 +211,20 @@ state_name <- "Kerala"
 source("scripts/b01_overall_model.R")
 # 402 min
 
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
+
+
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-# saving modelled data
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
 # saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
@@ -251,17 +257,20 @@ state_name <- "Maharashtra"
 source("scripts/b01_overall_model.R")
 # 221 min
 
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
+
+
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-# saving modelled data
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
 # saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
@@ -294,17 +303,20 @@ source("scripts/b01_overall_model.R")
 # 60 min
 # Long-tailed Shrike models for month type 1 and 3 are rank-deficient so drops 1 coefficient
 
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
+
+
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-# saving modelled data
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
 # saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
