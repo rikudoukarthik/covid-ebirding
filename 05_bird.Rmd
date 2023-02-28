@@ -249,6 +249,7 @@ state_name <- "Maharashtra"
 
 
 source("scripts/b01_overall_model.R")
+# 221 min
 
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
