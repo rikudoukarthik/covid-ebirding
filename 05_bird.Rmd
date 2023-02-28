@@ -151,7 +151,7 @@ Nothing conclusively due to the pandemic or in one particular direction, at the 
 
 At the annual level:
 
-Urban species show a wide range of patterns, often contradictory. But most species show a decrease during the pandemic year, which is contrary to the prediction of a pandemic effect. Most non-urban species saw a decline in reporting in the pandemic year in Bengaluru city. Both these patterns soften out when averaged across space, i.e., at the level of the entire state of Karnataka.
+Urban species show a wide range of patterns, often contradictory. But many show a very slight decrease during the pandemic year, which is contrary to the prediction of a pandemic effect. Most non-urban species saw a decline in reporting in the pandemic year in Bengaluru city. Both these patterns soften out when averaged across space, i.e., effect sizes shrink at the level of the entire state of Karnataka.
 
 ```{r b01_overall_s1c_model, cache=TRUE, message=FALSE}
 
@@ -179,10 +179,9 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
--   Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction. (Still true after final models?)
--   However, at the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding.
--   The crucial months like April and May show higher urban species reporting frequency overall.
--   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species. The slight suggestion (still insignificant) of a change in MY2019 during the peak period completely disappears at the larger temporal scale.
+-   At the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding.
+-   The crucial months like April and May show higher reporting frequency for urban species but not for non-urban species.
+-   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species at the larger temporal scale. 
 
 ```{r b01_overall_s2, cache=TRUE, message=FALSE}
 
@@ -197,10 +196,9 @@ b01_overall_annual("Kerala")
 
 ```
 
-No prominent effect of the pandemic, except PBF (increased) and SpDo (decreased) in April 2020 for Kerala state. Even at the scale of Kochi, there is no prominent effect, though a lot of species-months combos in Kochi have very little data.
+No prominent effect of the pandemic, except PBF (increased) and SpDo (decreased) in April 2020 for Kerala state. The effect of the pandemic seems much less pronounced than in Karnataka. At the scale of Kochi, there is no prominent effect, though a lot of species-months combos in Kochi have very little data.
 
-At the annual level in Kochi, only a few species seem to have been clearly affected by the pandemic. However, overall there is no clear directional pattern. Even with non-urban species, many increased during the pandemic. For the entire state, many patterns even out.
-
+At the annual level in Kochi, only a few species seem to have been clearly affected by the pandemic. However, overall there is no clear directional pattern. Even with non-urban species, many increased during the pandemic. For the entire state, many patterns even out. One notable exception is White-throated Kingfisher which decreased significantly in MY2019 but bounced back.
 
 ```{r b01_overall_s2c_model, cache=TRUE, message=FALSE}
 
@@ -228,6 +226,10 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
+- At the annual level, there is a slight increase in urban species reporting, but there is also a similar increase in non-urban species reporting. 
+- This is in fact due to finer-scale mirroring of patterns. Even during the peak pandemic period, both categories of species saw an increase in reporting. This is true for the other ten months as well, although the change is much smaller.
+- Since reporting of both kinds of species were affected similarly, there is no bias in the pandemic data. Moreover, although there was a change, it was of a relatively small magnitude. 
+
 ```{r b01_overall_s3, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s3a_m"
@@ -241,11 +243,9 @@ b01_overall_annual("Maharashtra")
 
 ```
 
-Many non-urban and wetland bird species showed a slight decrease in reporting frequency during the "peak" period, but none of the urban species did. Also, WCBa is rare in Pune city so can be ignored at this level.
+Only a couple of non-urban species decreased during the peak months in Pune city. Also, WCBa is rare in Pune city so can be ignored at this level. In the state as a whole, a couple of urban species and some non-urban species (more than urban) showed a decline during the peak months.
 
-There is no clear direction of change with the pandemic in Pune city. What happens when considering a larger spatial scale?
-
-At the larger spatial scale, pandemic effects are restricted to the "peak" period, mostly in 2020. Most species decreased (surprisingly, including urban ones) in frequency. But translated to the annual scale, non-urban species also spread out, in that there is no longer one specific direction in which frequencies of all the species changed. Only urban species seem to show a decrease in frequency, probably due to increased birding in non-urban areas over the years.
+At the annual scale in Pune, many non-urban species declined in MY2019 but only some of them bounced back. In the whole state, this softens and evens out.
 
 ```{r b01_overall_s3c_model, cache=TRUE, message=FALSE}
 
@@ -273,6 +273,10 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
+- At the annual level, both urban and non-urban species increased in MY2019, but they haven't reverted to pre-pandemic levels, suggesting that this is perhaps due to an increase in birding in Maharashtra. However, urban species have been more stable after MY2019 than non-urban.
+- Maharashtra is the only state where urban species clearly increased and non-urban species clearly decreased during the peak pandemic months. Both have since returned to normal.
+- In the other ten months, both kinds of species increased in MY2019, but urban species are being reported more and more even after the pandemic has passed. This might have something to do with the kind of birding that has been increasing in Maharashtra.
+
 ```{r b01_overall_s4, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s4a_m"
@@ -286,9 +290,7 @@ b01_overall_annual("Assam")
 
 ```
 
-Small spatial scale (city) for Assam has only one grid cell, so no variation and no CIs.
-
-There is absolutely no overall pattern at any of the scales suggesting any effect of the pandemic on bird reporting (either positive or negative). 
+Small spatial scale (city) for Assam has only one grid cell, so no variation and no CIs. There is absolutely no overall pattern at any of the scales suggesting any effect of the pandemic on bird reporting (either positive or negative). Some urban species showed an increase in Guwahati at the annual scale, but so did some non-urban species (while others showed a decrease). There is no clear directionality. This very much evens out at the level of state.
 
 ```{r b01_overall_s4c_model, cache=TRUE, message=FALSE}
 
@@ -317,10 +319,9 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
--   Unlike other states, Assam shows a bias in reporting towards urban species even at the annual scale.
--   The urban birding proportion in MY2019 is higher only relative to MY2018, and not to MY2020 or MY2021.
+-   Unlike other states, Assam showed similar reporting of urban and non-urban species before the pandemic, but since has higher urban reporting. This could be due to the kind of birding that has been growing in the state, which has seen a significant growth in the last few years. Even in MY2019, non-urban reporting did not decrease, but urban reporting just increased. 
 -   The gap between urban and non-urban birding proportion has been (very) gradually decreasing since MY2019. This might suggest that this was indeed an effect of the pandemic.
--   How is this related to Bihu Bird Count (did it start in MY2019?), and to general rise in popularity of birding as well as skill of birders in Assam?
+-   How is this related to Bihu Bird Count which started in MY2019, and to general rise in popularity of birding as well as skill of birders in Assam?
 
 ## Bird reporting with standard effort
 
@@ -554,8 +555,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = prolific_plot,
 
 The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area. When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain. Need to run the model separately for the three time periods because the results from both are greatly different. Because we know that the time periods are different in such a way, we should not ignore this and let the single global model average out and skew the existing patterns.
 
-The months of April and May seem to generally (even in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. The different patches under consideration all show considerably more variation (inferred from CIs) during these months than other times of the year. There is slightly more variability in rural species than in urban ones. There is also considerable variation between the patches in how reporting changed from year to year. While some increased in MY 2019, others decreased.
+There is no overall pattern or directionality in changes during the pandemic months of years. There is considerable variation between the patches in how reporting changed from year to year, especially during the peak months: while some increased in MY 2019, others decreased. In the other ten months of the year, nothing changed with the pandemic at all. In conclusion, it seems that the pandemic-induced changes were restricted to the lockdown months, but also there is no clear directionality in the changes over different locations and regions across the country.
 
-In the other ten months of the year, nothing changed with the pandemic at all. In conclusion, it seems that the pandemic-induced changes were restricted to the lockdown months, but also there is no clear directionality in the changes over different locations and regions across the country.
-
-In some patches where reporting frequencies increased in MY 2019 then went back to normal, it could be due to lower noise levels inducing better detection.
+Speculation: in some patches where reporting frequencies increased in MY 2019 then went back to normal, it could be due to lower noise levels inducing better detection.
