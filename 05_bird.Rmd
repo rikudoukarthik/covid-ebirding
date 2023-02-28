@@ -156,27 +156,30 @@ Urban species show a wide range of patterns, often contradictory. But most speci
 ```{r b01_overall_s1c_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s1c_model"
-
-
 state_name <- "Karnataka"
 
+
 source("scripts/b01_overall_model.R")
+# 341 mins
+
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
 
 
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-  
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
+# saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
--   Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction.
+-   Non-urban birds had lower reporting frequency in MY 2020, as seen from the MY:month interaction. (Still true after final models?)
 -   However, at the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding.
 -   The crucial months like April and May show higher urban species reporting frequency overall.
 -   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species. The slight suggestion (still insignificant) of a change in MY2019 during the peak period completely disappears at the larger temporal scale.
@@ -194,32 +197,34 @@ b01_overall_annual("Kerala")
 
 ```
 
-No prominent effect of the pandemic. Biggest change is in wetland birds.
+No prominent effect of the pandemic, except PBF (increased) and SpDo (decreased) in April 2020 for Kerala state. Even at the scale of Kochi, there is no prominent effect, though a lot of species-months combos in Kochi have very little data.
 
-No prominent effects directly attributable to the pandemic. Most patterns even out.
+At the annual level in Kochi, only a few species seem to have been clearly affected by the pandemic. However, overall there is no clear directional pattern. Even with non-urban species, many increased during the pandemic. For the entire state, many patterns even out.
 
-3-4 non-urban species decreased during the 2-3 months of "peak" and wetland species decreased during 5-6 months of the "peak" and following it. At the annual scale, a few urban species show slightly higher frequencies during migratory year 2019, but others show different patterns. Effect sizes will need to be judged. Non-urban and wetland species were not affected in any particular direction consistently (across species) by the pandemic.
 
 ```{r b01_overall_s2c_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s2c_model"
-
-
 state_name <- "Kerala"
 
+
 source("scripts/b01_overall_model.R")
+# 402 min
+
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
 
 
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-  
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
+# saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
@@ -245,23 +250,26 @@ At the larger spatial scale, pandemic effects are restricted to the "peak" perio
 ```{r b01_overall_s3c_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s3c_model"
-
-
 state_name <- "Maharashtra"
 
+
 source("scripts/b01_overall_model.R")
+# 221 min
+
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
 
 
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-  
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
+# saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
@@ -278,35 +286,40 @@ b01_overall_annual("Assam")
 
 ```
 
-Non-urban and wetland species do not show an impact, while some urban species did have slightly higher frequencies in migratory year 2019. However, confidence intervals are mostly overlapping and effect size is likely small.
+Small spatial scale (city) for Assam has only one grid cell, so no variation and no CIs.
 
-Very minor suggestions of changes during the 2 month period in a few species, but overall no pattern. At the annual scale, wetland species show some differences, but others show no overall change in reporting frequency due to the pandemic.
+There is absolutely no overall pattern at any of the scales suggesting any effect of the pandemic on bird reporting (either positive or negative). 
 
 ```{r b01_overall_s4c_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s4c_model"
-
-
 state_name <- "Assam"
 
+
 source("scripts/b01_overall_model.R")
+# 60 min
+# Long-tailed Shrike models for month type 1 and 3 are rank-deficient so drops 1 coefficient
+
+# saving modelled data
+save(birds_pred, data_occ, 
+     file = glue("outputs/{anal_name}.RData"))
 
 
+
+# loading modelled data
+load(glue("outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
-
-  
-save(birds_pred, 
-     file = glue("outputs/{anal_name}.RData"))
-
+# saving plots
 ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
-       dpi = 300, width = 21, height = 6, units = "in")
+       dpi = 300, width = 16, height = 7, units = "in")
 
 ```
 
--   Unlike other states, Assam shows a bias in reporting towards urban species even at the annual and state-wide scale.\
--   The increase in urban birding proportion is only relative to MY2018, and not to MY2020, although the trend seems to be negative post-MY2019.\
+-   Unlike other states, Assam shows a bias in reporting towards urban species even at the annual scale.
+-   The urban birding proportion in MY2019 is higher only relative to MY2018, and not to MY2020 or MY2021.
+-   The gap between urban and non-urban birding proportion has been (very) gradually decreasing since MY2019. This might suggest that this was indeed an effect of the pandemic.
 -   How is this related to Bihu Bird Count (did it start in MY2019?), and to general rise in popularity of birding as well as skill of birders in Assam?
 
 ## Bird reporting with standard effort
@@ -414,7 +427,7 @@ data_prolific <- data_prolific %>%
 ### Model run separately for each location, and species variables included in model 
 
 # Lockdown and non-lockdown months modelled separately, since the month variable in
-# model otherwise pulled to a very different average (as seen in third panel in graph here)
+# model otherwise pulled to a very different average 
 
 
 data_prolific0 <- bind_rows("LD" = data_prolific %>% filter(MONTH %in% 4:5), 
@@ -511,7 +524,7 @@ prolific_points <- prolific_pred %>%
   summarise(PRED = mean(PRED),
             # propagating SE across species of a category
             SE = sqrt(sum((SE)^2))/n()) %>% 
-  # to make lines connect per location
+  # to make lines connect per location                      
   group_by(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY) %>% 
   arrange(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
   mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
@@ -539,11 +552,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = prolific_plot,
 
 ```
 
-The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area.
-
-When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain.
-
-Need to run the model separately for the three time periods because the results from both are greatly different. Because we know that the time periods are different in such a way, we should not ignore this and let the single global model average out and skew the existing patterns.
+The prolific birder patterns will be able to suggest something about change in detectability vs. new birds in the area. When models are run for each location and species included in the model, a bit difficult to interpret because of our migratory year classification. Only two months in 2019 (Apr, May) were affected by COVID, so if pattern in MY 2019 is different from that in MY 2020, difficult to determine which to consider as the COVID effect. However, on including a third graph of all ten months other than the COVID months, this becomes easier to ascertain. Need to run the model separately for the three time periods because the results from both are greatly different. Because we know that the time periods are different in such a way, we should not ignore this and let the single global model average out and skew the existing patterns.
 
 The months of April and May seem to generally (even in MYs 2018 and 2021) be different from other months, with higher frequencies for both rural and urban species. The different patches under consideration all show considerably more variation (inferred from CIs) during these months than other times of the year. There is slightly more variability in rural species than in urban ones. There is also considerable variation between the patches in how reporting changed from year to year. While some increased in MY 2019, others decreased.
 
