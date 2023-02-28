@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Material: Birds in the time of COVID: Pandemic effects illuminated by birdwatchers, and implications for citizen science inference"
+title: "Supplementary Material: Birding in the time of COVID"
 author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
 bibliography: covid-ebirding.json
 link-citations: yes
@@ -23,21 +23,21 @@ where $n$ is the number of observations/rows in the group.
 
 ## Spatial spread
 
-For analysing spatial spread of the data, we decided to focus on districts as the spatial unit instead of 25 km × 25 km grid cells as in other metrics. This is because birding patterns in general are not uniformly and consistently spread across the country, so the fine scale of grid cells would produce too much noise. Here, districts provide a nice compromise: they are large enough to track change with less noise, while still being small enough to inform us about local patterns. We ensured that a single grid cell was linked with only one district, using random sampling from the list of districts it covered. The temporal unit of focus was the categorical COVID time period ("BEF", "DUR" or "AFT") and not individual months. Only those districts that were "covered" at least once in the three periods, i.e., had at least one qualifying checklist in each period, were considered in the analyses.
+For analysing spatial spread of the data, we decided to focus on districts as the spatial unit instead of 25 km × 25 km grid cells as in other metrics. This is because birding patterns in general are not uniformly and consistently spread across the country, so the fine scale of grid cells would produce too much noise. Here, districts provide a nice compromise: they are large enough to track change with less noise, while still being small enough to inform us about local patterns. We ensured that a single grid cell was linked with only one district, using random sampling from the list of districts it covered. The temporal unit of focus was the categorical COVID time period ("BEF", "DUR" or "AFT") and not individual months. Only those districts that were "covered" at least once in the study period, i.e., had at least one qualifying checklist in migratory years 2018--2021, were considered in the analyses.
 
-Our aim was to understand whether (and if so, how) the way birding patterns were spread across the country changed during the pandemic years. The two patterns of interest were changes in birding effort (number of lists) and grid coverage (proportion of total grid cells having birding activity) from one year to the next. Here, the changes in metrics rather than the metrics themselves inform us about consistency/variability across years, and would better highlight any anomalies brought by the pandemic. In the case of the period "DUR", both metrics were averaged across the two migratory years it comprised, 2019 and 2020.
+Our aim was to understand whether (and if so, how) the way birding patterns were spread across the country changed during the pandemic years. The two patterns of interest were change in birding effort (number of lists) and change in grid coverage (proportion of total grid cells having birding activity) from one year to the next. The former tells us about the intensity of birding while the latter shows us its breadth or completeness. Here, the changes in metrics rather than the metrics themselves inform us about consistency/variability across years, and would better highlight any anomalies brought by the pandemic. In the case of the period "DUR", both metrics were averaged across the two migratory years it comprised, 2019 and 2020.
 
 The grid coverage metric considered only those districts comprising at least five grid cells after the randomised assignment of grid cells to districts. Although this meant that certain districts which actually cover five or more grid cells might have been disqualified due to the random assignment, the converse is also true so some districts which in reality do not cover five or more grid cells might have qualified. We assume the two cases average out over the entire country, so it is not a statistical concern. However, grid coverage was further analysed in two conditions: one with no threshold for grid cell coverage, and one where a cell was considered "covered" only if it had five or more qualifying checklists per migratory year. The latter condition, by removing outlier cases, would produce clearer patterns with less noise.
 
-Due to the difficulty in quantitatively ascertaining change in spatial spread across such a large area with huge variability, we devised a suite of three analyses which put together would provide a clear qualitative picture of change in spatial spread/clustering of the metric.
+Due to the difficulty in quantitatively ascertaining change in spatial spread across such a large area with huge variability, we devised a suite of three analyses which, put together, would provide a clear qualitative picture of change in spatial spread/clustering of the metric.
 
 ### Spatial visualisation of raw change
 
-Raw change in a metric $a$ from period $x$ to period $y$ was calculated as the simple difference of their values $(a_{y}-a_{x})$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. We plotted the raw change per district from one COVID period to another on a map of India, colouring the districts based on magnitude of change. Here we were concerned with two things: firstly, whether the majority of districts showed a positive or a negative change; second, how many districts showed high magnitude of change, and whether these were clustered in space or not. If most districts showed a negative change in birding effort or grid coverage from BEF to DUR, this would translate to an effect of the pandemic on the quantity and quality of data collected during the pandemic. The higher the magnitude of change, the more worrisome the change would be. If these high magnitude changes were spatially clustered, this would result in a high spatial bias during the pandemic years, as opposed to if they were spread out across different regions of the country.
+Raw change in a metric $a$ from period $x$ to period $y$ was calculated as the simple difference of their values $(a_{y}-a_{x})$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. We plotted the raw change per district from one COVID period to another on a map of India, colouring the districts based on magnitude of change. Here we were concerned with two things: firstly, whether the majority of districts showed a positive or a negative change; second, how many districts showed high magnitude of change, and whether or not these were clustered in space. If most districts showed a negative change in birding effort or grid coverage from BEF to DUR, this would translate to an effect of the pandemic on the quantity and quality of data collected during the pandemic. The higher the magnitude of change, the more worrisome the change would be, and if these high magnitude changes were spatially clustered, this would result in a high spatial bias during the pandemic years, as opposed to if they were spread out across different regions of the country.
 
 ### Net raw change across the country
 
-This is a more quantitative way of analysing whether a majority of districts showed a positive or a negative change. We estimated mean raw change and its 95% CI, by bootstrapping across all the districts `(see S1 above)`. If the net change from DUR to AFT was significantly (no overlap of CIs) higher than from BEF to DUR, this would suggest that birding effort or grid coverage during the pandemic was subdued.
+This is a more quantitative method of analysing whether the majority of districts showed a positive or a negative change. We estimated mean raw change and its 95% CI, by bootstrapping across all the districts `(see S1.1 above)`. If the net change from DUR to AFT was significantly (no overlap of CIs) higher than from BEF to DUR, this would suggest that birding effort or grid coverage was subdued during the pandemic.
 
 ### Spatial visualisation of proportional change in two temporal directions
 
@@ -53,7 +53,7 @@ For each week of a migratory year, we calculated the proportion of lists submitt
 
 ### Times of the day
 
-For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping `(see S1)` to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
+For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping `(see S1.1)` to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
 # Figures
 
@@ -61,7 +61,7 @@ For each day of a migratory year, we calculated the proportion of lists submitte
 
 Line graphs, both in one
 
-## list distance, list duration
+## list distance, list duration, list length
 
 National and state graphs
 
@@ -72,6 +72,10 @@ State-level graphs
 ## Spatial spread
 
 whatever is not in main text
+
+## Spatial coverage
+
+State-level graphs
 
 ## Temporal spread
 
