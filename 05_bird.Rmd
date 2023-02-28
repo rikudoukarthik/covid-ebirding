@@ -228,7 +228,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
-
 ```{r b01_overall_s3, cache=TRUE, message=FALSE}
 
 anal_name <- "b01_overall_s3a_m"
@@ -273,8 +272,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
        dpi = 300, width = 16, height = 7, units = "in")
 
 ```
-
-
 
 ```{r b01_overall_s4, cache=TRUE, message=FALSE}
 
