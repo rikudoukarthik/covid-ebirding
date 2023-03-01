@@ -1806,11 +1806,11 @@ s_spread_map <- ggplot(data_spread1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
   #                                  n_interp = 7, na.value = "grey") +
-  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu"),
-                    breaks = c(-1000, -500, -100, 0, 100, 500, 1000),
-                    values = scales::rescale(c(-4134, -1000, -500, -100, 0, 
-                                               100, 500, 1000, 7848)), 
-                    limits = c(-4134, 7848),
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+                    breaks = c(-1000, -500, -100, -50, 50, 100, 500, 1000),
+                    values = scales::rescale(c(-11000, -1000, -500, -100, -50, 
+                                               50, 100, 500, 1000, 11000)), 
+                    limits = c(-11000, 11000),
                     na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\nno. of lists",
