@@ -130,7 +130,7 @@ We used the "bootMer()" function in *lme4* in order to test the significance of 
 
 To ascertain whether any of the changes in data quantity and quality during the pandemic impacted bird species reporting, or whether reporting changed at all due to any other factor, we conducted two major analyses involving two sets of commonly and easily observed bird species, one set of species common in human-dominated (urban) areas and the other uncommon in urban areas. Since not all species are widespread and equally abundant in different parts of the country, there were a few replacements in the species sets for different regions. Overall, we considered `xx` species in this study, of which `yy` were classified as "urban" and `zz` as "rural". Details of the region-wise species sets are provided in `table2`.
 
-### Overall reporting patterns
+### Overall species reporting
 
 In each of the four states analysed in our study, we also selected one of their large metropolitan (urban) cities. For every species in the corresponding regional species set, we visualised individual species reporting patterns at two temporal (months, migratory years) and spatial (city, state) scales. (Analysing species reporting patterns at the national level is not appropriate, considering the large variation in species ranges and abundances.) This was done by calculating the reporting frequency (proportion of qualifying checklists in which a species was reported) of each species at each scale.
 
@@ -138,7 +138,7 @@ We then pooled data from all urban and all rural species, and analysed whether o
 
 `table2: regionwise species sets used in analyses`
 
-### Reporting patterns with consistent effort
+### Species reporting with consistent effort
 
 The quality of citizen science data is contingent on observer effort; it is possible for changes in observer effort to produce artefactual changes in metrics such as reporting frequency. Given the existence of biases in effort driven by birder behaviour, it then becomes difficult to make inferences from such data. Hence, in order to ensure that the patterns visible in overall bird species reporting at the large scale are not driven by changes in data quantity and quality, we conducted a similar analysis using data only from "prolific" birders having consistent effort. An eBirder was considered "prolific" if they had submitted, from a single location, at least 800 qualifying checklists over the course of the four years being analysed (sufficient effort), as well as a minimum of 15 qualifying checklists per month in at least ten months of a year in all four years of the study (consistent effort)\-\--thus translating to about 200 qualifying checklists per year. Since the observer remains constant, and the observer is sufficiently experienced (as inferred from their prolificacy), we assume that detectability of birds in the location also remains similar over the years. Therefore, this analysis allows us to make a reasonable conclusion regarding actual behavioural changes in birds.
 
@@ -168,39 +168,57 @@ Our eBird dataset contained `How many numbers of lists after filtering?` after a
 
 `table4` of metrics and their overall patterns: + or - (as in BMS2022 poster)
 
-## Changes to data
+## Data quantity and quality
 
-Most changes to data quantity and quality were restricted to a few months around the peak pandemic and major lockdowns. Group birding per observer decreased considerably `(fig2)`, while site fidelity per observer increased `(fig2)`; birding in general became shorter in terms of distance covered, birding duration and list length `(fig in S2.2)`. Proportions of hotspot birding and travelling protocol lists decreased (`fig2`), whereas urban birding proportion increased `(fig3)`. These changes were unsurprising and short-lived, with most metrics reverting to pre-pandemic levels as the period of peak lockdowns passed. However, although spatial coverage decreased very slightly during April 2020, it has only increased in every successive month since.
+Most changes to data quantity and quality were restricted to a few months around the peak pandemic and major lockdowns, and this change was consistent across different spatial units for all metrics, with very few exceptions. Regardless of whether or not there was a change during the peak pandemic months, all metrics of birder behaviour, spatial coverage, spatial spread and urban bias remained unaffected at the large temporal scale of year `(refer to YEAR coefficients in a couple of the model summaries in the supplementary, showing that there were no long-lasting effects)`.
 
-The only noticeable long-lasting effects of the pandemic were in group birding per observer, site fidelity per observer, hotspot birding and birding protocol, which were all restricted to the lockdown months in 2020 but in 2021 decreased across a large part of the year `(fig2)`. Moreover, birding distance `(fig in S2.2)` at the national level declined after MY 2018, including in MY 2021 after the pandemic.
+### Birdwatcher behaviour
+
+Group birding per observer decreased considerably `(fig2)`, while site fidelity per observer increased `(fig2)`. Birding in general became shorter in terms of distance covered, birding duration and list length `(fig in S2.2)`. Proportions of hotspot birding and travelling protocol lists decreased (`fig2`). These changes were unsurprising. The only noticeable long-lasting effects of the pandemic were in group birding per observer, site fidelity per observer, hotspot birding and birding protocol, which were all restricted to the lockdown months in 2020 but in 2021 decreased across a large part of the year `(fig2)`. Moreover, birding distance `(fig in S2.2)` at the national level declined after MY 2018, including in MY 2021 after the pandemic.
+
+Thus, the effects of the pandemic on birder behaviour were not consistent throughout the pandemic. The changes were more drastic in 2020 than in 2021, even during the peak pandemic months of both years. In the case of observer-level group birding and site fidelity, and hotspot birding and birding protocol, 2021 had a lower magnitude of change compared to 2020 but the change spanned more months of the year. However, these long-term declines were only present at the national level; at the level of individual states, these patterns were highly variable `(fig S2.3)`.
+
+The effect on the birding distance metric, interestingly, was higher in 2020 during the peak period but lower in 2020 during several other months of the year. Moreover, there was no observable decline at all in overall birding effort in terms of time spent birding by an average observer `(model in S3; fig4)`.
 
 `fig2: group birding per observer, site fidelity per observer, hotspot birding, birding protocol (national)`
 
+### Urban bias
+
+As expected, urban birding proportion increased `(fig3)` during the peak pandemic months, and reverted to pre-pandemic levels as the period of peak lockdowns passed.
+
 `fig3: urban birding proportion`
 
-Thus, the effects of the pandemic on birder behaviour were not consistent throughout the pandemic. The changes were more drastic in 2020 than in 2021, even during the peak pandemic months of both years. In the case of observer-level group birding and site fidelity, and hotspot birding and birding protocol, 2021 had a lower magnitude of change compared to 2020 but the change spanned more months of the year. The effect on the birding distance metric, interestingly, was higher in 2020 during the peak period but lower in 2020 during several other months of the year.
+### Spatial coverage
 
-Regardless of whether or not there was a change during the peak pandemic months, all other metrics of birder behaviour, spatial coverage, spatial spread and urban bias remained unaffected at the large temporal scale of year `(refer to YEAR coefficients in a couple of the model summaries in the supplementary, showing that there were no long-lasting effects)`. Moreover, there was no observable decline at all in overall birding effort in terms of time spent birding by an average observer `(model in S3)` or overall area covered by birders `(model in S3)`. In fact, there are even suggestions of a slight increase in these metrics over the years `(fig4)`. Importantly, there was no spatial clustering or concentration of the fine-scale changes to overall birding effort `(fig5)`.
+There is a slight suggestion of a small decrease in spatial coverage during April 2020, but it has only increased in every successive month since. However, this has not resulted in any observable decline in overall area covered by birders (i.e., at the large temporal scale) `(model in S3)`. In fact, there are even suggestions of a slight increase in these metrics over the years `(fig4)`. Additionally, this slight decrease at the national level was mirrored only by some states like Kerala, while coverage either stayed the same (e.g., Karnataka `fig S2.5`) or even kept increasing (e.g., Maharashtra `figS2.5`) in others.
+
+### Spatial spread
+
+Importantly, there was no worrisome spatial clustering or concentration of the fine-scale changes to overall birding effort `(fig5)`.
 
 `fig4: graphs of birding time, spatial coverage`
 
 `fig5: graphs of spatial spread; one each of no. lists, grid coverage with threshold`
 
-The drastic change during the peak pandemic period was consistent across different spatial units for all metrics, with very few exceptional spatial units. The very slight decrease in spatial coverage in April 2020 seen at the national level was only present in some states like Kerala, while coverage either stayed the same (e.g., Karnataka `fig S2.5`) or even kept increasing (e.g., Maharashtra `figS2.5`). Moreover, the long-term declines in observer-level group birding and site fidelity, and hotspot birding and birding protocol were only present at the national level; at the level of individual states, these patterns were highly variable `(fig S2.3)`.
+## Bird species reporting
 
-## Changes in bird reporting patterns
+Overall bird species reporting patterns for the states of Karnataka, Kerala, Maharashtra and Assam were explored for 23 species (11 urban, 12 rural), 21 species (11, 10), 22 species (11, 11) and 19 species (10, 9) respectively. The analysis of reporting patterns with consistent effort considered 20 species (11, 9) common to all `how many` qualifying locations across the country. In general, urban species are reported more frequently than non-urban species. Across all these analyses, there exists high variability at the fine scale that often evens out at larger scales.
 
-Bird reporting patterns for the states of Karnataka, Kerala, Maharashtra and Assam were explored for 23 species (11 urban, 12 rural), 21 species (11, 10), 22 species (11, 11) and 19 species (10, 9) respectively. In general, urban species are reported more frequently than non-urban species.
+### Overall species reporting
 
-During the peak periods of the pandemic, urban species reporting increased in all states `(fig6)`. However, the states varied in how reporting frequency of non-urban species changed. In Karnataka, while urban species reporting increased, non-urban species reporting stayed the same. In Kerala and Assam, the increase in urban species reporting was accompanied by an increase in non-urban species reporting, though the increase in non-urban species was smaller than that of urban species in Assam. Maharashtra was the only state where non-urban species reporting decreased during the peak pandemic months. However, bird reporting patterns with consistent effort show a different picture in that neither urban nor non-urban species reporting increased or decreased notably during the peak periods, as the highly variable local patterns average out across space `(fig7)`. This suggests, at the very least, that there was no inherent change in birds making them more or less active/bold, detectable or abundant during the pandemic.
+During the peak periods of the pandemic, urban species reporting increased in all states `(fig6)`. However, the states varied in how reporting frequency of non-urban species changed. In Karnataka, while urban species reporting increased, non-urban species reporting stayed the same. In Kerala and Assam, the increase in urban species reporting was accompanied by an increase in non-urban species reporting, though the increase in non-urban species was smaller than that of urban species in Assam. Maharashtra was the only state where non-urban species reporting decreased during the peak pandemic months.
+
+The patterns in Kerala are consistent at both temporal scales, whereas at the annual level Maharashtra mirrors the patterns in Kerala. At the annual scale, Assam retains the higher urban reporting during the pandemic year while non-urban reporting did not change. The small-scale increase in urban species reporting in Karnataka is not reflected at the annual scale, resulting in no notable effect on either species category. Importantly, at this large scale it becomes evident that the pandemic did not result in a decrease in non-urban species reporting.
+
+Different species within the same category sometimes showed contradictory patterns `(refer annual graph of some state)`. Often, species exhibited patterns contradictory to the expectations of pandemic effects: urban species reporting decreased (e.g., `KA annual graph`) or non-urban species reporting decreased (e.g., `KL annual graph`). Patterns also generally soften out (effect sizes decrease) across space, time or species. Thus, in most cases there is no clear and noticeable directional effect of the pandemic of bird species reporting.
+
+### Species reporting with consistent effort
+
+These patterns show a different picture at the small scale in that neither urban nor non-urban species reporting increased or decreased notably during the peak periods, as the highly variable local patterns average out across space `(fig7)`. This is true at the large scale of years as well, suggesting at the very least that there was no inherent change in birds that made them more or less active/bold, detectable or abundant during the pandemic.
 
 `fig6: 2 months of all states overall models`
 
 `fig7: all three panels of prolific models`
-
-The patterns in Kerala are consistent at both temporal scales, whereas at the annual level Maharashtra mirrors the patterns in Kerala. At the annual scale, Assam retains the higher urban reporting during the pandemic year while non-urban reporting did not change. The small-scale increase in urban species reporting in Karnataka is not reflected at the annual scale, resulting in no notable effect on either species category. The same pattern is seen in bird reporting with consistent effort, which retains the small-scale pattern. Importantly, at this large scale it becomes evident that the pandemic did not result in a decrease in non-urban species reporting.
-
-Across all these analyses, there exists high variability at the fine scale that often evens out at larger scales. Species within the same category sometimes showed contradictory patterns `(refer annual graph of some state)`. Often, species exhibited patterns contradictory to the expectations of pandemic effects: urban species reporting decreased (e.g., `KA annual graph`) or non-urban species reporting decreased (e.g., `KL annual graph`). Patterns also generally soften out (effect sizes decrease) across space, time or species. Thus, in most cases there is no clear and noticeable directional effect of the pandemic of bird species reporting.
 
 # Discussion
 
