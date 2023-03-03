@@ -1,0 +1,21 @@
+---
+title: "Birding in the time of COVID: Pandemic effects illuminated by birdwatchers, and implications for citizen science inference"
+author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
+bibliography: covid-ebirding.json
+csl: ibis.csl
+link-citations: yes
+output: 
+  bookdown::word_document2:
+    number_sections: true
+    global_numbering: true
+    fig_caption: yes
+    reference_docx: rmd_word_template.docx
+---
+
+<!-- <style> -->
+
+<!-- body { -->
+
+<!-- text-align: justify} -->
+
+<!-- </style> -->
