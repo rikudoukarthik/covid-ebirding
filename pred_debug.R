@@ -97,3 +97,13 @@ c <- data0_MY_d_slice_G %>%
   filter(COVERED == 1) %>% 
   summarise(COVERED = n_distinct(CELL.ID),
             PROP = COVERED/min(TOT)) 
+
+
+
+# Prediction can be a bit higher or lower than manual-calc-prop. based on random effects. 
+# But shouldn't be drastically different unless the data is grouped in some peculiar 
+# way that the random effects have a big influence.
+# In this case it is most likely due to random effects. Makes sense that proportion 
+# of travelling lists metric is the one where random effects have the least effect, 
+# while things like proportion of hotspot birding could potentially vary greatly over space
+
