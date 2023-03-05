@@ -1,17 +1,8 @@
----
-title: "Supplementary Material: Birding in the time of COVID"
-author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
-bibliography: covid-ebirding.json
-link-citations: yes
-output: 
-  word_document:
-    number_sections: true
-    reference_docx: rmd_word_template.docx
----
+# Supplementary Material
 
-# Methods
+## Methods
 
-## Exploratory analyses and bootstrapped estimates
+### Exploratory analyses and bootstrapped estimates {#explboot}
 
 We selected the various metrics of data quantity and quality from the available effort metadata associated with every eBird checklist. To check whether these metrics were useful to answer our question, we first explored basic patterns by calculating the metrics for every month and migratory year, for the four individual states of interest (state-level). These calculations produced a mean or median value and associated confidence interval from non-parametric bootstrapping: first the mean of the values in a group were calculated, following which a new sample of the same size as the original one was selected by resampling the original group with replacement, and a new mean was calculated, and so on until this calculation was done 1000 times. The mean/median of the 1000 sampled means is the group mean/median estimate while its standard deviation is the standard error. We then calculated CIs from the SEs assuming a Gaussian distribution ($CIs = mean \pm 1.96 SE$) due to the large sample size in our dataset.
 
@@ -21,7 +12,7 @@ $$SE_{y} = \frac {\sqrt {\sum_{i=1}^n (SE_{x_{i}}) ^2}} {n}$$
 
 where $n$ is the number of observations/rows in the group.
 
-## Spatial spread
+### Spatial spread {#sspreadmeth}
 
 For analysing spatial spread of the data, we decided to focus on districts as the spatial unit instead of 25 km × 25 km grid cells as in other metrics. This is because birding patterns in general are not uniformly and consistently spread across the country, so the fine scale of grid cells would produce too much noise. Here, districts provide a nice compromise: they are large enough to track change with less noise, while still being small enough to inform us about local patterns. We ensured that a single grid cell was linked with only one district, using random sampling from the list of districts it covered. The temporal unit of focus was the categorical COVID time period ("BEF", "DUR" or "AFT") and not individual months. Only those districts that were "covered" at least once in the study period, i.e., had at least one qualifying checklist in migratory years 2018--2021, were considered in the analyses.
 
@@ -31,62 +22,195 @@ The grid coverage metric considered only those districts comprising at least fiv
 
 Due to the difficulty in quantitatively ascertaining change in spatial spread across such a large area with huge variability, we devised a suite of three analyses which, put together, would provide a clear qualitative picture of change in spatial spread/clustering of the metric.
 
-### Spatial visualisation of raw change
+#### Spatial visualisation of raw change
 
 Raw change in a metric $a$ from period $x$ to period $y$ was calculated as the simple difference of their values $(a_{y}-a_{x})$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. We plotted the raw change per district from one COVID period to another on a map of India, colouring the districts based on magnitude of change. Here we were concerned with two things: firstly, whether the majority of districts showed a positive or a negative change; second, how many districts showed high magnitude of change, and whether or not these were clustered in space. If most districts showed a negative change in birding effort or grid coverage from BEF to DUR, this would translate to an effect of the pandemic on the quantity and quality of data collected during the pandemic. The higher the magnitude of change, the more worrisome the change would be, and if these high magnitude changes were spatially clustered, this would result in a high spatial bias during the pandemic years, as opposed to if they were spread out across different regions of the country.
 
-### Net raw change across the country
+#### Net raw change across the country
 
-This is a more quantitative method of analysing whether the majority of districts showed a positive or a negative change. We estimated mean raw change and its 95% CI, by bootstrapping across all the districts `(see S1.1 above)`. If the net change from DUR to AFT was significantly (no overlap of CIs) higher than from BEF to DUR, this would suggest that birding effort or grid coverage was subdued during the pandemic.
+This is a more quantitative method of analysing whether the majority of districts showed a positive or a negative change. We estimated mean raw change and its 95% CI, by bootstrapping across all the districts (see Section \@ref(explboot) above). If the net change from DUR to AFT was significantly (no overlap of CIs) higher than from BEF to DUR, this would suggest that birding effort or grid coverage was subdued during the pandemic.
 
-### Spatial visualisation of proportional change in two temporal directions
+#### Spatial visualisation of proportional change in two temporal directions
 
 Proportional change in a metric $a$ from period $x$ to period $y$ was calculated as $(a_{y}-a_{x})/a_{x}$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. If only $a_{x}$ was zero, a constant $k=1$ was added to both $a_{x}$ and $a_{y}$ in order to avoid zero in the denominator. Moreover, for the birding effort metric, proportional change was not calculated if the first period in the transition had less than 10 qualifying checklists ($a_{x} < 10$). Otherwise, since the metric has a fixed lower limit but not an upper limit, this would result in very high values of proportional change simply due to the low overall birding.
 
 We visualised only the negative values of proportional change, since a general increase in birding effort or grid coverage is not worrisome and is in fact even expected. Here, the values were coloured based on magnitude and once again the high magnitude changes are of interest, but we are also interested in transitions in both directions. For example, if the same districts with high magnitudes of negative proportional change from BEF to DUR have similar values also from AFT to DUR, this would suggest a clear and direct impact of the pandemic in lower birding effort or grid coverage.
 
-## Temporal spread
+### Temporal spread {#tspreadmeth}
 
-### Days of the week
+#### Days of the week
 
-For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see S1) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
+For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see Section \@ref(explboot)) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
-### Times of the day
+#### Times of the day
 
-For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping `(see S1.1)` to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
+For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping (see Section \@ref(explboot)) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
-# Figures
+## Figures
 
-## Number of lists in each year, Number of eBirders in each year
+### Number of lists in each year, Number of eBirders in each year
 
 Line graphs, both in one
 
-## list distance, list duration, list length
+```{r lists-ebirders, fig.cap=".", echo=FALSE}
+
+
+
+```
+
+### list distance, list duration, list length
 
 National and state graphs
 
-## group birding, hotspot, protocol
+```{r dist-dur-length, fig.cap="Graphs of birding distance, birding duration and list length metrics at the national level.", out.width="100%", fig.width=7, out.height="100%", fig.height=8.5, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/d06_distance_a.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/d07_duration_a.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/d08_length_a.png") %>% image_ggplot()
+
+(p1 / p2 / p3) +
+  plot_layout(guides = "collect")
+
+```
+
+```{r dist-dur-length-states, fig.cap="Graphs of birding distance, birding duration and list length metrics at the state level.", out.width="100%", fig.width=7, out.height="100%", fig.height=10, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/d06_distance_b.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/d07_duration_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/d08_length_b.png") %>% image_ggplot()
+
+(p1 / p2 / p3) +
+  plot_layout(guides = "collect")
+
+```
+
+### group birding, fidelity, hotspot, protocol
 
 State-level graphs
 
-## Spatial spread
+```{r not-long-states, fig.cap="Graphs of observer-level group birding and site fidelity, hotspot birding and travelling protocol birding at the state level.", out.height="100%", fig.height=10, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/d01_group_po_b.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/d02_fidelity_po_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/d04_hotspot_b.png") %>% image_ggplot()
+p4 <- image_read("03_wrap_figs/d05_protocol_b.png") %>% image_ggplot()
+
+(p1 / p2 / p3 / p4) +
+  plot_layout(guides = "collect")
+
+```
+
+### Spatial spread
 
 whatever is not in main text
 
-## Spatial coverage
+```{r s-spread-rest, fig.cap="Graphs of spatial spread visualisations.", out.width="100%", fig.width=7, out.height="100%", fig.height=8.5, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/d09c_s_spread_1effort_b.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/d09c_s_spread_2gridcov_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/d09c_s_spread_2gridcov_c1.png") %>% image_ggplot()
+
+((p1 | p2) / p3) +
+  plot_layout(guides = "collect", heights = c(1, 2))
+
+```
+
+### Spatial coverage
 
 State-level graphs
 
-## Temporal spread
+```{r cov-states, fig.cap="Graph of spatial coverage at the state level.", out.width="100%", fig.width=7, dpi=300, echo=FALSE}
 
-result presentation (graph) and interpretation (caption)
+p1 <- image_read("03_wrap_figs/d09b_s_cover_b.png") %>% image_ggplot()
 
-## Overall bird reporting
+p1
 
-All/most non-model results (graphs)
+```
 
-10 and 12 months graphs of overall bird models
+### Temporal spread
 
-# Tables
+```{r t-spread-figs, fig.cap="Graphs of temporal spread (day-of-week and time-of-day) and national and state levels.", out.height="100%", fig.height=10, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/d10a_t_dow_a.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/d10a_t_dow_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/d10b_t_tod_a.png") %>% image_ggplot()
+p4 <- image_read("03_wrap_figs/d10b_t_tod_b.png") %>% image_ggplot()
+
+((p1 / p3) / p2 / p4) +
+  plot_layout(guides = "collect", heights = c(1, 1, 2, 2))
+
+```
+
+interpretation (caption)
+
+### Overall bird reporting
+
+All non-model results
+
+```{r overall-non-model-m, fig.cap="Non-model analyses of overall monthly bird species reporting patterns.", out.width="100%", fig.width=7, out.height="100%", fig.height=8.5, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/b01_overall_s1a_m_a.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/b01_overall_s1a_m_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/b01_overall_s2a_m_a.png") %>% image_ggplot()
+p4 <- image_read("03_wrap_figs/b01_overall_s2a_m_b.png") %>% image_ggplot()
+p5 <- image_read("03_wrap_figs/b01_overall_s3a_m_a.png") %>% image_ggplot()
+p6 <- image_read("03_wrap_figs/b01_overall_s3a_m_b.png") %>% image_ggplot()
+p7 <- image_read("03_wrap_figs/b01_overall_s4a_m_a.png") %>% image_ggplot()
+p8 <- image_read("03_wrap_figs/b01_overall_s4a_m_b.png") %>% image_ggplot()
+
+(p1 / p2 ) +
+  plot_layout(guides = "collect")
+
+(p3 / p4) +
+  plot_layout(guides = "collect")
+
+(p5 / p6 ) +
+  plot_layout(guides = "collect")
+
+(p7 / p8) +
+  plot_layout(guides = "collect")
+
+```
+
+```{r overall-non-model-y, fig.cap="Non-model analyses of overall yearly bird species reporting patterns.", out.width="100%", fig.width=7, out.height="100%", fig.height=8.5, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/b01_overall_s1b_y_a.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/b01_overall_s1b_y_b.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/b01_overall_s2b_y_a.png") %>% image_ggplot()
+p4 <- image_read("03_wrap_figs/b01_overall_s2b_y_b.png") %>% image_ggplot()
+p5 <- image_read("03_wrap_figs/b01_overall_s3b_y_a.png") %>% image_ggplot()
+p6 <- image_read("03_wrap_figs/b01_overall_s3b_y_b.png") %>% image_ggplot()
+p7 <- image_read("03_wrap_figs/b01_overall_s4b_y_a.png") %>% image_ggplot()
+p8 <- image_read("03_wrap_figs/b01_overall_s4b_y_b.png") %>% image_ggplot()
+
+(p1 / p2 ) +
+  plot_layout(guides = "collect")
+
+(p3 / p4) +
+  plot_layout(guides = "collect")
+
+(p5 / p6 ) +
+  plot_layout(guides = "collect")
+
+(p7 / p8) +
+  plot_layout(guides = "collect")
+
+```
+
+10 and 12 months graphs of overall bird models (10 in one row, 12 in one row)
+
+```{r overall1012m, fig.cap="Non-lockdown-months and all-months panels of overall bird species reporting models", out.width="100%", fig.width=7, out.height="100%", fig.height=10, dpi=300, echo=FALSE}
+
+p1 <- image_read("03_wrap_figs/b01_overall_s1c_model.png") %>% image_ggplot()
+p2 <- image_read("03_wrap_figs/b01_overall_s2c_model.png") %>% image_ggplot()
+p3 <- image_read("03_wrap_figs/b01_overall_s3c_model.png") %>% image_ggplot()
+p4 <- image_read("03_wrap_figs/b01_overall_s4c_model.png") %>% image_ggplot()
+
+(p1 / p2 / p3 / p4) +
+  plot_layout(guides = "collect")
+
+```
+
+## Tables
 
 Tables of model summaries for all the data metrics
