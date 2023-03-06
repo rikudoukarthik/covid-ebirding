@@ -130,6 +130,107 @@ prolific <- inner_join(prolific_a, prolific_b)
 
 rm(prolific_a, prolific_b)
 
+
+
+### preparing data for prolific models ####
+
+# species list (all species included in list for other analyses, across all states)
+species_prolific <- species_list %>% distinct(COMMON.NAME, SP.CATEGORY)
+
+
+# to join for presence-absence of various species
+temp1 <- data0_MY_b %>% 
+  right_join(prolific) %>% 
+  group_by(SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
+  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
+  ungroup()
+
+# to later join checklist metadata
+temp2 <- data0_MY_b_slice_S %>% 
+  right_join(prolific) %>% 
+  select(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER)
+
+# join patches with patch-specific species
+temp3 <- data0_MY_b %>% 
+  right_join(prolific) %>% 
+  group_by(LOCALITY.ID) %>% 
+  filter(COMMON.NAME %in% species_prolific$COMMON.NAME) %>% 
+  distinct(LOCALITY.ID, COMMON.NAME)
+
+
+data_prolific <- temp2 %>% 
+  group_by(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  # for every list from a person's patch, adding all possible species for the patch
+  left_join(temp3) %>% 
+  # joining observation count to species, and will replace NAs with 0
+  left_join(temp1) %>% 
+  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0"),
+         OBSERVATION.COUNT = NULL) %>% 
+  # converting counts to presences
+  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
+  ungroup()
+
+
+# FILTERS:
+# - calculating overall (12 months, 4 years) repfreq for each patch-species combo to 
+#   filter out very uncommon species based on threshold.
+# - also removing species only "present" (same threshold) in one locality because 
+#   cannot use random effect with only one level in model.
+#
+# - finally, removing locations where after above filters, both sp. categ. do not exist
+
+temp2a <- temp2 %>% 
+  group_by(OBSERVER.ID, LOCALITY.ID) %>% 
+  summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  ungroup()
+
+filt <- data_prolific %>% 
+  group_by(OBSERVER.ID, LOCALITY.ID, COMMON.NAME) %>% 
+  # data_prolific is list-level, so some patch-species combos will be 0 in certain lists
+  # interested in species repfreq for each patch, so here removing 0 to count presences
+  filter(REPORT != 0) %>% 
+  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  ungroup() %>% 
+  right_join(temp2a) %>% 
+  mutate(PROP.LISTS = 100*NO.LISTS/TOT.LISTS) %>% 
+  # filtering for species present in threshold lists 
+  # (RoPi with 11% not converging in max iterations so setting threshold at 15, not 10)
+  filter(PROP.LISTS >= 15) %>%
+  # removing species present only in one locality
+  group_by(COMMON.NAME) %>% 
+  mutate(N.LOC = n_distinct(LOCALITY.ID)) %>%
+  ungroup() %>% 
+  filter(N.LOC > 1) %>% 
+  distinct(COMMON.NAME, LOCALITY.ID) %>%
+  arrange(COMMON.NAME, LOCALITY.ID) 
+
+data_prolific <- data_prolific %>% 
+  # filtering for patch-species combos present in threshold lists at >1 locality
+  right_join(filt) %>% 
+  arrange(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
+  # joining list length, year and month metadata
+  left_join(data0_MY_b_slice_S %>% distinct(SAMPLING.EVENT.IDENTIFIER, NO.SP, M.YEAR, MONTH)) %>%
+  # joining species info
+  left_join(species_prolific) %>% 
+  # filtering out locations where both species categories do not exist (after species filters)
+  group_by(LOCALITY.ID) %>% 
+  mutate(N.SPC = n_distinct(SP.CATEGORY)) %>% 
+  ungroup() %>% 
+  filter(N.SPC == 2) %>% 
+  mutate(N.SPC = NULL)
+  
+
+### species for which cloglog failing ####
+
+# overall bird models (b01_overall_model.R) generally binomial with cloglog but
+# for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+# failed to reduce deviance in pwrssUpdate" or other convergence issues.
+# so for these, we use logit instead
+
+fail_spec_KL <- c("Black Drongo", "Jungle Myna", "Common Myna", "Green Bee-eater", 
+                  "Spotted Dove", "White-throated Kingfisher")
+fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eater")
+
 ```
 
 ## Overall species reporting
@@ -334,94 +435,6 @@ This is not done for individual states, because focus is individual locations wh
 ```{r b02_prolific_model, cache=TRUE, message=FALSE}
 
 anal_name <- "b02_prolific_model"
-
-# preparing data ------------------------------------------------------------
-
-# species list (all species included in list for other analyses, across all states)
-species_prolific <- species_list %>% distinct(COMMON.NAME, SP.CATEGORY)
-
-
-# to join for presence-absence of various species
-temp1 <- data0_MY_b %>% 
-  right_join(prolific) %>% 
-  group_by(SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
-  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
-  ungroup()
-
-# to later join checklist metadata
-temp2 <- data0_MY_b_slice_S %>% 
-  right_join(prolific) %>% 
-  select(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER)
-
-# join patches with patch-specific species
-temp3 <- data0_MY_b %>% 
-  right_join(prolific) %>% 
-  group_by(LOCALITY.ID) %>% 
-  filter(COMMON.NAME %in% species_prolific$COMMON.NAME) %>% 
-  distinct(LOCALITY.ID, COMMON.NAME)
-
-
-data_prolific <- temp2 %>% 
-  group_by(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
-  # for every list from a person's patch, adding all possible species for the patch
-  left_join(temp3) %>% 
-  # joining observation count to species, and will replace NAs with 0
-  left_join(temp1) %>% 
-  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0"),
-         OBSERVATION.COUNT = NULL) %>% 
-  # converting counts to presences
-  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
-  ungroup()
-
-
-# FILTERS:
-# - calculating overall (12 months, 4 years) repfreq for each patch-species combo to 
-#   filter out very uncommon species based on threshold.
-# - also removing species only "present" (same threshold) in one locality because 
-#   cannot use random effect with only one level in model.
-#
-# - finally, removing locations where after above filters, both sp. categ. do not exist
-
-temp2a <- temp2 %>% 
-  group_by(OBSERVER.ID, LOCALITY.ID) %>% 
-  summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  ungroup()
-
-filt <- data_prolific %>% 
-  group_by(OBSERVER.ID, LOCALITY.ID, COMMON.NAME) %>% 
-  # data_prolific is list-level, so some patch-species combos will be 0 in certain lists
-  # interested in species repfreq for each patch, so here removing 0 to count presences
-  filter(REPORT != 0) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
-  ungroup() %>% 
-  right_join(temp2a) %>% 
-  mutate(PROP.LISTS = 100*NO.LISTS/TOT.LISTS) %>% 
-  # filtering for species present in threshold lists 
-  # (RoPi with 11% not converging in max iterations so setting threshold at 15, not 10)
-  filter(PROP.LISTS >= 15) %>%
-  # removing species present only in one locality
-  group_by(COMMON.NAME) %>% 
-  mutate(N.LOC = n_distinct(LOCALITY.ID)) %>%
-  ungroup() %>% 
-  filter(N.LOC > 1) %>% 
-  distinct(COMMON.NAME, LOCALITY.ID) %>%
-  arrange(COMMON.NAME, LOCALITY.ID) 
-
-data_prolific <- data_prolific %>% 
-  # filtering for patch-species combos present in threshold lists at >1 locality
-  right_join(filt) %>% 
-  arrange(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
-  # joining list length, year and month metadata
-  left_join(data0_MY_b_slice_S %>% distinct(SAMPLING.EVENT.IDENTIFIER, NO.SP, M.YEAR, MONTH)) %>%
-  # joining species info
-  left_join(species_prolific) %>% 
-  # filtering out locations where both species categories do not exist (after species filters)
-  group_by(LOCALITY.ID) %>% 
-  mutate(N.SPC = n_distinct(SP.CATEGORY)) %>% 
-  ungroup() %>% 
-  filter(N.SPC == 2) %>% 
-  mutate(N.SPC = NULL)
-  
 
 # models ------------------------------------------------------------
 

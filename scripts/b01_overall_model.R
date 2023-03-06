@@ -72,13 +72,6 @@ birds_pred <- data_occ0 %>%
 print("Completed preparations for modelling. Now starting modelling.")
 
 
-# for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
-# failed to reduce deviance in pwrssUpdate"
-
-fail_spec_KL <- c("Black Drongo", "Jungle Myna", "Common Myna", "Green Bee-eater", 
-                  "Spotted Dove", "White-throated Kingfisher")
-fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eater")
-
 
 # month type 1 ------------------------------------------------------------
 
