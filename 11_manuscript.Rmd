@@ -123,9 +123,7 @@ For all metrics except spatial spread, unless otherwise mentioned, the above ana
 
 Some metrics like observer-level site fidelity, observer-level birding time, birding distance, list duration and list length were either whole number or continuous numerical variables that did not include zero in the range of possible values. For these, since GLMMs with binomial or Poisson error distributions are not appropriate, we instead fitted LMMs (Linear Mixed Models) with the same fixed and random effects specifications and using BOBYQA optimiser, after first log-transforming (natural) the response variables to ensure normality. This was done using the "lmer()" function in *lme4*. The various models of data metrics and their specifications are listed in Table \@ref(tab:metrics-d). There was no model run for temporal spread due to it being a visual metric and its analytical specifications being very different from those of other metrics (Section \@ref(tspreadmeth)).
 
-diagnostics
-
-We used the "bootMer()" function in *lme4* in order to test the significance of the fitted model results, by obtaining mean and CI estimates using semi-parametric bootstrapping. The bootstrapping was done with 1000 simulations and with parallel core processing [package *parallel*, @rcoreteam2021].
+For all models, model diagnostics were inspected using the *DHARMa* package [@hartig2022], to ensure that there were no major violations of model assumptions. We used the "bootMer()" function in *lme4* in order to test the significance of the fitted model results, by obtaining mean and CI estimates using semi-parametric bootstrapping. The bootstrapping was done with 1000 simulations and with parallel core processing [with the help of packages *parallel*, @rcoreteam2021; and *VGAM*, @yee2010].
 
 ```{r metrics-d, echo=FALSE}
 # a large sideways full-page table of metrics of data quantity and quality, and model specifications
@@ -161,9 +159,7 @@ Like with the metrics of data quantity and quality, the bird reporting patterns 
 
 For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided in Table \@ref(tab:models-b). All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser, except in a few `(how many?)` of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
 
-diagnostics same as birder
-
-Mean and CI estimates were obtained for the fitted models in the same way as outlined in Section \@ref(model-boot), but with 500 simulations instead of 1000, due to computational limitations.
+Diagnostics were not inspected separately for the bird reporting models due to the large number of models fitted. Mean and CI estimates were obtained in the same way as outlined in Section \@ref(model-boot), but with 500 simulations instead of 1000, due to computational limitations.
 
 ```{r models-b, echo=FALSE}
 # a large sideways full-page table of model specifications of bird reporting patterns
@@ -173,9 +169,7 @@ knitr::kable(mtcars[1:5, 1:5], caption = "Model specifications for analyses of b
 
 ## Software
 
-R, RStudio, packages
-
-The source code for the entire analysis, from data preparation to statistical validation of metrics, are available at `code repo`.
+All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@positteam2022]. Figures were made using *ggplot2* [@wickham2016] and *patchwork* [@pedersen2020]. In addition, packages *sf* [@pebesma2018], *spdep* [@bivand2022], *raster* [@hijmans2022], *terra* [@hijmans2022a] and *geodata* [@hijmans2022b; for spatial analyses], as well as *lubridate* [@grolemund2011], *glue* and *tictoc* were used. The source code for the entire analysis, from data preparation to statistical validation of metrics, is available on the [GitHub repository](https://github.com/rikudoukarthik/covid-ebirding) for the study.
 
 # Results
 
