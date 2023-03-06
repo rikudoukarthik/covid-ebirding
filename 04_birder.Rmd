@@ -1367,7 +1367,7 @@ tictoc::tic(glue("GLMM for India"))
 model_a <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
-tictoc::toc() #  sec ()
+tictoc::toc() # 300 sec (5 min)
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -1375,7 +1375,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "extra")
-tictoc::toc() #  sec ( h)
+tictoc::toc() # 8324 sec (138 min)
 
 
 for (i in 1:length(data0_a$MONTH)) {
