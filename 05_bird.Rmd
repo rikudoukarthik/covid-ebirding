@@ -102,29 +102,29 @@ eBird_users <- read.delim("data/ebd_users_relMay-2022.txt",
 # getting overall checklist leaders from data
 prolific_a <- data0_MY_b_slice_S %>% 
   group_by(OBSERVER.ID, LOCALITY.ID, LOCALITY) %>% 
-  summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   ungroup() %>% 
   filter(TOT.LISTS >= 800) %>% # 200 per year threshold (arbitrary)
   arrange(desc(TOT.LISTS)) %>% 
   left_join(eBird_users) %>% 
-  select(-TOT.LISTS)
+  dplyr::select(-TOT.LISTS)
   
 
 # getting checklist leaders with equal effort across years from data
 prolific_b <- data0_MY_b_slice_S %>% 
   group_by(OBSERVER.ID, LOCALITY.ID, LOCALITY, M.YEAR, MONTH) %>% 
-  summarise(MONTH.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(MONTH.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   filter(MONTH.LISTS >= 15) %>% # 200 per year roughly translates to 16 per month
-  summarise(N = n_distinct(MONTH),
+  dplyr::summarise(N = n_distinct(MONTH),
             TOT.LISTS = sum(MONTH.LISTS)) %>% 
   filter(N >= 10) %>% # at least 10 months in a year
-  summarise(N = n_distinct(M.YEAR),
+  dplyr::summarise(N = n_distinct(M.YEAR),
             TOT.LISTS = sum(TOT.LISTS)) %>% 
   filter(N == 4) %>% # all four years
   ungroup() %>% 
   arrange(desc(TOT.LISTS)) %>% 
   left_join(eBird_users) %>% 
-  select(-N, -TOT.LISTS)
+  dplyr::select(-N, -TOT.LISTS)
 
 prolific <- inner_join(prolific_a, prolific_b)
 
@@ -142,13 +142,13 @@ species_prolific <- species_list %>% distinct(COMMON.NAME, SP.CATEGORY)
 temp1 <- data0_MY_b %>% 
   right_join(prolific) %>% 
   group_by(SAMPLING.EVENT.IDENTIFIER, COMMON.NAME) %>% 
-  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
+  dplyr::summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
   ungroup()
 
 # to later join checklist metadata
 temp2 <- data0_MY_b_slice_S %>% 
   right_join(prolific) %>% 
-  select(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER)
+  dplyr::select(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER)
 
 # join patches with patch-specific species
 temp3 <- data0_MY_b %>% 
@@ -181,7 +181,7 @@ data_prolific <- temp2 %>%
 
 temp2a <- temp2 %>% 
   group_by(OBSERVER.ID, LOCALITY.ID) %>% 
-  summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(TOT.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   ungroup()
 
 filt <- data_prolific %>% 
@@ -189,7 +189,7 @@ filt <- data_prolific %>%
   # data_prolific is list-level, so some patch-species combos will be 0 in certain lists
   # interested in species repfreq for each patch, so here removing 0 to count presences
   filter(REPORT != 0) %>% 
-  summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   ungroup() %>% 
   right_join(temp2a) %>% 
   mutate(PROP.LISTS = 100*NO.LISTS/TOT.LISTS) %>% 
@@ -282,7 +282,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 -   At the annual level, urban species did not show a higher reporting frequency, which could be because birders in Karnataka compensated during the winter months with exceptional non-urban birding.
 -   The crucial months like April and May show higher reporting frequency for urban species but not for non-urban species.
--   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species at the larger temporal scale. 
+-   Changes in birder behaviour during the peak period did not translate to notable changes in reporting frequency of bird species at the larger temporal scale.
 
 ```{r b01_overall_s2, cache=TRUE, message=FALSE}
 
@@ -327,9 +327,9 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
-- At the annual level, there is a slight increase in urban species reporting, but there is also a similar increase in non-urban species reporting. 
-- This is in fact due to finer-scale mirroring of patterns. Even during the peak pandemic period, both categories of species saw an increase in reporting. This is true for the other ten months as well, although the change is much smaller.
-- Since reporting of both kinds of species were affected similarly, there is no bias in the pandemic data. Moreover, although there was a change, it was of a relatively small magnitude. 
+-   At the annual level, there is a slight increase in urban species reporting, but there is also a similar increase in non-urban species reporting.
+-   This is in fact due to finer-scale mirroring of patterns. Even during the peak pandemic period, both categories of species saw an increase in reporting. This is true for the other ten months as well, although the change is much smaller.
+-   Since reporting of both kinds of species were affected similarly, there is no bias in the pandemic data. Moreover, although there was a change, it was of a relatively small magnitude.
 
 ```{r b01_overall_s3, cache=TRUE, message=FALSE}
 
@@ -374,9 +374,9 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
-- At the annual level, both urban and non-urban species increased in MY2019, but they haven't reverted to pre-pandemic levels, suggesting that this is perhaps due to an increase in birding in Maharashtra. However, urban species have been more stable after MY2019 than non-urban.
-- Maharashtra is the only state where urban species clearly increased and non-urban species clearly decreased during the peak pandemic months. Both have since returned to normal.
-- In the other ten months, both kinds of species increased in MY2019, but urban species are being reported more and more even after the pandemic has passed. This might have something to do with the kind of birding that has been increasing in Maharashtra.
+-   At the annual level, both urban and non-urban species increased in MY2019, but they haven't reverted to pre-pandemic levels, suggesting that this is perhaps due to an increase in birding in Maharashtra. However, urban species have been more stable after MY2019 than non-urban.
+-   Maharashtra is the only state where urban species clearly increased and non-urban species clearly decreased during the peak pandemic months. Both have since returned to normal.
+-   In the other ten months, both kinds of species increased in MY2019, but urban species are being reported more and more even after the pandemic has passed. This might have something to do with the kind of birding that has been increasing in Maharashtra.
 
 ```{r b01_overall_s4, cache=TRUE, message=FALSE}
 
@@ -420,7 +420,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```
 
--   Unlike other states, Assam showed similar reporting of urban and non-urban species before the pandemic, but since has higher urban reporting. This could be due to the kind of birding that has been growing in the state, which has seen a significant growth in the last few years. Even in MY2019, non-urban reporting did not decrease, but urban reporting just increased. 
+-   Unlike other states, Assam showed similar reporting of urban and non-urban species before the pandemic, but since has higher urban reporting. This could be due to the kind of birding that has been growing in the state, which has seen a significant growth in the last few years. Even in MY2019, non-urban reporting did not decrease, but urban reporting just increased.
 -   The gap between urban and non-urban birding proportion has been (very) gradually decreasing since MY2019. This might suggest that this was indeed an effect of the pandemic.
 -   How is this related to Bihu Bird Count which started in MY2019, and to general rise in popularity of birding as well as skill of birders in Assam?
 
@@ -455,7 +455,7 @@ data_prolific0 <- bind_rows("LD" = data_prolific %>% filter(MONTH %in% 4:5),
 median_length <- data_prolific0 %>% 
   distinct(MONTHS.TYPE, LOCALITY.ID, M.YEAR, MONTH, SAMPLING.EVENT.IDENTIFIER, NO.SP) %>% 
   group_by(MONTHS.TYPE, LOCALITY.ID, MONTH) %>% 
-  summarise(NO.SP.MED = floor(median(NO.SP)))
+  dplyr::summarise(NO.SP.MED = floor(median(NO.SP)))
 
 # dataframe with empty column to populate with looped values
 prolific_pred <- data_prolific0 %>% 
@@ -535,7 +535,7 @@ prolific_points <- prolific_pred %>%
   left_join(timeline) %>% 
   # averaging across months of year
   group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
-  summarise(PRED = mean(PRED),
+  dplyr::summarise(PRED = mean(PRED),
             # propagating SE across species of a category
             SE = sqrt(sum((SE)^2))/n()) %>% 
   # to make lines connect per location                      
@@ -546,7 +546,7 @@ prolific_points <- prolific_pred %>%
 prolific_pred <- prolific_points %>% 
   # summarising for species categories
   group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
-  summarise(PRED = mean(PRED),
+  dplyr::summarise(PRED = mean(PRED),
             # propagating SE across species of a category
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PRED - 1.96*SE,

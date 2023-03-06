@@ -16,7 +16,7 @@ cur_species_list <- species_list %>% filter(STATE == state_name)
 temp1 <- data0_MY_b %>% 
   filter(STATE == state_name) %>% 
   group_by(GROUP.ID, COMMON.NAME) %>% 
-  summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
+  dplyr::summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
   ungroup()
 
 # to later join checklist metadata
@@ -30,7 +30,7 @@ data_occ <- data0_MY_b_slice_G %>%
   filter(STATE == state_name) %>% 
   # getting species of interest
   group_by(GROUP.ID) %>% 
-  summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 
+  dplyr::summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 
   left_join(temp1) %>% 
   # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
   mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
@@ -54,7 +54,7 @@ median_length <- data_occ0 %>%
   distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
   # interested in seasonality so not concerned with M.YEAR
   group_by(MONTHS.TYPE, MONTH) %>% 
-  summarise(NO.SP.MED = floor(median(NO.SP)))
+  dplyr::summarise(NO.SP.MED = floor(median(NO.SP)))
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -365,7 +365,7 @@ birds_pred <- birds_pred %>%
   left_join(timeline) %>% 
   # summarising for species categories
   group_by(STATE, MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
-  summarise(PRED = mean(PRED),
+  dplyr::summarise(PRED = mean(PRED),
             # propagating SE across species of a category
             SE = sqrt(sum((SE)^2))/n(),
             CI.L = PRED - 1.96*SE,

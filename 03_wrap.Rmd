@@ -134,12 +134,12 @@ timeline <- data0_MY_d_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
 # finding main state of birders (mainly for observer-level metrics)
 obs_mainstates <- data0_MY_d_slice_S %>% 
   group_by(OBSERVER.ID, STATE) %>% 
-  summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  dplyr::summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
   arrange(desc(LISTS)) %>% 
   slice(1) %>% 
   ungroup() %>% 
   rename(MAIN.STATE = STATE) %>% 
-  select(-LISTS)
+  dplyr::select(-LISTS)
 
 # choosing only months with data from all 3 COVID categories
 month_compar <- data0_MY_d_slice_G %>% 

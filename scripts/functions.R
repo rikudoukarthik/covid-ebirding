@@ -415,7 +415,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
                                 TRUE ~ CATEGORY)) %>% 
     filter(CATEGORY %in% c("issf","species")) %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-    summarise(NO.SP = n_distinct(COMMON.NAME))
+    dplyr::summarise(NO.SP = n_distinct(COMMON.NAME))
   
   ## for bird analyses (group acc filter different) ####
   
@@ -1434,44 +1434,44 @@ b01_overall_monthly <- function(state_name) {
     filter(COUNTY == unique(cur_city_list$COUNTY), 
            CELL.ID %in% cur_city_list$CELLS) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
-    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+    dplyr::summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
               TOT.LISTS = n_distinct(GROUP.ID)) %>% 
     ungroup() %>% 
     left_join(data0_MY_b) %>% 
     filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-    summarise(TOT.LISTS = min(TOT.LISTS),
+    dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
               NO.LISTS = n_distinct(GROUP.ID),
               REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
-    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    dplyr::summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
-    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+    dplyr::summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
               CI.U = stats::quantile(REP.FREQ, 0.975),
               REP.FREQ = median(REP.FREQ)) %>% 
     left_join(cur_species_list) %>% 
-    select(-STATE)
+    dplyr::select(-STATE)
   
   print("data_a completed.")
   
   data_b <- data0_MY_b_slice_G %>% 
     filter(STATE == unique(cur_city_list$STATE)) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
-    summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
+    dplyr::summarise(GROUP.ID = GROUP.ID, # not mutating so as to remove unwanted join columns
               TOT.LISTS = n_distinct(GROUP.ID)) %>% 
     ungroup() %>% 
     left_join(data0_MY_b) %>% 
     filter(COMMON.NAME %in% cur_species_list$COMMON.NAME) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH, CELL.ID) %>% 
-    summarise(TOT.LISTS = min(TOT.LISTS),
+    dplyr::summarise(TOT.LISTS = min(TOT.LISTS),
               NO.LISTS = n_distinct(GROUP.ID),
               REP.FREQ = round(NO.LISTS/TOT.LISTS, 4)) %>% 
-    summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
+    dplyr::summarise(REP.FREQ = boot_conf(REP.FREQ)) %>% 
     group_by(COMMON.NAME, M.YEAR, MONTH) %>% 
-    summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
+    dplyr::summarise(CI.L = stats::quantile(REP.FREQ, 0.025), # Obtain the CIs
               CI.U = stats::quantile(REP.FREQ, 0.975),
               REP.FREQ = median(REP.FREQ)) %>% 
     left_join(cur_species_list) %>% 
-    select(-STATE)
+    dplyr::select(-STATE)
   
   print("data_b completed.")
   
@@ -1504,24 +1504,24 @@ b01_overall_annual <- function(state_name) {
   data_a <- data_a %>% 
     mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
     group_by(COMMON.NAME, M.YEAR) %>% 
-    summarise(REP.FREQ = mean(REP.FREQ),
+    dplyr::summarise(REP.FREQ = mean(REP.FREQ),
               SE = sqrt(sum((SE)^2))/n(),
               CI.L = REP.FREQ - 1.96*SE,
               CI.U = REP.FREQ + 1.96*SE) %>% 
     left_join(cur_species_list) %>% 
-    select(-STATE)
+    dplyr::select(-STATE)
   
   print("data_a completed.")
   
   data_b <- data_b %>% 
     mutate(SE = (REP.FREQ - CI.L)/1.96) %>% 
     group_by(COMMON.NAME, M.YEAR) %>% 
-    summarise(REP.FREQ = mean(REP.FREQ),
+    dplyr::summarise(REP.FREQ = mean(REP.FREQ),
               SE = sqrt(sum((SE)^2))/n(),
               CI.L = REP.FREQ - 1.96*SE,
               CI.U = REP.FREQ + 1.96*SE) %>% 
     left_join(cur_species_list) %>% 
-    select(-STATE)
+    dplyr::select(-STATE)
   
   print("data_b completed.")
   

@@ -1664,7 +1664,7 @@ grid_dist_base0 <- districtmap %>%
 # some districts have two different rows (two different polygons) so need to combine
 # them into one polygon
   group_by(DISTRICT.NAME) %>% 
-  summarise() # dplyr-sf magic :) 
+  dplyr::summarise() # dplyr-sf magic :) 
 # https://gis.stackexchange.com/questions/421651/merging-two-multipolygon-shapefiles-and-removing-one-of-overlapping-polygons-usi
 
 grid_dist_base <- grid_dist_base0 %>% st_join(gridmapg1_IN)
@@ -1715,11 +1715,11 @@ dist_cons <- temp0 %>% distinct(DISTRICT.NAME, NO.CELLS.TOT) %>% arrange(DISTRIC
 temp1 <- temp0 %>% 
   # average gridcov across two DUR years
   group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID),
+  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
             GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT),
             COVID = COVID) %>% 
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(GRID.COV = mean(GRID.COV)) %>% 
+  dplyr::summarise(GRID.COV = mean(GRID.COV)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
   complete(COVID, 
@@ -1732,15 +1732,15 @@ temp1 <- temp0 %>%
 temp2 <- temp0 %>% 
   # average gridcov across two DUR years
   group_by(M.YEAR, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
-  summarise(CELL.LISTS = n_distinct(GROUP.ID),
+  dplyr::summarise(CELL.LISTS = n_distinct(GROUP.ID),
             COVID = COVID) %>% 
   # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
   filter(CELL.LISTS >= 5) %>% 
-  summarise(NO.CELLS = n_distinct(CELL.ID),
+  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
             GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT),
             COVID = COVID) %>% 
   group_by(COVID, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
+  dplyr::summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
   complete(COVID, 
@@ -1753,7 +1753,7 @@ temp2 <- temp0 %>%
 temp3 <- temp01 %>% 
   # summarising metrics of interest (more districts for no.lists than for coverage)
   group_by(COVID, DISTRICT.NAME) %>% 
-  summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
   complete(COVID, 
