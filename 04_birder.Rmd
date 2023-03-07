@@ -376,7 +376,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 anal_name <- "d03_time_po"
 
-##### Final analysis: national GLMMs ####
+##### Final analysis: national LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -427,7 +427,7 @@ data0_a <- data0_a %>%
          CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
-##### Final analysis: statewise GLMMs ####
+##### Final analysis: statewise LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
