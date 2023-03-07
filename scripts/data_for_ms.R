@@ -3,6 +3,12 @@
 # first run all setup and data import steps in 03_wrap.Rmd, 04_birder.Rmd and 05_bird.Rmd
 
 
+# months timeline ---------------------------------------------------------
+
+months_timeline <- data0_MY_b_slice_S %>% 
+  arrange(OBSERVATION.DATE) %>% 
+  distinct(M.YEAR, MONTH) 
+
 # total no. of unique lists -----------------------------------------------
 
 tot_uniq_lists <- n_distinct(data0_MY_b_slice_S$GROUP.ID)
@@ -25,6 +31,7 @@ tot_qual_prolific <- data.frame(
 
 save(covid_palette, # timeline graph 
      totalcells, # how many 25 x 25 cells
+     months_timeline,
      tot_uniq_lists, # how many total unique lists
      species_list, # how many species (and urban, rural)
      fail_spec_KL, fail_spec_MH, # for how many spp in overall bird models used logit
