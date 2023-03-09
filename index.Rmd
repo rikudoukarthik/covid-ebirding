@@ -1,5 +1,5 @@
 ---
-title: "Birding in the time of COVID: Pandemic effects illuminated by birdwatchers, and implications for citizen science inference"
+title: "Birding in the time of COVID: Pandemic effects on data, and implications for citizen science inference"
 author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
 bibliography: covid-ebirding.json
 csl: ibis.csl
