@@ -25,8 +25,24 @@ covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
+# month labels
+month_lab <- data.frame(MONTH = 1:12 %>% month()) %>% 
+  mutate(MONTH.LAB = month(MONTH, label = T)) %>% 
+  mutate(MONTH = factor(MONTH))
+
+
 # loading data required for various summaries, tables and figures
 load("outputs/data_for_ms.RData")
+
+
+knitr::opts_chunk$set(
+  fig.retina=3,
+  echo = FALSE,
+  include = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
 ```
 
 # Introduction
@@ -73,7 +89,7 @@ We used the "relMay-2022" version of the publicly available [eBird Basic Dataset
 
 First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" as a unit time period and we analysed data over a period of four migratory years, from 1 June 2018 to 31 May 2022 Fig. \@ref(fig:timeline). We consider a relatively fine temporal scale of months in order to account for within-year variations in bird and birder behaviour. Moreover, in India severe COVID-19 restrictions and lockdowns were limited to a few months in 2020 and 2021 [@theeconomictimes2020; @theindianexpress2021], and this scale allows us to consider these patterns separately from patterns in other months of the "pandemic years" (the migratory years 2019 and 2020, coded as "DUR"; 2018 and 2021 coded as "BEF" and "AFT" respectively).
 
-```{r timeline, fig.cap="Timeline of our study period, showing migratory years colorued by COVID category.", echo=FALSE}
+```{r timeline, fig.cap="Timeline of our study period, showing migratory years colorued by COVID category."}
 
 
 
@@ -195,60 +211,50 @@ Thus, the effects of the pandemic on birder behaviour were not consistent throug
 
 The effect on the birding distance metric, interestingly, was higher in 2020 during the peak period but lower in 2020 during several other months of the year. Moreover, there was no observable decline at all in overall birding effort in terms of time spent birding by an average observer (`one model in S3`; Fig. \@ref(fig:time-cov)).
 
-```{r long-changes, fig.cap="Graphs of observer-level group birding and site fidelity, hotspot birding and travelling protocol birding at the national level.", out.height="100%", fig.height=8.5, dpi=300, echo=FALSE}
+```{r long-changes, fig.cap="Graphs of observer-level group birding and site fidelity, hotspot birding and travelling protocol birding at the national level.", fig.width=8, fig.height=12, out.width="100%", out.height="100%", dpi=300, cache=TRUE, dev="jpeg"}
 
-# load(glue("outputs/d01_group_po.RData"))
-# d1 <- data0_a
-# load(glue("outputs/d02_fidelity_po.RData"))
-# d2 <- data0_a
-# load(glue("outputs/d04_hotspot.RData"))
-# d3 <- data0_a
-# load(glue("outputs/d05_protocol.RData"))
-# d4 <- data0_a
-# 
-# rm(list = setdiff(ls(), c("covid_palette", "d1", "d2", "d3", "d4")))
-# 
-# 
-# p1 <- ggplot(d1, aes(MONTH, PRED, colour = M.YEAR)) +
-#   labs(x = "Month", y = "Predicted group birding proportion") +
-#   geom_point(size = 2, position = position_dodge(0.5)) +
-#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-#                 size = 1, width = 0.3, position = position_dodge(0.5)) +
-#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
-# 
-# p2 <- ggplot(d2, aes(MONTH, PRED, colour = M.YEAR)) +
-#   labs(x = "Month", y = "Predicted no. of sites visited") +
-#   geom_point(size = 2, position = position_dodge(0.5)) +
-#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-#                 size = 1, width = 0.3, position = position_dodge(0.5)) +
-#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
-# 
-# p3 <- ggplot(d3, aes(MONTH, PRED, colour = M.YEAR)) +
-#   labs(x = "Month", y = "Predicted hotspot birding proportion") +
-#   geom_point(size = 2, position = position_dodge(0.5)) +
-#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-#                 size = 1, width = 0.3, position = position_dodge(0.5)) +
-#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
-# 
-# p4 <- ggplot(d4, aes(MONTH, PRED, colour = M.YEAR)) +
-#   labs(x = "Month", y = "Predicted travelling birding proportion") +
-#   geom_point(size = 2, position = position_dodge(0.5)) +
-#   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-#                 size = 1, width = 0.3, position = position_dodge(0.5)) +
-#   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
-# 
-# ((p1 / p2) | (p3 / p4)) +
-#   plot_layout(guides = "collect") +
-#   plot_annotation(title = "National-level models")
+load(glue("outputs/d01_group_po.RData"))
+d1 <- data0_a %>% left_join(month_lab)
+load(glue("outputs/d02_fidelity_po.RData"))
+d2 <- data0_a %>% left_join(month_lab)
+load(glue("outputs/d04_hotspot.RData"))
+d3 <- data0_a %>% left_join(month_lab)
+load(glue("outputs/d05_protocol.RData"))
+d4 <- data0_a %>% left_join(month_lab)
 
 
-p1 <- image_read("03_wrap_figs/d01_group_po_a.png") %>% image_ggplot()
-p2 <- image_read("03_wrap_figs/d02_fidelity_po_a.png") %>% image_ggplot()
-p3 <- image_read("03_wrap_figs/d04_hotspot_a.png") %>% image_ggplot()
-p4 <- image_read("03_wrap_figs/d05_protocol_a.png") %>% image_ggplot()
+
+p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted group birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted no. of sites visited") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted hotspot birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted travelling birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
 (p1 / p2 / p3 / p4) +
-  plot_layout(guides = "collect")
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A")
 
 ```
 
@@ -256,11 +262,17 @@ p4 <- image_read("03_wrap_figs/d05_protocol_a.png") %>% image_ggplot()
 
 As expected, urban birding proportion increased (Fig. \@ref(fig:urban)) during the peak pandemic months, and reverted to pre-pandemic levels as the period of peak lockdowns passed.
 
-```{r urban, fig.cap="Graph of urban birding proportion at the national level.", out.width="100%", fig.width=7, dpi=300, echo=FALSE}
+```{r urban, fig.cap="Graph of urban birding proportion at the national level.", fig.width=11, fig.height=5, dpi=300, cache=TRUE, dev="jpeg"}
 
-p1 <- image_read("03_wrap_figs/d09a_s_UNU_a.png") %>% image_ggplot()
+load("outputs/d09a_s_UNU.RData")
 
-p1
+ggplot(data0_a %>% left_join(month_lab), 
+       aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted urban birding proportion") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
 ```
 
@@ -272,10 +284,28 @@ There is a slight suggestion of a small decrease in spatial coverage during Apri
 
 Importantly, there was no worrisome spatial clustering or concentration of the fine-scale changes to overall birding effort (Fig. \@ref(fig:s-spread-figs)).
 
-```{r time-cov, fig.cap="Graphs of observer-level birding time, and spatial coverage at the national level.", out.width="100%", fig.width=7, out.height="100%", fig.height=6.5, dpi=300, echo=FALSE}
+```{r time-cov, fig.cap="Graphs of observer-level birding time, and spatial coverage at the national level.", fig.width=8, fig.height=7, out.width="100%", dpi=300, cache=TRUE, dev="jpeg"}
 
-p1 <- image_read("03_wrap_figs/d03_time_po_a.png") %>% image_ggplot()
-p2 <- image_read("03_wrap_figs/d09b_s_cover_a.png") %>% image_ggplot()
+load("outputs/d03_time_po.RData")
+d1 <- data0_a %>% left_join(month_lab)
+load("outputs/d09b_s_cover.RData")
+d2 <- data0_a %>% left_join(month_lab)
+
+p1 <- ggplot(d1 %>% left_join(month_lab), 
+             aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted birding time per observer") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
+
+p2 <- ggplot(d2 %>% left_join(month_lab), 
+             aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Predicted proportion of grid cells covered") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
 (p1 / p2) +
   plot_layout(guides = "collect")
