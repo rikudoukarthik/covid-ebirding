@@ -556,7 +556,7 @@ prolific_pred <- prolific_points %>%
 
 # graphs ------------------------------------------------------------
 
-save(prolific_pred, 
+save(prolific_pred, prolific_points, 
      file = glue("outputs/{anal_name}.RData"))
 
 prolific_plot <- gg_b_model(prolific_pred, type = "prolific", prolific_points)
