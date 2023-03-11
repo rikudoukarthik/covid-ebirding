@@ -3,6 +3,23 @@
 # first run all setup and data import steps in 03_wrap.Rmd, 04_birder.Rmd and 05_bird.Rmd
 
 
+
+# data quantity (supp.) ---------------------------------------------------
+
+dataquant_a <- data0_MY_d_slice_S %>% 
+  group_by(M.YEAR, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   NO.EBIRDERS = n_distinct(OBSERVER.ID)) %>%
+  ungroup()
+
+dataquant_b <- data0_MY_d_slice_S %>% 
+  filter(STATE %in% anal_states) %>% 
+  group_by(STATE, M.YEAR, MONTH) %>% 
+  dplyr::summarise(NO.LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER),
+                   NO.EBIRDERS = n_distinct(OBSERVER.ID)) %>%
+  ungroup()
+
+
 # months timeline ---------------------------------------------------------
 
 months_timeline <- data0_MY_b_slice_S %>% 
@@ -31,6 +48,7 @@ tot_qual_prolific <- data.frame(
 
 save(covid_palette, # timeline graph 
      totalcells, # how many 25 x 25 cells
+     dataquant_a, dataquant_b, # data quantity
      months_timeline,
      tot_uniq_lists, # how many total unique lists
      species_list, # how many species (and urban, rural)
