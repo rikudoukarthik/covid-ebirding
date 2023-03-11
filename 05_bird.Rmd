@@ -241,10 +241,13 @@ anal_name <- "b01_overall_s1a_m"
 
 b01_overall_monthly("Karnataka")
 
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
 
 anal_name <- "b01_overall_s1b_y"
 
 b01_overall_annual("Karnataka")
+
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
 
 ```
 
@@ -290,10 +293,14 @@ anal_name <- "b01_overall_s2a_m"
 
 b01_overall_monthly("Kerala")
 
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+
 
 anal_name <- "b01_overall_s2b_y"
 
 b01_overall_annual("Kerala")
+
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
 
 ```
 
@@ -337,10 +344,14 @@ anal_name <- "b01_overall_s3a_m"
 
 b01_overall_monthly("Maharashtra")
 
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+
 
 anal_name <- "b01_overall_s3b_y"
 
 b01_overall_annual("Maharashtra")
+
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
 
 ```
 
@@ -384,10 +395,14 @@ anal_name <- "b01_overall_s4a_m"
 
 b01_overall_monthly("Assam")
 
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+
 
 anal_name <- "b01_overall_s4b_y"
 
 b01_overall_annual("Assam")
+
+save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
 
 ```
 
