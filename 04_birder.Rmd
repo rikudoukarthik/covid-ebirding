@@ -376,7 +376,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 anal_name <- "d03_time_po"
 
-##### Final analysis: national GLMMs ####
+##### Final analysis: national LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -427,7 +427,7 @@ data0_a <- data0_a %>%
          CI.L = PRED - 1.96*SE) %>% 
   left_join(timeline)
 
-##### Final analysis: statewise GLMMs ####
+##### Final analysis: statewise LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -2085,6 +2085,20 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"),
 
 # all these values are zero in one of the two transition periods.
 
+##### Saving analysis objects ####
+
+temp1 <- data_spread1 %>% st_drop_geometry() %>% dplyr::select(-geometry)
+temp2 <- data_spread2
+temp3 <- data_spread3a %>% st_drop_geometry() %>% dplyr::select(-geometry)
+temp4 <- data_spread3b %>% st_drop_geometry() %>% dplyr::select(-geometry)
+temp5 <- data_spread4 %>% st_drop_geometry() %>% dplyr::select(-geometry)
+temp6 <- data_spread5 
+temp7 <- data_spread6 %>% st_drop_geometry() %>% dplyr::select(-geometry)
+
+
+save(grid_dist_base0, temp1, temp2, temp3, temp4, temp5, temp6, temp7, indiamap,
+     file = glue("outputs/{anal_name}.RData"))
+
 ```
 
 -   In terms of pure no. of lists, overall birding effort was not notably affected by the pandemic. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
@@ -2185,6 +2199,12 @@ plot_b <- ggplot(data_b, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) +
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
+##### Saving analysis objects ####
+
+save(data_a, data_b, 
+     file = glue("outputs/{anal_name}.RData"))
+
+
 ```
 
 ```{r d10b_t_tod, cache=TRUE, message=FALSE}
@@ -2255,5 +2275,11 @@ plot_b <- ggplot(data_b, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 32, height = 17, units = "in")
+
+
+##### Saving analysis objects ####
+
+save(data_a, data_b, 
+     file = glue("outputs/{anal_name}.RData"))
 
 ```
