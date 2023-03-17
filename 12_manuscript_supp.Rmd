@@ -2,6 +2,14 @@
 
 ## Methods
 
+### Data preparation {#dataprep}
+
+We standardised the dataset before analysis with the following set of filters. First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" (MY) as a unit time period.
+
+We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 8pm and 4am (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding "effort": checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. The dataset at this stage was used in analyses of observer-level metrics, while for non-observer-level data metrics and metrics of bird reporting, a final filter was added: in instances of group birding where each participant eBirder owns a copy of the checklist, duplicate records/checklists were removed by filtering out non-unique combinations of group birding event (column "GROUP.IDENTIFIER") and bird species (column "COMMON.NAME").
+
+The checklists that passed these criteria are referred to as "qualifying checklists".
+
 ### Exploratory analyses and bootstrapped estimates {#explboot}
 
 We selected the various metrics of data quantity and quality from the available effort metadata associated with every eBird checklist. To check whether these metrics were useful to answer our question, we first explored basic patterns by calculating the metrics for every month and migratory year, for the four individual states of interest (state-level). These calculations produced a mean or median value and associated confidence interval from non-parametric bootstrapping: first the mean of the values in a group were calculated, following which a new sample of the same size as the original one was selected by resampling the original group with replacement, and a new mean was calculated, and so on until this calculation was done 1000 times. The mean/median of the 1000 sampled means is the group mean/median estimate while its standard deviation is the standard error. We then calculated CIs from the SEs assuming a Gaussian distribution ($CIs = mean \pm 1.96 SE$) due to the large sample size in our dataset.
@@ -82,7 +90,7 @@ where $length$ refers to the median number of species reported in the respective
 
 ### Data quantity increased
 
-```{r lists-ebirders, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBidrers; B). Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text. Note the peak in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
+```{r lists-ebirders, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBidrers; B). Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
 
 x <- month_lab %>% 
   mutate(YEAR = ifelse(MONTH %in% 6:12, 
@@ -121,7 +129,7 @@ p2 <- ggplot(d1, aes(x = DATE, y = NO.EBIRDERS, colour = M.YEAR)) +
 
 ### Birding sessions became shorter
 
-```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 load("outputs/d06_distance.RData")
 d1 <- data0_a %>% left_join(month_lab)
@@ -159,7 +167,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r dist-dur-length-state1, fig.cap="Graphs of birding distance, list duration and list length for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length-state1, fig.cap="Graphs of birding distance, list duration and list length for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 load("outputs/d06_distance.RData")
 d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
@@ -197,7 +205,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r dist-dur-length-state2, fig.cap="Graphs of birding distance, list duration and list length for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length-state2, fig.cap="Graphs of birding distance, list duration and list length for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 load("outputs/d06_distance.RData")
 d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
@@ -235,7 +243,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r dist-dur-length-state3, fig.cap="Graphs of birding distance, list duration and list length for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length-state3, fig.cap="Graphs of birding distance, list duration and list length for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 load("outputs/d06_distance.RData")
 d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
@@ -273,7 +281,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r dist-dur-length-state4, fig.cap="Graphs of birding distance, list duration and list length for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length-state4, fig.cap="Graphs of birding distance, list duration and list length for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 load("outputs/d06_distance.RData")
 d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
@@ -311,9 +319,9 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-### Birders followed precautionary measures
+### Birders avoided travel, groups, and public spaces
 
-```{r long-changes-state1, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state1, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load(glue("outputs/d01_group_po.RData"))
 d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
@@ -361,7 +369,7 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r long-changes-state2, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state2, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load(glue("outputs/d01_group_po.RData"))
 d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
@@ -409,7 +417,7 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r long-changes-state3, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state3, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load(glue("outputs/d01_group_po.RData"))
 d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
@@ -457,7 +465,7 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r long-changes-state4, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state4, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load(glue("outputs/d01_group_po.RData"))
 d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
@@ -507,7 +515,7 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ### Urban bias
 
-```{r urban-states, fig.cap="Urban bias in the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D): Y-axis shows the proportion of checklists that are from urban areas. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r urban-states, fig.cap="Urban bias in the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D): Y-axis shows the proportion of checklists that are from urban areas. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d09a_s_UNU.RData")
 d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
@@ -561,7 +569,7 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ### Was overall birding effort lower?
 
-```{r time-cov-state1, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r time-cov-state1, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d03_time_po.RData")
 d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
@@ -590,7 +598,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r time-cov-state2, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r time-cov-state2, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d03_time_po.RData")
 d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
@@ -619,7 +627,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r time-cov-state3, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r time-cov-state3, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d03_time_po.RData")
 d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
@@ -648,7 +656,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r time-cov-state4, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r time-cov-state4, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d03_time_po.RData")
 d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
@@ -785,7 +793,7 @@ ggplot(d6) +
 
 Most birding before the pandemic happened on weekends, especially on Sundays, but proportional birding on Sunday decreased in the pandemic years, and there were slight suggestions of birding being more spread out over the weekdays (Fig. \@ref(fig:t-spread)A). This could be because many people started working from home and hence had some time freed up. Similarly, much more birding happened in the evening hours (17:00--18:00 hrs) during the pandemic years than before or after, while there was a little less morning birding, around 06:00 hrs (Fig. \@ref(fig:t-spread)B). People might have done birding in the extra time that would have otherwise gone for the evening commute. Some evidence for these speculations is that the changes were much more notable in states having big metropolitan cities like Karnataka (Fig. \@ref(fig:t-spread-state1)B) and Maharashtra (Fig. \@ref(fig:t-spread-state3)A).
 
-```{r t-spread, fig.cap="Proportional spread of birding (lists submitted) at the national level across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple).", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r t-spread, fig.cap="Proportional spread of birding (lists submitted) at the national level across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d10a_t_dow.RData")
 d1 <- data_a
@@ -817,7 +825,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ```
 
-```{r t-spread-state1, fig.cap="Proportional spread of birding (lists submitted) in Karnataka across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple).", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r t-spread-state1, fig.cap="Proportional spread of birding (lists submitted) in Karnataka across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d10a_t_dow.RData")
 d1 <- data_b %>% filter(STATE == "Karnataka")
@@ -849,7 +857,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ```
 
-```{r t-spread-state2, fig.cap="Proportional spread of birding (lists submitted) in Kerala across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple).", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r t-spread-state2, fig.cap="Proportional spread of birding (lists submitted) in Kerala across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d10a_t_dow.RData")
 d1 <- data_b %>% filter(STATE == "Kerala")
@@ -881,7 +889,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ```
 
-```{r t-spread-state3, fig.cap="Proportional spread of birding (lists submitted) in Maharashtra across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple).", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r t-spread-state3, fig.cap="Proportional spread of birding (lists submitted) in Maharashtra across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d10a_t_dow.RData")
 d1 <- data_b %>% filter(STATE == "Maharashtra")
@@ -913,7 +921,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ```
 
-```{r t-spread-state4, fig.cap="Proportional spread of birding (lists submitted) in Assam across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple).", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r t-spread-state4, fig.cap="Proportional spread of birding (lists submitted) in Assam across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d10a_t_dow.RData")
 d1 <- data_b %>% filter(STATE == "Assam")
@@ -947,7 +955,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
 
 ### Overall bird reporting
 
-```{r overall-non1, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non1, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/b01_overall_s1a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
@@ -983,7 +991,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```
 
-```{r overall-non2, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Karnataka state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non2, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Karnataka state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
@@ -1089,7 +1097,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non5, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non5, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/b01_overall_s2a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
@@ -1125,7 +1133,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```
 
-```{r overall-non6, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kerala state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non6, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kerala state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
@@ -1231,7 +1239,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non9, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non9, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/b01_overall_s3a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
@@ -1267,7 +1275,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```
 
-```{r overall-non10, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Maharashtra state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non10, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Maharashtra state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
@@ -1373,7 +1381,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non13, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-non13, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/b01_overall_s4a_m.RData")
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
