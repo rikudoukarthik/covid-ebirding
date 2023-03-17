@@ -40,7 +40,8 @@ month_lab <- data.frame(M.YEAR = 2018:2021) %>%
          MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T))) %>% 
   mutate(COL1 = ifelse(MONTH.LAB %in% c("Apr", "May"), "red", "black"), # for normal plots
          COL2 = ifelse((M.YEAR %in% 2019:2020) & 
-                         (MONTH.LAB %in% c("Apr", "May")), "red", "black")) %>%  # for timeline 
+                         (MONTH.LAB %in% c("Apr", "May")), "red", "black"), # for timeline 
+         COL3 = ifelse(M.YEAR %in% 2019:2020, "red", "black")) %>% # for bird model plots
   arrange(M.YEAR, MONTH.LAB)
 
 # loading data required for various summaries, tables and figures
@@ -92,7 +93,7 @@ We used the "relMay-2022" version of the publicly available [eBird Basic Dataset
 
 First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" (MY) as a unit time period and we analysed data over a period of four migratory years, from 1 June 2018 to 31 May 2022 Fig. \@ref(fig:timeline). We consider a relatively fine temporal scale of months in order to account for within-year variations in bird and birder behaviour. Moreover, in India severe COVID-19 restrictions and lockdowns were limited to a few months in 2020 and 2021 [@theeconomictimes2020; @theindianexpress2021], and this scale allows us to consider these patterns separately from patterns in other months of the "pandemic years" (the migratory years 2019 and 2020, coded as "DUR"; 2018 and 2021 coded as "BEF" and "AFT" respectively).
 
-```{r timeline, fig.cap="Timeline of our study period, showing migratory years colorued by COVID category.", fig.width=8, out.width="100%", dev="jpeg", dpi=300}
+```{r timeline, fig.cap="Timeline of the study period. The spans of the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and pre-pandemic, pandemic and post-pandemic months are also signified. April and May of both pandemic years (shown in red text) are considered as the peak pandemic months.", fig.width=8, out.width="100%", dev="jpeg", dpi=300}
 
 x <- month_lab %>% 
   mutate(YEAR = ifelse(MONTH %in% 6:12, 
@@ -176,7 +177,7 @@ To test whether the pandemic led to an increase or decrease in eBird data quanti
 
 ## Analysis of data quality
 
-To analyse pandemic-induced changes in data quality, we devised a suite of metrics (Table \@ref(tab:metrics-d)) that help gauge various aspects of data quality. These metrics were compared at the monthly level across our years of interest, i.e., the metrics were calculated per month, across the four years. Moreover, all the metrics except for spatial spread and temporal spread were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in local governance, policy and general public perspective.
+To analyse pandemic-induced changes in data quality, we devised a suite of metrics (see below) that help gauge various aspects of data quality. These metrics were compared at the monthly level across our years of interest, i.e., the metrics were calculated per month, across the four years. Moreover, all the metrics except for spatial spread and temporal spread were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in local governance, policy and general public perspective.
 
 ### Metrics of birder behaviour
 
@@ -212,17 +213,11 @@ Did the pandemic create spatial clusters of positive or negative change in birdi
 
 ### Statistical validation {#model-boot}
 
-For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see Section \@ref(explboot)). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For this, we used the "glmer()" function in the *lme4* package [@bates2015] For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models (Table \@ref(tab:metrics-d)). All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser.
+For all metrics except spatial spread, unless otherwise mentioned, the above analyses were first done using exploratory visualisations, following which emerging patterns were validated using simple confidence calculations or bootstrap validation in some cases (see Section \@ref(explboot)). Finally, after the metrics and analysis approaches were deemed meaningful, they were tested statistically using Generalised Linear Mixed Models (GLMMs). For this, we used the "glmer()" function in the *lme4* package [@bates2015] For the observer-level metrics (group birding, site fidelity, and birding time), observer identity was used as the random effect, whereas spatial identity defined by grid cell ID was used as the random effect for all other models (Section \@ref(modelspecs-d)). All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser.
 
-Some metrics like observer-level site fidelity, observer-level birding time, birding distance, list duration and list length were either whole number or continuous numerical variables that did not include zero in the range of possible values. For these, since GLMMs with binomial or Poisson error distributions are not appropriate, we instead fitted LMMs (Linear Mixed Models) with the same fixed and random effects specifications and using BOBYQA optimiser, after first log-transforming (natural) the response variables to ensure normality. This was done using the "lmer()" function in *lme4*. The various models of data metrics and their specifications are listed in Table \@ref(tab:metrics-d). There was no model run for temporal spread due to it being a visual metric and its analytical specifications being very different from those of other metrics (Section \@ref(tspreadmeth)).
+Some metrics like observer-level site fidelity, observer-level birding time, birding distance, list duration and list length were either whole number or continuous numerical variables that did not include zero in the range of possible values. For these, since GLMMs with binomial or Poisson error distributions are not appropriate, we instead fitted LMMs (Linear Mixed Models) with the same fixed and random effects specifications and using BOBYQA optimiser, after first log-transforming (natural) the response variables to ensure normality. This was done using the "lmer()" function in *lme4*. The specifications of the various models of data metrics are listed in Section \@ref(modelspecs-d). There was no model run for temporal spread due to it being a visual metric and its analytical specifications being very different from those of other metrics (Section \@ref(tspreadmeth)).
 
 For all models, model diagnostics were inspected using the *DHARMa* package [@hartig2022], to ensure that there were no major violations of model assumptions. We used the "bootMer()" function in *lme4* in order to test the significance of the fitted model results, by obtaining mean and CI estimates using semi-parametric bootstrapping. The bootstrapping was done with 1000 simulations and with parallel core processing [with the help of packages *parallel*, @rcoreteam2021; and *VGAM*, @yee2010].
-
-```{r metrics-d}
-# a large sideways full-page table of metrics of data quantity and quality, and model specifications
-knitr::kable(mtcars[1:5, 1:5], caption = "The various metrics of data quantity and quality and their model specifications.")
-
-```
 
 ## Analysis of bird species reporting
 
@@ -234,11 +229,26 @@ Since not all species are widespread and equally abundant in different parts of 
 
 In each of the four states analysed in our study, we also selected one of their large metropolitan (urban) cities. For every species in the corresponding regional species set, we visualised individual species reporting patterns at two temporal (months, migratory years) and spatial (city, state) scales. (Analysing species reporting patterns at the national level is not appropriate, considering the large variation in species ranges and abundances.) This was done by calculating the reporting frequency (proportion of qualifying checklists in which a species was reported) of each species at each scale.
 
-We then pooled data from all urban and all rural species, and analysed whether overall species reporting patterns at the large scale (migratory years & state) were affected by the pandemic. This gave us an idea of how urban and rural species idiosyncratically differed in terms of general reporting, how species reporting varied across multiple urban areas and how this averaged out over a large spatial scale, and how species reporting varied over the course of a year and how this variation was expressed at the large temporal scale. Kamrup Metropolitan, the metropolitan capital of the state of Assam, did not have sufficient data for visualisation of month-level patterns, so this combination was dropped.
+We then pooled data from all urban and all rural species, and analysed whether overall species reporting patterns at the large scale (migratory years & state) were affected by the pandemic. This gave us an idea of how urban and rural species idiosyncratically differed in terms of general reporting, how species reporting varied across multiple urban areas and how this averaged out over a large spatial scale, and how species reporting varied over the course of a year and how this variation was expressed at the large temporal scale. Kamrup Metropolitan, the metropolitan capital of the state of Assam, did not have sufficient data for visualisation of month-level or year-level patterns, so this combination was dropped.
 
 ```{r reg-spec}
 # regionwise species sets used in analyses
-knitr::kable(mtcars[1:5, 1:5], caption = "The regionwise species sets for which reporting patterns were analysed.")
+
+species_list <- species_list %>% 
+  mutate(STATE = factor(STATE, levels = c("Karnataka", "Kerala", "Maharashtra", "Assam")),
+         SP.CATEGORY = factor(SP.CATEGORY, levels = c("U", "R"))) %>% 
+  distinct(SP.CATEGORY, STATE, COMMON.NAME) %>% 
+  arrange(SP.CATEGORY, STATE) %>% 
+  mutate(PRESENT = "+") %>% 
+  pivot_wider(names_from = "STATE", values_from = "PRESENT") %>% 
+  mutate(SP.CATEGORY = ifelse(SP.CATEGORY == "U", "Urban", "Rural")) %>% 
+  rename(Species = COMMON.NAME, `Species category` = SP.CATEGORY)
+
+options(knitr.kable.NA = "")
+
+knitr::kable(species_list, 
+             align = "lcccc",
+             caption = "Region-wise species sets for which overall reporting patterns were analysed.")
 
 ```
 
@@ -252,15 +262,9 @@ From the set of species analysed in the previous section, we determined those to
 
 Like with the metrics of data quantity and quality, the bird reporting patterns were first explored using visualisations, then emerging patterns were validated using simple bootstrapping for confidence estimates as in Section \@ref(explboot), except that the bootstrapped values were calculated separately for each spatial scale and propagation was done from the fine temporal scale of month to the scale of migratory year. Eventually, once the specifics of the analyses were finalised, the patterns were statistically tested using GLMMs. Due to strikingly obvious differences in birding conditions between the lockdown and non-lockdown periods (and due to large differences in results from both approaches), we ran three separate models: one for the months of April and May ("lockdown"), one for the other ten months ("non-lockdown"), and one for all twelve months together ("all"). This also helps determine whether the effects of the pandemic on species reporting were restricted to the strict lockdown period.
 
-For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided in Table \@ref(tab:models-b). All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser, except in a few `r (length(fail_spec_KL) + length(fail_spec_MH))` (`r length(fail_spec_KL)` of Kerala, `r length(fail_spec_MH)` of Maharashtra) of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
+For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided in Section \@ref(modelspecs-b). All GLMMs were fit with binomial error distribution and cloglog link function, using BOBYQA optimiser, except in a few `r (length(fail_spec_KL) + length(fail_spec_MH))` (`r length(fail_spec_KL)` of Kerala, `r length(fail_spec_MH)` of Maharashtra) of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
 
 Diagnostics were not inspected separately for the bird reporting models due to the large number of models fitted. Mean and CI estimates were obtained in the same way as outlined in Section \@ref(model-boot), but with 500 simulations instead of 1000, due to computational limitations.
-
-```{r models-b}
-# a large sideways full-page table of model specifications of bird reporting patterns
-knitr::kable(mtcars[1:5, 1:5], caption = "Model specifications for analyses of bird reporting patterns.")
-
-```
 
 ## Software
 
@@ -268,37 +272,31 @@ All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@p
 
 # Results
 
-```{r metric-summ}
-# table of metrics and their overall patterns: + or - (as in BMS2022 poster)
-knitr::kable(mtcars[1:5, 1:5], caption = "Summary of pandemic-induced changes on metrics of data quantity and quality.")
-
-```
-
 ## Data quantity
 
-`data quantity results`
+Although there was considerable variation between the months of a year in how many lists were submitted and how many eBirders uploaded lists, these values for each individual month consistently increased across the four year period (Fig. \@ref(fig:lists-ebirders)), with very few exceptions. One such exception is a lower participation in the first wave of COVID-19 in April of MY 2019 compared to April of MY 2018, but data generation was still much higher. Thus, there was no clear evidence for a decrease in data quantity due to the pandemic.
 
 ## Data quality
 
 ### Birder behaviour
 
-1.  *Group birding* (observer-level): Group birding occurred much less frequently during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced, until group birding decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time birders started interacting with each other like usual soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns were largely consistent across different states with minor variations (Fig. \@ref(fig:not-long-states)).
+1.  *Group birding* (observer-level): Group birding occurred much less frequently during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced, until group birding decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time birders started interacting with each other like usual soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns were largely consistent across different states with minor variations (Fig. \@ref(fig:long-changes-state1)--\@ref(fig:long-changes-state4)).
 
-2.  *Site fidelity* (observer-level): Birders during the peak periods of the pandemic travelled much less and visited much fewer sites than usual, instead spending more time in the same locations (i.e., higher site fidelity; Fig. \@ref(fig:long-changes)). This change also persisted in the months following the first peak period in MY 2019, but reverted to regular pre-pandemic levels immediately after the peak months of the second year. These patterns were also largely common across different states with minor variations (Fig. \@ref(fig:not-long-states)).
+2.  *Site fidelity* (observer-level): Birders during the peak periods of the pandemic travelled much less and visited much fewer sites than usual, instead spending more time in the same locations (i.e., higher site fidelity; Fig. \@ref(fig:long-changes)). This change also persisted in the months following the first peak period in MY 2019, but reverted to regular pre-pandemic levels immediately after the peak months of the second year. These patterns were also largely common across different states with minor variations (Fig. \@ref(fig:long-changes-state1)--\@ref(fig:long-changes-state4)).
 
-3.  *Birding time* (observer-level): While the average birder spent less overall time birding during the peak months in both pandemic years, they soon reverted to their usual levels in the following months (Fig. \@ref(fig:time-cov)). The time spent birding during some of the winter months was lower during and even after the pandemic, compared to before. However, birders across different states varied considerably in their response to the pandemic `(fig: state-level birding time)`.
+3.  *Birding time* (observer-level): While the average birder spent less overall time birding during the peak months in both pandemic years, they soon reverted to their usual levels in the following months (Fig. \@ref(fig:time-cov)A). The time spent birding during some of the winter months was lower during and even after the pandemic, compared to pre-pandemic levels. However, this change started even before the pandemic and has continued after, suggesting a change in birding culture as a potential cause. Moreover, birders across different states also varied considerably in their response to the pandemic (Fig. \@ref(fig:time-cov-state1)--\@ref(fig:time-cov-state4)A).
 
-4.  *Hotspot birding*: Birders visited eBird hotspots much less frequently during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced until hotspot birding even returned to normal, but then decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time around birders recovered soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns varied slightly across different states (Fig. \@ref(fig:not-long-states)).
+4.  *Hotspot birding*: Birders visited eBird hotspots much less frequently during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced until hotspot birding even returned to normal, but then decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time around birders recovered soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns varied slightly across different states (Fig. \@ref(fig:long-changes-state1)--\@ref(fig:long-changes-state4)).
 
-5.  *Birding protocol*: Birders made and uploaded considerably less travelling lists during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced until hotspot birding even returned to normal, but then decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time around birders recovered soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns were largely consistent across states with minor variations (Fig. \@ref(fig:not-long-states)).
+5.  *Birding protocol*: Birders made and uploaded considerably less travelling lists during the peak pandemic months of MY 2019 than before (Fig. \@ref(fig:long-changes)). In the months following the lockdown, this difference in proportions gradually reduced until hotspot birding even returned to normal, but then decreased again (but to a lesser extent) in the peak months of MY 2020. However, this time around birders recovered soon after the peak months (Fig. \@ref(fig:long-changes)). These patterns were largely consistent across states with minor variations (Fig. \@ref(fig:long-changes-state1)--\@ref(fig:long-changes-state4)).
 
-6.  *Birding distance*: Birders covered less distance than usual while birding during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). This change evidently disappeared soon, although birders still seem to be covering less distance overall even after the pandemic has passed. These patterns were inconsistent across states (Fig. \@ref(fig:dist-dur-length-states)).
+6.  *Birding distance*: Birders covered less distance than usual while birding during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). This change evidently disappeared soon, although birders still seem to be covering less distance overall even after the pandemic has passed. These patterns were inconsistent across states (Fig. \@ref(fig:dist-dur-length-state1)--\@ref(fig:dist-dur-length-state4)).
 
-7.  *List duration*: The average checklist became shorter in terms of time during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). This change did not last beyond the peak months, although birders still seem to be uploading lower duration lists even after the pandemic has passed. These patterns were inconsistent across states (Fig. \@ref(fig:dist-dur-length-states)).
+7.  *List duration*: The average checklist became shorter in terms of time during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). This change did not last beyond the peak months, although birders still seem to be uploading lower duration lists even after the pandemic has passed. These patterns were inconsistent across states (Fig. \@ref(fig:dist-dur-length-state1)--\@ref(fig:dist-dur-length-state4)).
 
-8.  *List length*: The average checklist reported fewer species during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). However, this decrease in list length relative to MY 2018 was evidently also present in certain months before as well as after the pandemic. Patterns of list length varied considerably across states (Fig. \@ref(fig:dist-dur-length-states)).
+8.  *List length*: The average checklist reported fewer species during the peak periods of MY 2019 and MY 2020 (Fig. \@ref(fig:dist-dur-length)). However, this decrease in list length relative to MY 2018 was evidently also present in certain months before as well as after the pandemic. Patterns of list length varied considerably across states (Fig. \@ref(fig:dist-dur-length-state1)--\@ref(fig:dist-dur-length-state4)).
 
-```{r long-changes, fig.cap="Graphs of observer-level group birding and site fidelity, hotspot birding and travelling protocol birding at the national level.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 load(glue("outputs/d01_group_po.RData"))
 d1 <- data0_a %>% left_join(month_lab)
@@ -350,9 +348,9 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ### Urban bias
 
-Birding in urban areas was slightly higher during the peak periods of both pandemic years, though to a lesser degree in the second (Fig. \@ref(fig:urban)). However, this change was short-lived and returned to regular levels in the immediate months. Urban bias was highly inconsistent, and was even absent in some states.
+Birding in urban areas was slightly higher during the peak periods of both pandemic years, though to a lesser degree in the second (Fig. \@ref(fig:urban)). However, this change was short-lived and returned to regular levels in the immediate months. Urban bias was highly inconsistent, and was even absent in some states (Fig. \@ref(fig:urban-states)).
 
-```{r urban, fig.cap="Graph of urban birding proportion at the national level.", fig.width=8, out.width="100%", fig.height=5, out.height="100%", dpi=300, dev="jpeg"}
+```{r urban, fig.cap="Urban bias at the national level: Y-axis shows the proportion of checklists that are from urban areas. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, out.width="100%", fig.height=5, out.height="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d09a_s_UNU.RData")
 
@@ -370,15 +368,15 @@ ggplot(data0_a %>% left_join(month_lab),
 
 ### Spatial coverage
 
-Birders collectively covered slightly fewer grid cells during April of MY 2019 (Fig. \@ref(fig:time-cov)), but this has not translated to the larger temporal scale of years `(model in S3)`. In fact, coverage has only increased in every successive month since and over the years (Fig. \@ref(fig:time-cov)). Additionally, the slight decrease at the national level was mirrored only by some states like Kerala, while coverage either stayed the same (e.g., Karnataka) or even kept increasing (e.g., Maharashtra) in others (Fig. \@ref(fig:cov-states)).
+Birders collectively covered slightly fewer grid cells during April of MY 2019 (Fig. \@ref(fig:time-cov)B), but this has not translated to the larger temporal scale of years `(model in S3)`. In fact, coverage has only increased in every successive month since and over the years (Fig. \@ref(fig:time-cov)). Additionally, the slight decrease at the national level was mirrored only by some states like Kerala, while coverage either stayed the same (e.g., Karnataka) or even kept increasing (e.g., Maharashtra) in others (Fig. \@ref(fig:time-cov-state1)--\@ref(fig:time-cov-state4)B).
 
 ### Spatial spread
 
-There was an overall positive raw change in birding effort across districts in both transition periods (Fig. \@ref(fig:s-spread-figs); `figS-netchange`). This was true also for grid coverage from before to during the pandemic, but there was a slight negative change from during to after the pandemic `fig`. Thus, the net change in the latter transition was lower than in the former, but was still not negative `figS-netchange`. There were very few major and worrisome changes, and these were not clustered in space.
+There was an overall positive raw change in birding effort across districts in both transition periods (Fig. \@ref(fig:s-spread-figs-raw)A; Fig. \@ref(fig:s-spread-rest1)B). This was true also for grid coverage from before to during the pandemic, but there was a slight decline from during to after the pandemic (Fig. \@ref(fig:s-spread-figs-raw)B). Thus, the net change in the latter transition was lower than in the former, but was still not negative (Fig. \@ref(fig:s-spread-rest1)D). There were very few major and worrisome changes, and these were not clustered in space.
 
-Major proportional declines (bright yellow) in both birding effort and grid coverage from before to during and from after to during the pandemic were restricted to a few districts in central and northern India, and there was little overlap between the two transitions (Fig. \@ref(fig:s-spread-figs)). There were also similar numbers of districts showing prominent declines in the opposite direction, i.e., from during to before and from during to after the pandemic respectively. More districts showed major declines in the backward direction than in the forward direction of time. Several districts were covered during the pandemic that were not covered before or after.
+Major proportional declines (bright yellow) in both birding effort and grid coverage from before to during and from after to during the pandemic were restricted to a few districts in central and northern India, and there was little overlap between the two transitions (Fig. \@ref(fig:s-spread-figs-prop); Fig. \@ref(fig:s-spread-rest3)). There were also similar numbers of districts showing prominent declines in the opposite direction, i.e., from during to before and from during to after the pandemic respectively. More districts showed major declines in the backward direction than in the forward direction of time. Several districts were covered during the pandemic that were not covered before or after.
 
-```{r time-cov, fig.cap="Graphs of observer-level birding time, and spatial coverage at the national level.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+```{r time-cov, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours (MY 2018 in teal-blue, MY 2019 in red, MY 2020 in orange and MY 2021 in purple), and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
 load("outputs/d03_time_po.RData")
 d1 <- data0_a %>% left_join(month_lab)
@@ -409,7 +407,7 @@ p2 <- ggplot(d2,
 
 ```
 
-```{r s-spread-figs-raw, fig.cap="Graphs of spatial spread visualisations.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r s-spread-figs-raw, fig.cap="Spatial spread: raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/d09c_s_spread.RData")
 
@@ -456,7 +454,7 @@ p2 <- ggplot(d2) +
 
 ```
 
-```{r s-spread-figs-prop, fig.cap="Graphs of spatial spread visualisations.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r s-spread-figs-prop, fig.cap="Spatial spread: proportional declines in number of lists per district in forward (top row) and backward (bottom row) transitions. Although the analysis calculated proportional change, districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/d09c_s_spread.RData")
 
@@ -512,17 +510,47 @@ Overall bird species reporting patterns for the states of Karnataka, Kerala, Mah
 
 ### Overall species reporting
 
-During the peak periods of the pandemic, urban species were reported more frequently than usual in all states (Fig. \@ref(fig:overall2m)), but the states varied in how rural species reporting changed. In Karnataka, Kerala and Assam, the increase in urban species reporting was accompanied by an increase in rural species reporting, though the latter was smaller than the former in Karnataka and Assam. The change in rural species reporting in Karnataka was also higher in the peak period of MY 2020 than of MY 2019. Maharashtra was the only state where rural species were reported less frequently than usual during the peak pandemic months.
+During the peak periods of the pandemic, urban species were reported more frequently than usual in all states (Fig. \@ref(fig:overall-212m)A1--A4), but the states varied in how rural species reporting changed. In Karnataka, Kerala and Assam, the increase in urban species reporting was accompanied by an increase in rural species reporting, though the latter was smaller than the former in Karnataka and Assam. The change in rural species reporting in Karnataka was also higher in the peak period of MY 2020 than of MY 2019. Maharashtra was the only state where rural species were reported less frequently than usual during the peak pandemic months.
 
-Year-round frequencies in Karnataka and Kerala of both urban and rural species were also marginally higher during the pandemic year MY 2019 `fig`. However, from MY 2020 in Karnataka, rural species have been reported more frequently than before. There has been an increase in year-round frequencies of both urban and rural species in Maharashtra in the years after MY 2018, though the latter is smaller than the former. The pandemic years saw an increase in urban species reporting in Assam, while rural species were reported as frequently as before.
+Year-round frequencies in Karnataka and Kerala of both urban and rural species were also marginally higher during the pandemic year MY 2019 (Fig. \@ref(fig:overall-212m)B1,B2). However, from MY 2020 in Karnataka, rural species have been reported more frequently than before. There has been an increase in year-round frequencies of both urban and rural species in Maharashtra in the years after MY 2018, though the latter is smaller than the former (Fig. \@ref(fig:overall-212m)B3). The pandemic years saw an increase in urban species reporting in Assam, while rural species were reported as frequently as before (Fig. \@ref(fig:overall-212m)B4).
 
-Different species within the same category sometimes showed contradictory patterns `(refer annual graph of some state)`. Often, species exhibited patterns contradictory to the expectations of pandemic effects: urban species reporting decreased (e.g., `KA annual graph`) or rural species reporting increased (e.g., `KL annual graph`). Not only did these patterns of species reporting vary considerably from months to years, between states, and across species, they also became weaker (effect sizes decreased).
+Different species within the same category sometimes showed contradictory patterns (e.g., Fig. \@ref(fig:overall-non8)). Often, species exhibited patterns contradictory to the expectations of pandemic effects: urban species reporting decreased (e.g., Fig. \@ref(fig:overall-non4)) or rural species reporting increased (e.g., Fig. \@ref(fig:overall-non8)). Not only did these patterns of species reporting vary considerably from months to years, between states, and across species, they also became weaker (effect sizes decreased).
+
+```{r metric-summ}
+# table of metrics and their overall patterns: + or - (as in BMS2022 poster)
+
+data.frame(Metrics = c("Group birding", "Site fidelity", "Birding time",
+                       "Hotspot birding", "Birding protocol", 
+                       "Birding distance", "List duration", "List length", 
+                       "Urban bias", "Spatial coverage",
+                       "Overall bird reporting", "Bird reporting with consistent effort"),
+           Peak = c("+", "+", "+", 
+                    "+", "+",
+                    "+", "+", "+",
+                    "+", "",
+                    "+", ""),
+           Pandemic = c("+", "+", "+",
+                        "+", "+",
+                        "+", "+", "+",
+                        "", "",
+                        "", ""),
+           Post = c("", "", "+",
+                               "", "",
+                               "+", "+", "+",
+                               "", "",
+                               "", "")) %>% 
+  arrange(desc(Peak), desc(Pandemic), desc(Post)) %>% 
+  knitr::kable(caption = 'Summary of changes to metrics of data quality and bird species reporting at the national level. "+" denotes the presence of a prominent change in the metric at various temporal scales: column "Peak" refers to the peak pandemic months; "Pandemic" refers to the pandemic years; "Post-pandemic" denotes changes that lasted even after the pandemic years.',
+               align = "lccc",
+               col.names = c("Metrics", "Peak", "Pandemic", "Post-pandemic"))
+
+```
 
 ### Species reporting with consistent effort
 
 Species reporting patterns with consistent effort show a different picture at the small scale: neither urban nor rural species were reported more or less frequently during the peak periods than before, as the highly variable local patterns averaged out across space (Fig. \@ref(fig:prolific)). This remains true for year-round frequencies as well.
 
-```{r overall-212m, fig.cap="Two-months panels of overall bird species reporting models", out.width="100%", fig.width=10, fig.height=13, dpi=300, dev="jpeg"}
+```{r overall-212m, fig.cap="Modelled species reporting frequencies for the months of April and May (top row) and separately for all twelve months of a year (bottom row), for the states of Karnataka (A1, B1), Kerala (A2, B2), Maharashtra (A3, B3) and Assam (A4, B4). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=13, dpi=300, dev="jpeg"}
 
 load("outputs/b01_overall_s1c_model.RData")
 d1 <- birds_pred %>% filter(MONTHS.TYPE == "LD")
@@ -634,7 +662,7 @@ pB <- (p5 | p6 | p7 | p8) + plot_layout(tag_level = "new")
 
 ```
 
-```{r prolific, fig.cap="Models of bird species reporting patterns with consistent effort.", out.width="100%", fig.width=8, fig.height=6, dpi=300, dev="jpeg"}
+```{r prolific, fig.cap="Species reporting frequencies with consistent effort data, separately modelled for the months of April and May (A), the other ten months (B), and all twelve months of a year (C). Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text. Each translucent line connecting points represents reporting frequencies from a single location/patch across the four years. Points with error bars represent means with 95% confidence intervals.", out.width="100%", fig.width=8, fig.height=6, dpi=300, dev="jpeg"}
 
 load("outputs/b02_prolific_model.RData")
 
@@ -714,7 +742,7 @@ p3 <- ggplot(d3a, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
 
 ## Did data quantity increase?
 
-Despite the various restrictions on movement and social interaction during the strict lockdowns, we found a consistent increase in data quantity over the years, in terms of both participation and data generation (Fig. \@ref(fig:lists-ebirders)). This is largely consistent with results from elsewhere in CS programmes such as eBird [@hochachka2021] and iNaturalist [@crimmins2021], `but unlike these, we found no direct link with the pandemic. Instead, our results suggest a consistent and long-term growth of eBird data quantity in India.`
+Despite the various restrictions on movement and social interaction during the strict lockdowns, we found a consistent increase in overall data quantity over the years, in terms of both participation and data generation (Fig. \@ref(fig:lists-ebirders)). This is largely consistent with results from elsewhere in CS programmes such as eBird [@hochachka2021] and iNaturalist [@crimmins2021], but we found no evidence for the large-scale patterns being linked with the pandemic. Instead, our results suggest a consistent and long-term growth of eBird data quantity in India over the years.
 
 ## Did birders follow precautionary measures?
 
@@ -722,21 +750,21 @@ During the peak lockdown periods in India, birders behaved differently and in ac
 
 ## Did birding sessions become shorter?
 
-Checklist-level "effort" decreased during the lockdowns, with lists becoming shorter overall (Fig. \@ref(fig:dist-dur-length)A,B,C), although the specifics of the changes varied considerably depending on the specific area and scale under consideration (Fig. \@ref(fig:dist-dur-length-states)). Moreover, there is no clear evidence for attributing these changes to the pandemic; rather, it seems to be a consistent change in birding culture that started even before the pandemic and has continued after.
+Checklist-level "effort" decreased during the lockdowns, with lists becoming shorter overall (Fig. \@ref(fig:dist-dur-length)), although the specifics of the changes varied considerably depending on the specific area and scale under consideration (Fig. \@ref(fig:dist-dur-length-state1)--\@ref(fig:dist-dur-length-state4)). Moreover, there is no clear evidence for attributing these changes to the pandemic; rather, it seems to be a consistent change in birding culture that started even before the pandemic and has continued after.
 
 ## Was overall birding effort lower?
 
-This slow change in birding culture where sessions have become shorter has seemingly resulted in slightly lower overall birding effort even during the winter months after the pandemic (Fig. \@ref(fig:time-cov)A). However, this pattern varied among the different states and may not be directly linked to the pandemic, but could be due to the general growth in participation (Fig. \@ref(fig:lists-ebirders)), with many new birders pulling down the average birding time.
+This slow change in birding culture where sessions have become shorter has seemingly also resulted in people spending less overall time birding, especially during the winter months after the pandemic (Fig. \@ref(fig:time-cov)A). However, this change started before the pandemic in MY 2019, and the pattern varied among the different states. Therefore, it may not be directly linked to the pandemic, but could instead be due to the general growth in participation (Fig. \@ref(fig:lists-ebirders)), with many new birders pulling down the average birding time.
 
-Although the lower mobility of birders caused a slight decline in spatial coverage in April of MY 2019 (Fig. \@ref(fig:time-cov)B), this quickly reverted and did not translate to larger or longer-term changes (Fig. \@ref(fig:s-spread-rest)`net`). In fact, overall spatial coverage has only been increasing since, owing to the birding community in India being in the exponential phase of growth. Importantly, none of the fine-scale changes in effort were concentrated in any notable way in space, i.e., the very few worrisome changes were not located all in certain parts of the country (Fig. \@ref(fig:s-spread-figs)).
+Although the lower mobility of birders caused a slight decline in spatial coverage in April of MY 2019 (Fig. \@ref(fig:time-cov)B), this quickly reverted and did not translate to larger or longer-term declines (Fig. \@ref(fig:s-spread-rest3)). In fact, overall spatial coverage has only been increasing since, owing to the birding community in India being in the exponential phase of growth. Importantly, none of the fine-scale changes in effort were concentrated in any notable way in space, i.e., the very few worrisome changes were not located all in certain parts of the country (Fig. \@ref(fig:s-spread-figs-prop); Fig. \@ref(fig:s-spread-rest3)).
 
 ## Did birders report more urban and less rural species?
 
-Since a large majority of the eBirding community is urban, birders becoming more sedentary also meant a clear bias towards urban areas in the data generated during the lockdown periods. However, the bias was short-lived and was inconsistent across space, and it therefore did not result in larger or longer-term changes to data quality relative to pre-COVID standards.
+Since a large majority of the eBirding community is urban, birders becoming more sedentary also meant a clear bias towards urban areas in the data generated during the lockdown periods (Fig. \@ref(fig:urban)). However, the bias was short-lived and was inconsistent across space (Fig. \@ref(fig:urban-states)), and it therefore did not result in larger or longer-term changes to data quality relative to pre-COVID standards.
 
-Nevertheless, if this fine-scale urban bias also resulted in complementary changes in species reporting patterns, this would impact the utility of data from these years. Indeed, in some states, birders reported urban species slightly more frequently during the pandemic years than before, but this change remained even after the pandemic, suggesting some other cause for the change. Moreover, in other states there was no evidence of higher urban species reporting during the pandemic. Thus the evidence of directional change was not consistent and cannot be clearly linked to the pandemic.
+Nevertheless, if this fine-scale urban bias also resulted in complementary changes in species reporting patterns, this would impact the utility of data from these years. Indeed, in some states, birders reported urban species slightly more frequently during the pandemic years than before, but this change remained even after the pandemic, suggesting some other cause for the change (Fig. \@ref(fig:overall-212m)). Moreover, in other states there was no evidence of higher urban species reporting during the pandemic. Thus the evidence of directional change was not consistent and cannot be clearly linked to the pandemic.
 
-Importantly, we found no clear, consistent and directional evidence for birders reporting rural species less frequently.
+Importantly, we found no clear, consistent and directional evidence for birders reporting rural species less frequently (Fig. \@ref(fig:overall-212m)).
 
 ## Did bird abundance change?
 
@@ -744,7 +772,7 @@ Not only do anthropogenic factors affect birds via habitat availability, suitabi
 
 To ascertain whether birds became more or less abundant during the pandemic in the Indian context, we checked once again for differences in bird species reporting, but this time considering only data with similar effort across space and time. If this revealed changes in species reporting, it would suggest some response of birds to the reduced human activity during the pandemic, such as changes in bird abundance or detectability.
 
-However, we found no clear evidence for bird abundance changing during the pandemic. This might be because a few months of reduced human activity is insufficient to cause changes in large-scale patterns of bird behaviour or occurrence [see @seress2021]. A few individual locations did separately show signs of increased or decreased reporting of urban or rural species during the peak pandemic months, but any pattern disappeared when averaged across space. Moreover, any location-specific pattern became muted when considering entire years, or when excluding the peak pandemic months. In conclusion, there is no consistent evidence of birds being affected by the pandemic, positively or negatively, artefactually or otherwise.
+However, we found no clear evidence for bird abundance changing during the pandemic (Fig. \@ref(fig:prolific)). This might be because a few months of reduced human activity is insufficient to cause changes in large-scale patterns of bird behaviour or occurrence [see @seress2021]. A few individual locations did separately show signs of increased or decreased reporting of urban or rural species during the peak pandemic months, but any pattern disappeared when averaged across space. Moreover, any location-specific pattern became muted when considering entire years, or when excluding the peak pandemic months. In conclusion, there is no consistent evidence of birds being affected by the pandemic, positively or negatively, artefactually or otherwise.
 
 ## What happened during the peak pandemic months?
 
