@@ -1,6 +1,14 @@
 ---
-title: "Birding in the time of COVID: Pandemic effects on data, and implications for citizen science inference"
-author: "Karthik Thrikkadeeri, Ashwin Viswanathan"
+title: "Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference"
+author: 
+  - Karthik Thrikkadeeri:
+      email: karthik.t@ncf-india.org
+      institute: ncf
+      correspondence: true
+  - name: Ashwin Viswanathan
+    institute: ncf
+institute:
+  - ncf: "Nature Conservation Foundation, 1311, ‘Amritha’, 12th Main, Vijayanagar 1st Stage, Mysuru 570017, India"
 bibliography: covid-ebirding.json
 csl: ibis.csl
 link-citations: yes

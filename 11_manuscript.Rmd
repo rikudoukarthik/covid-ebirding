@@ -1,9 +1,3 @@
-# Alternative titles {.unnumbered}
-
-Birding in the time of COVID: Context-dependence of pandemic effects on birdwatching and birds, and importance of scale considerations
-
-Pandemic-induced changes in birdwatcher behaviour outweighed by lack of corresponding decline in data quantity and of directional change in bird responses
-
 # Abstract {.unnumbered}
 
 Conventional systematic projects to monitor bird populations, like breeding bird surveys, require large and coordinated volunteer networks that are lacking in many parts of the world. Semi-structured citizen science (CS) data offers an alternative to systematic initiatives in these regions, but the semi-structured nature of such data also presents several challenges. The utility of semi-structured data to monitor species abundance is contingent on how, where, and how comparably birdwatchers watch birds, year-on-year. Trends inferred directly from the data can be confounded during years when birdwatchers may behave differently, such as during the COVID pandemic. We wanted to ascertain how the data uploaded to one such CS platform in India, eBird, was impacted by the deadliest global pandemic of the 21st century. To understand whether eBird data from the pandemic years in India is useful and comparable to data from adjacent years, we explored several metrics of data quantity and quality (such as birdwatcher behaviour). We also compared patterns of modelled reporting frequencies for select species between the different years, to examine whether they were predictably different from the previous and next years, due to changes in either birdwatcher behaviour or bird abundance. We found no negative impact of the pandemic on data quantity. Data quality changed largely only during the peak months involving lockdowns, probably due to decreased human mobility and social interaction, but remained similar to the adjacent years during the rest of this restrictive period. We did not find a direct impact on large-scale patterns of bird species reporting, despite high variability at finer scales. We also found no clear evidence of shifts in bird abundance due to the pandemic. Our results show that birdwatchers as data collectors are resilient to disturbance, and that the effects of the pandemic on birdwatching and birds are highly context- and scale-dependent. In summary, eBird data in India from the pandemic years remains useful and interpretable for most large-scale applications, but will benefit from preliminary data quality checks when applied to fine-scale questions.
@@ -69,7 +63,7 @@ Conventional CS bird monitoring programmes that are used to inform conservation 
 
 eBird data has proved very useful in better understanding bird ecology, species ranges [e.g., @sreekumar2021; @sinnott2021], migration [e.g., @aoki2021; @youngflesh2021], behaviour [e.g., @winger2019; @alaniz2020], morphology [e.g., @vrettos2021; @menon2022] and conservation action [@sullivan2017; @soib2020; @ruiz-gutierrez2021]. A drawback of typical eBird data, however, is that the checklists vary in "effort", quality, and quantity (no single fixed protocol), creating apparent biases in space and time [@johnston2021]. Largely associated with birder behaviour, such biases make the data difficult to use to inform yearly abundance trends, but some recent analyses show that the biases can be reduced statistically to mimic inference from more systematic data [@johnston2021, Viswanathan *et al.* in press, see @soib2020]. Biases in semi-structured data become especially enhanced when there are large-scale changes in human (birder) behaviour, such as during the COVID-19 pandemic. Given the widespread utility of semi-structured CS data today for conservation, an important question presents itself: has COVID-19 rendered eBird data from the pandemic years unusable in combination with the rest of the dataset?
 
-## eBirding in the time of COVID-19
+## Birding in the time of COVID-19
 
 COVID-19 is a deadly infectious disease that resulted in the deadliest pandemic of the 21st century, with a death toll of more than 6.8 million [around 0.08% of the global population, @wikipedia2022; @worldometer2023], alongside others like the bubonic plague, influenza, smallpox and even cholera. Governments across the world had therefore taken various precautionary and preventive measures, and had implemented various restrictions such as nation- or state-wide lockdowns and curfews, quarantines and self-isolation, and shutting down of non-essential public services and activities [see @hale2020]. Given that the eBird enterprise hinges entirely on public participation, this widespread public upheaval might have changed the very nature of eBird data during this period.
 
@@ -81,7 +75,7 @@ Regardless of how much more or less data was generated during the pandemic, the 
 
 ## Our aim
 
-In this study, we sought to understand how eBird data in India was affected by the pandemic, at multiple scales. We asked whether or not data quantity and quality were similar before, during and after the pandemic. We also explored whether patterns of bird species reporting had changed due to differences in either data characteristics or bird abundance and behaviour. Thus, we wished to understand the implications of the pandemic for the utility of eBird data.
+In this study, we sought to understand how eBird data in India was affected by the pandemic, at multiple scales. We asked whether or not data quantity and quality were similar before, during and after the pandemic. We also explored whether patterns of bird species reporting had changed due to differences in either data characteristics or bird abundance and behaviour. Thus, we wished to understand the implications of the pandemic for the utility of eBird data for long-term bird monitoring.
 
 # Methods
 
@@ -195,7 +189,7 @@ To analyse pandemic-induced changes in the quality of eBird data, we devised a s
 
 9.  *Temporal spread*: Did the pandemic bring a change in when birders chose to observe birds? We looked at how checklists were distributed proportionally over two temporal scales: across the seven days of a week, and across the twenty-four hours of a day (although in the latter case our dataset was truncated due to our nocturnal filter).
 
-All the metrics except temporal spread were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in local governance, policy and general public perspective.
+All the metrics except temporal spread were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in response to the pandemic owing to differences in local governance, policy and general public perspective.
 
 ### Urban bias
 
@@ -246,7 +240,7 @@ options(knitr.kable.NA = "")
 
 knitr::kable(species_list, 
              align = "lcccc",
-             caption = "Region-wise species sets for which overall reporting patterns were analysed.")
+             caption = "Region-wise species sets for which overall reporting patterns were analysed. “+” indicates species that were included in the analysis for the different states.")
 
 ```
 
@@ -538,7 +532,7 @@ data.frame(Metrics = c("Group birding", "Site fidelity", "Birding time",
                     "", "",
                     "", "")) %>% 
   arrange(desc(Peak), desc(Pandemic), desc(Post)) %>% 
-  knitr::kable(caption = 'Summary of changes to metrics of data quality and bird species reporting at the national level. "+" denotes the presence of a prominent change in the metric at various temporal scales: column "Peak" refers to the peak pandemic months; "Pandemic" refers to the pandemic years; "Post-pandemic" denotes changes that lasted even after the pandemic years.',
+  knitr::kable(caption = 'Summary of changes to metrics of data quality and bird species reporting at the national level, at various temporal scales: column "Peak" refers to the peak pandemic months; "Pandemic" refers to the pandemic years; "Post-pandemic" denotes changes that lasted even after the pandemic years. "+" denotes the presence of a prominent change (positive or negative) relative to pre-pandemic levels.',
                align = "lccc",
                col.names = c("Metrics", "Peak", "Pandemic", "Post-pandemic"))
 
@@ -746,7 +740,7 @@ Despite the various restrictions on movement and social interaction during the s
 
 During the peak lockdown periods in India, birders behaved differently and in accordance with the guidelines to prevent and minimise the spread of the disease. Birders became more isolated (Fig. \@ref(fig:long-changes)A), and more sedentary by limiting travel (Fig. \@ref(fig:long-changes)B) and moving less (Fig. \@ref(fig:long-changes)C,D), during the first peak lockdown period. In the following months, as restrictions were gradually lifted, birder behaviour also changed slowly back to normal, but only until the peak months of the second pandemic year. In this second lockdown period, birders became isolated to a slightly lesser extent, but recovered soon despite this "wave" being more devastating in terms of COVID-19 cases [@worldometer2023]. The staggered recovery in the first year and the immediate recovery in the second suggest that the novelty of the disease played an important role in changing birder behaviour.
 
-## Was birding effort lower?
+## Did birding effort decrease?
 
 Checklist-level "effort" decreased during the lockdown months, with lists becoming shorter overall (Fig. \@ref(fig:dist-dur-length)), but recovered quickly. The specifics of the changes varied considerably depending on the specific area and scale under consideration (Fig. \@ref(fig:dist-dur-length-state1)--\@ref(fig:dist-dur-length-state4)). While there is no clear evidence for long-lasting impacts of the pandemic in this regard, checklist-level "effort" has been consistently lower since MY 2018 (starting even before the pandemic and continuing after; Table \@ref(tab:metric-summ)). This suggests a gradual evolution in birding culture towards shorter birding sessions. Of the three metrics, list length seems to be more resilient to such perturbations and general changes over time, compared to birding distance and list duration.
 
@@ -754,7 +748,7 @@ This shift towards shorter birding sessions has seemingly also coincided with pe
 
 Although the lower mobility of birders caused a slight decline in spatial coverage in April of MY 2019 (Fig. \@ref(fig:time-cov)B), this quickly reverted and did not translate to larger or longer-term declines (Fig. \@ref(fig:s-spread-rest3)). In fact, overall spatial coverage has only been increasing since, owing to the birding community in India being in the exponential phase of growth. Importantly, none of the fine-scale changes in effort were concentrated in any notable way in space, i.e., the very few worrisome changes were not located all in certain parts of the country (Fig. \@ref(fig:s-spread-figs-prop); Fig. \@ref(fig:s-spread-rest3)).
 
-## Did birders report more urban and less rural species?
+## Did birders report more urban and fewer rural species?
 
 Since a large majority of the eBirding community is urban, birders becoming more sedentary also meant a clear bias towards urban areas in the data generated during the lockdown periods (Fig. \@ref(fig:urban)). However, the bias was short-lived (Table \@ref(tab:metric-summ)) and was inconsistent across space (Fig. \@ref(fig:urban-states)), and it therefore did not result in larger or longer-term changes to data quality relative to pre-COVID standards. In the post-pandemic period, birding in urban areas was lower than in previous years. While this could be due to birders overcompensating for their restricted travel during the pandemic, the consistent year-on-year decline in urban birding in the non-pandemic months suggests that this is rather yet another aspect of birding in India that has changed over the years with its growth.
 
