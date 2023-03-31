@@ -2,13 +2,19 @@
 
 ## Methods
 
-### Data preparation {#dataprep}
+### Data preparation
+
+#### Data filters {#dataprep}
 
 We standardised the dataset before analysis with the following set of filters. First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" (MY) as a unit time period.
 
 We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 8pm and 4am (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding "effort": checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. The dataset at this stage was used in analyses of observer-level metrics, while for non-observer-level data metrics and metrics of bird reporting, a final filter was added: in instances of group birding where each participant eBirder owns a copy of the checklist, duplicate records/checklists were removed by filtering out non-unique combinations of group birding event (column "GROUP.IDENTIFIER") and bird species (column "COMMON.NAME").
 
 The checklists that passed these criteria are referred to as "qualifying checklists".
+
+#### Urban or rural {#UNUprep}
+
+We used remote sensing data to divide the country into urban and non-urban (rural) areas. For this, we downloaded the MODIS Land Cover Type Product (MCD12Q1) that includes several science datasets (SDSs) mapping global land cover at a 500 m resolution. Although this comes at an annual time step, we used data from the single time point, 31 December 2021. The tiled MODIS data was downloaded using the "getModis()" function in the *luna* package and saved as individual .tif files, which were then merged into a single raster. After cropping and masking to the country's administrative boundary shapefile, the MODIS land cover categories in the raster were reclassified: category 13, "urban and built-up lands" was considered "urban", and all other categories were considered "rural" (technically "non-urban"). We didn't use the MODIS data at 500 m × 500 m resolution because the location information in eBird data, despite being precise, is not very accurate at small grain sizes (due to the very nature of eBird data where sampling often occurs over a distance). So, finally we aggregated the raster to a resolution of 2 km × 2 km which was deemed more appropriate, then classified each qualifying checklist in the dataset as urban or rural by extracting the land cover class from the modified MODIS raster, again using the latitude-longitude information.
 
 ### Exploratory analyses and bootstrapped estimates {#explboot}
 
@@ -54,6 +60,10 @@ For each week of a migratory year, we calculated the proportion of lists submitt
 
 For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping (see Section \@ref(explboot)) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
 
+### Prolific birders {#prolific-def}
+
+An eBirder was considered "prolific" if they had uploaded, from a single location, at least 800 qualifying checklists over the course of the four years being analysed (sufficient effort), as well as a minimum of 15 qualifying checklists per month in at least ten months of a year in all four years of the study (consistent effort)---thus translating to about 200 qualifying checklists per year. Since the observer remains constant, and the observer is sufficiently experienced (as inferred from their prolificacy), we assume that detection rates of birds in the location also remains similar over the years (given the short time period).
+
 ### Model specifications
 
 #### Data quality {#modelspecs-d}
@@ -76,11 +86,11 @@ $$log(metric) \sim year + year:month + (1/cell)$$
 
 #### Bird species reporting {#modelspecs-b}
 
-Overall reporting GLMMs with detection (yes or no) as the response variable were specified as follows:
+GLMMs for species reporting across all locations were fit for each species and for different periods ("lockdown", "non-lockdown", "all") separately. These models, with detection (yes or no) as the response variable, were specified as follows:
 
 $$detection \sim year*month + month:length + (1/cell)$$
 
-and species reporting with consistent effort as follows:
+Models for species reporting at locations with consistent effort were fit for each locations and for different periods ("lockdown", "non-lockdown", "all") separately. The models were specified as follows:
 
 $$detection \sim year + year:month + month:length + category + (1/species)$$
 
@@ -90,7 +100,7 @@ where $length$ refers to the median number of species reported in the respective
 
 ### Data quantity increased
 
-```{r lists-ebirders, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBidrers; B). Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
+```{r lists-ebirders, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBirders; B). Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
 
 x <- month_lab %>% 
   mutate(YEAR = ifelse(MONTH %in% 6:12, 
@@ -139,21 +149,21 @@ load("outputs/d08_length.RData")
 d3 <- data0_a %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding\ndistance (km)") +
+  labs(x = "Month", y = "Birding distance\n(km)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list\nduration (mins)") +
+  labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list length\n(no. of species)") +
+  labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -177,21 +187,21 @@ load("outputs/d08_length.RData")
 d3 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding\ndistance (km)") +
+  labs(x = "Month", y = "Birding distance\n(km)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list\nduration (mins)") +
+  labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list length\n(no. of species)") +
+  labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -215,21 +225,21 @@ load("outputs/d08_length.RData")
 d3 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding\ndistance (km)") +
+  labs(x = "Month", y = "Birding distance\n(km)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list\nduration (mins)") +
+  labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list length\n(no. of species)") +
+  labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -253,21 +263,21 @@ load("outputs/d08_length.RData")
 d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding\ndistance (km)") +
+  labs(x = "Month", y = "Birding distance\n(km)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list\nduration (mins)") +
+  labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list length\n(no. of species)") +
+  labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -291,21 +301,21 @@ load("outputs/d08_length.RData")
 d3 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding\ndistance (km)") +
+  labs(x = "Month", y = "Birding distance\n(km)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list\nduration (mins)") +
+  labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted list length\n(no. of species)") +
+  labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -323,39 +333,39 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r long-changes-state1, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load(glue("outputs/d01_group_po.RData"))
+load("outputs/d01_group_po.RData")
 d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load(glue("outputs/d02_fidelity_po.RData"))
+load("outputs/d02_fidelity_po.RData")
 d2 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load(glue("outputs/d04_hotspot.RData"))
+load("outputs/d04_hotspot.RData")
 d3 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load(glue("outputs/d05_protocol.RData"))
+load("outputs/d05_protocol.RData")
 d4 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
 
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted group\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted no. of\nsites visited") +
+  labs(x = "Month", y = "No. of sites\nvisited") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted hotspot\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nhotspot birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted travelling\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ntravelling birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -371,39 +381,39 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r long-changes-state2, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load(glue("outputs/d01_group_po.RData"))
+load("outputs/d01_group_po.RData")
 d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load(glue("outputs/d02_fidelity_po.RData"))
+load("outputs/d02_fidelity_po.RData")
 d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load(glue("outputs/d04_hotspot.RData"))
+load("outputs/d04_hotspot.RData")
 d3 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load(glue("outputs/d05_protocol.RData"))
+load("outputs/d05_protocol.RData")
 d4 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
 
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted group\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted no. of\nsites visited") +
+  labs(x = "Month", y = "No. of sites\nvisited") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted hotspot\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nhotspot birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted travelling\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ntravelling birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -419,39 +429,39 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r long-changes-state3, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load(glue("outputs/d01_group_po.RData"))
+load("outputs/d01_group_po.RData")
 d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load(glue("outputs/d02_fidelity_po.RData"))
+load("outputs/d02_fidelity_po.RData")
 d2 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load(glue("outputs/d04_hotspot.RData"))
+load("outputs/d04_hotspot.RData")
 d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load(glue("outputs/d05_protocol.RData"))
+load("outputs/d05_protocol.RData")
 d4 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
 
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted group\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted no. of\nsites visited") +
+  labs(x = "Month", y = "No. of sites\nvisited") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted hotspot\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nhotspot birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted travelling\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ntravelling birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -467,39 +477,39 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r long-changes-state4, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load(glue("outputs/d01_group_po.RData"))
+load("outputs/d01_group_po.RData")
 d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load(glue("outputs/d02_fidelity_po.RData"))
+load("outputs/d02_fidelity_po.RData")
 d2 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load(glue("outputs/d04_hotspot.RData"))
+load("outputs/d04_hotspot.RData")
 d3 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load(glue("outputs/d05_protocol.RData"))
+load("outputs/d05_protocol.RData")
 d4 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
 
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted group\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted no. of\nsites visited") +
+  labs(x = "Month", y = "No. of sites\nvisited") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted hotspot\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nhotspot birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted travelling\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\ntravelling birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -524,7 +534,7 @@ d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
 d4 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted urban\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nurban birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -533,7 +543,7 @@ p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
         axis.text.x = element_text(colour = month_lab$COL1))
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted urban\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nurban birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -542,7 +552,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
         axis.text.x = element_text(colour = month_lab$COL1))
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted urban\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nurban birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -551,7 +561,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
         axis.text.x = element_text(colour = month_lab$COL1))
 
 p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted urban\nbirding proportion") +
+  labs(x = "Month", y = "Proportion of\nurban birding") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -577,14 +587,14 @@ load("outputs/d09b_s_cover.RData")
 d2 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding time\nper observer") +
+  labs(x = "Month", y = "Time spent birding\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted cell coverage\nproportion") +
+  labs(x = "Month", y = "Proportion of\ncells covered") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -606,14 +616,14 @@ load("outputs/d09b_s_cover.RData")
 d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding time\nper observer") +
+  labs(x = "Month", y = "Time spent birding\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted cell coverage\nproportion") +
+  labs(x = "Month", y = "Proportion of\ncells covered") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -635,14 +645,14 @@ load("outputs/d09b_s_cover.RData")
 d2 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding time\nper observer") +
+  labs(x = "Month", y = "Time spent birding\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted cell coverage\nproportion") +
+  labs(x = "Month", y = "Proportion of\ncells covered") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -664,14 +674,14 @@ load("outputs/d09b_s_cover.RData")
 d2 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted birding time\nper observer") +
+  labs(x = "Month", y = "Time spent birding\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Predicted cell coverage\nproportion") +
+  labs(x = "Month", y = "Proportion of\ncells covered") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
@@ -747,7 +757,7 @@ ggplot(d5) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
                fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#E0E0E0", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
                     mid = viridisLite::cividis(5, direction = -1)[3],
@@ -755,7 +765,7 @@ ggplot(d5) +
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#ACACAC") +
+                    na.value = "#E0E0E0") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change") +
   theme(legend.position = "bottom",
@@ -772,7 +782,7 @@ ggplot(d6) +
   geom_polygon(data = indiamap,
                aes(long, lat, group = group),
                fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#ACACAC", size = 0.1) +
+  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#E0E0E0", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
                     mid = viridisLite::cividis(5, direction = -1)[3],
@@ -780,7 +790,7 @@ ggplot(d6) +
                     midpoint = -0.45,
                     breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
                     limits = c(-1, 0),
-                    na.value = "#ACACAC") +
+                    na.value = "#E0E0E0") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change") +
   theme(legend.position = "bottom",
@@ -813,7 +823,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1, width = 0.6, position = position_dodge(0.9)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.2, 23.2), breaks = 0:23) +
+  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
   labs(x = "Time of day (hours)", y = "Proportion of lists")
 
 (p1 / guide_area() / p2) +
@@ -845,7 +855,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1, width = 0.6, position = position_dodge(0.9)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.2, 23.2), breaks = 0:23) +
+  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
   labs(x = "Time of day (hours)", y = "Proportion of lists")
 
 (p1 / guide_area() / p2) +
@@ -877,7 +887,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1, width = 0.6, position = position_dodge(0.9)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.2, 23.2), breaks = 0:23) +
+  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
   labs(x = "Time of day (hours)", y = "Proportion of lists")
 
 (p1 / guide_area() / p2) +
@@ -909,7 +919,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1, width = 0.6, position = position_dodge(0.9)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.2, 23.2), breaks = 0:23) +
+  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
   labs(x = "Time of day (hours)", y = "Proportion of lists")
 
 (p1 / guide_area() / p2) +
@@ -941,7 +951,7 @@ p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                 size = 1, width = 0.6, position = position_dodge(0.9)) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.2, 23.2), breaks = 0:23) +
+  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
   labs(x = "Time of day (hours)", y = "Proportion of lists")
 
 (p1 / guide_area() / p2) +
@@ -1468,7 +1478,7 @@ p1 <- ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
   scale_color_manual(values = c("#8F85C1", "#A3383C"),
                      name = "Species category",
                      labels = c("Rural", "Urban")) +
-  labs(x = "", y = "Predicted reporting frequency") +
+  labs(x = "", y = "Reporting frequency") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) 
@@ -1514,12 +1524,272 @@ p4 <- ggplot(d4, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
 
 ## Tables
 
-Tables of model summaries for all the data metrics
+```{r model-summ1, out.width="100%"}
 
-```{r model-summ1, fig.cap="Model summary for observer-level group birding at the national level.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
+load("outputs/d01_group_po.RData")
 
-load(glue("outputs/d01_group_po.RData"))
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for observer-level group birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is 2.796. See model specifications described earlier.',
+               align = "lccc")
 
+```
 
+```{r model-summ2, out.width="100%"}
+
+load("outputs/d02_fidelity_po.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for observer-level site fidelity at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is 0.0988. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ3, out.width="100%"}
+
+load("outputs/d04_hotspot.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for hotspot birding at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 2.635. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ4, out.width="100%"}
+
+load("outputs/d05_protocol.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for travelling protocol birding at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 0.3118. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ5, out.width="100%"}
+
+load("outputs/d06_distance.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for birding distance at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 0.3059. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ6, out.width="100%"}
+
+load("outputs/d07_duration.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for list duration at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 0.3324. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ7, out.width="100%"}
+
+load("outputs/d08_length.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for list length at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 0.2146. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ8, out.width="100%"}
+
+load("outputs/d09a_s_UNU.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 8.563. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ9, out.width="100%"}
+
+load("outputs/d03_time_po.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for observer-level birding time at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is 0.9489. See model specifications described earlier.',
+               align = "lccc")
+
+```
+
+```{r model-summ10, out.width="100%"}
+
+load("outputs/d09b_s_cover.RData")
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  knitr::kable(caption = 'Model summary for spatial coverage at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is 10.22. See model specifications described earlier.',
+               align = "lccc")
 
 ```
