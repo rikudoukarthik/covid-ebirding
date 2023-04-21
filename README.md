@@ -35,34 +35,29 @@ Then, the analyses can be run. The study is divided into two broad sections, one
 
 Once the full analysis has been successfully run (and outputs generated and stored), the final manuscript can also be reproduced (and validated), since it is an `.Rmd` file and most summaries and results in it (textual or graphical) are obtained directly from the data and analysis outputs.
 
-The full manuscript is divided into the main manuscript (`11_manuscript.Rmd`) and the supplementary material (`12_manuscript_supp.Rmd`). `index.Rmd` uses [bookdown](https://bookdown.org/) (see `_bookdown.yml`) to combine the two and produce the final document (`_book/_main.docx`). This building of the book is executed by `r bookdown::render_book()`. This step **requires a template `.docx` file**, containing all necessary formatting rules and styles, to be present in the repository (in this case, named `rmd_word_template_journ_guide.docx`, which needs to be created separately). The bibliography for this study (`covid-ebirding.json`) and citation style language (CSL) for the journal of interest (`ibis.csl`) are also necessary.
+The full manuscript is divided into the main manuscript (`11_manuscript.Rmd`) and the supplementary material (`12_manuscript_supp.Rmd`). `index.Rmd` uses [bookdown](https://bookdown.org/) (see `_bookdown.yml`) to combine the two and produce the final document (`_book/_main.docx`). This building of the book is executed by `bookdown::render_book()`. This step **requires a template `.docx` file**, containing all necessary formatting rules and styles, to be present in the repository---in this case, named `rmd_word_template_journ_guide.docx`, which needs to be created separately. The bibliography for this study (`covid-ebirding.json`) and citation style language (CSL) for the journal of interest (`ibis.csl`) are also necessary.
 
-A separate title page containing author affiliations, acknowledgements, etc. can be knitted directly from `13_titlepage.Rmd`, without having to build the book.
+A separate title page containing author affiliations, acknowledgements, etc. can be knitted directly from `13_titlepage.Rmd`, without having to build a book.
 
-#### Non-reproducible aspects
-
-Some aspects or elements of the final manuscript are non-reproducible. They are detailed below.
+Some aspects or elements of the final manuscript are **non-reproducible**. They are detailed below.
 
 **Model summary tables**
 
-Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`outputs/`) into a simple and neat table using `r knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
+Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`outputs/`) into a simple and neat table using `knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
 
 **Main text and supplementary material**
 
-The reason for using `r bookdown::render_book()` (instead of simply knitting the two documents separately) is to allow easy cross-referencing of sections, figures, tables, etc. between the main text and the supplementary material. However, one disadvantage is that [there is no easy way](https://stackoverflow.com/questions/50223141/rmarkdown-bookdown-separate-figure-numbering-for-supplemental-section) to restart numbering of sections, figures, tables, etc. from a given section onwards or to add a prefix to the numbering.
+The reason for using `bookdown::render_book()` (instead of simply knitting the two documents separately) is to allow easy cross-referencing of sections, figures, tables, etc. between the main text and the supplementary material. However, one disadvantage is that [there is no easy way](https://stackoverflow.com/questions/50223141/rmarkdown-bookdown-separate-figure-numbering-for-supplemental-section) to restart numbering of sections, figures, tables, etc. from a given section onwards or to add a prefix to the numbering.
 
 Therefore, the manual steps followed are:
 
 1.  Create two copies of the final document (`_book/_main.docx`). In the first, manually delete all text from the supplementary section onwards. In the second, delete all text until the supplementary section.
 2.  Adjust the numbering of supplementary sections.
-
--   In the supplementary document, *find and replace* "7." with "". This removes the unnecessary tier of numbering.
--   In the main document, *find and replace* "7." with "S". This adds the prefix "S" to all in-text references to supplementary sections.
-
+    -   In the supplementary document, *find and replace* "7." with "". This removes the unnecessary tier of numbering.
+    -   In the main document, *find and replace* "7." with "S". This adds the prefix "S" to all in-text references to supplementary sections.
 3.  Manually adjust the numbering of supplementary figures and tables.
-
--   In the supplementary document, *find and replace* "Figure x" or "Fig. x" with "Figure x-8" or "Fig. x-8" respectively (because there 8 figures in the main document). Similarly, *find and replace* "Table x" with "Table x-2" (because there 2 tables in the main document).
--   In the main document, *find and replace* "Figure x" or "Fig. x" with "Figure Sx-8" or "Fig. Sx-8" respectively, and "Table x" with "Table Sx-2". This adds the prefix "S" to all in-text references to supplementary sections.
+    -   In the supplementary document, *find and replace* "Figure x" or "Fig. x" with "Figure x-8" or "Fig. x-8" respectively (because there 8 figures in the main document). Similarly, *find and replace* "Table x" with "Table x-2" (because there 2 tables in the main document).
+    -   In the main document, *find and replace* "Figure x" or "Fig. x" with "Figure Sx-8" or "Fig. Sx-8" respectively, and "Table x" with "Table Sx-2". This adds the prefix "S" to all in-text references to supplementary sections.
 
 **Separate figure legends**
 
