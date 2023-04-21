@@ -55,7 +55,7 @@ Therefore, the manual steps followed are:
 2.  Adjust the numbering of supplementary sections.
     -   In the supplementary document, *find and replace* "7." with "". This removes the unnecessary tier of numbering.
     -   In the main document, *find and replace* "7." with "S". This adds the prefix "S" to all in-text references to supplementary sections.
-3.  Manually adjust the numbering of supplementary figures and tables.
+3.  Manually adjust the numbering of *x* supplementary figures and tables one-by-one (for *x* from 1 to 46).
     -   In the supplementary document, *find and replace* "Figure x" or "Fig. x" with "Figure x-8" or "Fig. x-8" respectively (because there 8 figures in the main document). Similarly, *find and replace* "Table x" with "Table x-2" (because there 2 tables in the main document).
     -   In the main document, *find and replace* "Figure x" or "Fig. x" with "Figure Sx-8" or "Fig. Sx-8" respectively, and "Table x" with "Table Sx-2". This adds the prefix "S" to all in-text references to supplementary sections.
 
