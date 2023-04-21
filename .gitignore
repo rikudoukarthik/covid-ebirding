@@ -20,22 +20,11 @@
 *.pptx
 
 # folders in repo
-Literature/
-data/boundaries_IN_PA_WII/
-data/boundaries_IN_admin_old/
 data/in_LULC/
 data/in_LULC_USGS/
 
-# posters
-example_betterland_template_files/
 # Zoom recording
-recording/
-03_presentation_IOC/
-
-example_betterland_template.Rmd
-example_betterland_template.html
-example_betterport_template.Rmd
-example_html_template.Rmd
+Recording/
 
 01_abstract-conference.Rmd
 10_lit-review.html
