@@ -1,0 +1,24 @@
+---
+title: "Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference"
+bibliography: ../covid-ebirding.json
+# csl: 
+link-citations: yes
+output: 
+  bookdown::word_document2:
+    number_sections: true
+    global_numbering: true
+    fig_caption: yes
+    reference_docx: ../rmd_word_template_journ_guide.docx
+---
+
+<!-- <style> -->
+
+<!-- body { -->
+
+<!-- text-align: justify} -->
+
+<!-- </style> -->
+
+<!-- Knit the manuscript using: -->
+
+<!-- bookdown::render_book("10_manuscripts/01_ebirding_effort/") -->
