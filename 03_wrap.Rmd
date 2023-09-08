@@ -44,11 +44,11 @@ anal_states <- data.frame(a = "Karnataka",
 
 
 # boundary of India 
-india <- rgdal::readOGR(dsn = "data/in_2011", layer = "India_2011")
+india <- rgdal::readOGR(dsn = "00_data/in_2011", layer = "India_2011")
 sp::proj4string(india) <- "+proj=longlat +datum=WGS84"
 india <- terra::vect(india)
 # state boundaries
-states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") %>% 
+states <- rgdal::readOGR(dsn = "00_data/in_states_2019", layer = "in_states_2019") %>% 
   terra::vect()
 
 india_sf <- india %>% 
@@ -68,8 +68,8 @@ source("scripts/functions.R")
 # Only needed once in the beginning to obtain the data.
 
 # Getting MODIS data ###
-if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") & 
-    !file.exists("data/rast_UNU.RData")) {
+if (!file.exists("00_data/in_LULC_MODIS/in_LULC_MODIS.tif") & 
+    !file.exists("00_data/rast_UNU.RData")) {
 
   getmodisdata()
 
@@ -79,23 +79,23 @@ if (!file.exists("data/in_LULC_MODIS/in_LULC_MODIS.tif") &
 
 # #  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
 # tictoc::tic("Preparing data for analyses")
-# rawdatapath <- "data/ebd_IN_prv_relMay-2022.txt"
-# senspath <- "data/ebd_sensitive_relMay-2022_IN.txt"
-# datapath <- "data/ebd_IN_relMay-2022.RData"
-# groupaccspath <- "data/ebd_users_GA_relMay-2022.csv"
-# covidclasspath <- "data/covid_classification.csv"
-# rast_UNU_path <- "data/rast_UNU.RData"
+# rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
+# senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
+# datapath <- "00_data/ebd_IN_relMay-2022.RData"
+# groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
+# covidclasspath <- "00_data/covid_classification.csv"
+# rast_UNU_path <- "00_data/rast_UNU.RData"
 # 
 # data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
 #                    rast_UNU_path,
 #                    maxvel = 20, minsut = 2)
 # tictoc::toc()
 
-load("data/data0_MY_d_slice.RData")
-load("data/maps.RData")
+load("00_data/data0_MY_d_slice.RData")
+load("00_data/maps.RData")
 
 
-load("data/maps_gridmapg1_IN.RData") # all cells within India
+load("00_data/maps_gridmapg1_IN.RData") # all cells within India
 
 
 states_sf <- statemap %>% 

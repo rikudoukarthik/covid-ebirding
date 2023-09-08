@@ -104,7 +104,7 @@ covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 # covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
 covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
-load("data/02_poster_BMS.RData")
+load("00_data/02_poster_BMS.RData")
 
 source("scripts/functions.R")
 

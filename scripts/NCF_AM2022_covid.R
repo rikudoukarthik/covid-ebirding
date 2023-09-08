@@ -1,5 +1,5 @@
 # # for showing dimensions of data in slide
-# load("data/ebd_IN_relMay-2022.RData")
+# load("00_data/ebd_IN_relMay-2022.RData")
 # our_small_dataset <- as_tibble(data)
 # 
 # rm(our_small_dataset, data)
@@ -432,7 +432,7 @@ gridmapg1_sf <- gridmapg1 %>%
   st_as_sf() %>% 
   rename(CELL.ID = id)
 
-load("data/maps_gridmapg1_IN.RData") # all cells within India
+load("00_data/maps_gridmapg1_IN.RData") # all cells within India
 
 
 data_SoIBmap0 <- data0_MY_slice_G %>% 
@@ -506,4 +506,4 @@ clust_data <- pw_spread_LMCOA(data_SoIBmap1, data_SoIBmap2, data_SoIBmap3,
 save(anal_states, bang1, bang2, birding_protocol, birding_time, clust_data, coverage, 
      group_birding, hotspot_birding, indiamap, obs_mainstates, site_fidelity, 
      species, species_guwa, species_koch, urban1,
-     file = "data/NCF_AM2022_covid.RData")
+     file = "00_data/NCF_AM2022_covid.RData")

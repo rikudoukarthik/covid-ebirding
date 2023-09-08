@@ -137,7 +137,7 @@ end <- "2021-12-31" # time period of mapping
 
 
 # creating folder to store MODIS data that will be downloaded
-MODISpath <- "data/in_LULC_MODIS/"
+MODISpath <- "00_data/in_LULC_MODIS/"
 dir.create(MODISpath, showWarnings=FALSE)
 
 
@@ -201,7 +201,7 @@ print("Created merged TIFF file")
 ### Modifying the MODIS data #######
 
 ## read in cropped and masked .tif
-rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
+rast <- raster::raster("00_data/in_LULC_MODIS/in_LULC_MODIS.tif")
 
 
 ## reclassifying the raster as urban vs. non-urban 
@@ -225,7 +225,7 @@ rast_UNU <- rast_UNU %>%
   raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
   raster::aggregate(fact = 2, fun = rast_agg_fn)
 
-save(rast_UNU, file = "data/rast_UNU.RData")
+save(rast_UNU, file = "00_data/rast_UNU.RData")
 
 print("Reclassified and aggregated MODIS data")
 
@@ -365,7 +365,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     filter(!is.na(URBAN)) %>% 
     dplyr::select(-LONGITUDE, -LATITUDE)
   
-  save(lists_UNU, file = "data/lists_UNU.RData")
+  save(lists_UNU, file = "00_data/lists_UNU.RData")
   
   print("Added UNU information")
   
@@ -402,7 +402,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
 
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA_d)
-  save(new_obsr_data, file = "data/new_obsr_data.RData")
+  save(new_obsr_data, file = "00_data/new_obsr_data.RData")
   
   print("Obtained new observer data")
   
@@ -505,7 +505,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
+  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
   lists_grids <- data0_MY_b_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
@@ -517,8 +517,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   data0_MY_b_slice_S <- data0_MY_b_slice_S %>% left_join(lists_grids)
   data0_MY_b_slice_G <- data0_MY_b_slice_G %>% left_join(lists_grids)
   
-  save(data0_MY_b, file = "data/data0_MY_b.RData")
-  save(data0_MY_b_slice_S, data0_MY_b_slice_G, file = "data/data0_MY_b_slice.RData")
+  save(data0_MY_b, file = "00_data/data0_MY_b.RData")
+  save(data0_MY_b_slice_S, data0_MY_b_slice_G, file = "00_data/data0_MY_b_slice.RData")
   
   print("Complete main data filtering for bird analyses!")
   
@@ -611,7 +611,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
+  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
   lists_grids <- data0_MY_d_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
@@ -623,8 +623,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   data0_MY_d_slice_S <- data0_MY_d_slice_S %>% left_join(lists_grids)
   data0_MY_d_slice_G <- data0_MY_d_slice_G %>% left_join(lists_grids)
   
-  save(data0_MY_d, file = "data/data0_MY_d.RData")
-  save(data0_MY_d_slice_S, data0_MY_d_slice_G, file = "data/data0_MY_d_slice.RData")
+  save(data0_MY_d, file = "00_data/data0_MY_d.RData")
+  save(data0_MY_d_slice_S, data0_MY_d_slice_G, file = "00_data/data0_MY_d_slice.RData")
   
   print("Completed main data filtering for birder analyses!")
   

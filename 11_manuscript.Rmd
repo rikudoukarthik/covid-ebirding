@@ -109,7 +109,7 @@ z <- x %>%
             END = if_else(M.YEAR == 2021, max(DATE), max(DATE) + months(1)))
 
 # for COVID period labels
-covid_lab <- read_csv("data/covid_classification.csv") %>% 
+covid_lab <- read_csv("00_data/covid_classification.csv") %>% 
   mutate(COVID = ifelse(str_detect(COVID, "DUR"), "DUR", COVID),
          MONTH = factor(MONTH)) %>% 
   right_join(x) %>% 

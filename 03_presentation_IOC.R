@@ -6,16 +6,16 @@ library(rasterVis)
 library(RColorBrewer)
 
 # boundary of India 
-india <- rgdal::readOGR(dsn = "data/in_2011", layer = "India_2011")
+india <- rgdal::readOGR(dsn = "00_data/in_2011", layer = "India_2011")
 sp::proj4string(india) <- "+proj=longlat +datum=WGS84"
 india <- terra::vect(india)
 # state boundaries
-states <- rgdal::readOGR(dsn = "data/in_states_2019", layer = "in_states_2019") %>% 
+states <- rgdal::readOGR(dsn = "00_data/in_states_2019", layer = "in_states_2019") %>% 
   terra::vect()
 
-load("data/data0_slice.RData")
-load("data/rast_UNU.RData")
-load("data/rast_SoIB.RData")
+load("00_data/data0_slice.RData")
+load("00_data/rast_UNU.RData")
+load("00_data/rast_SoIB.RData")
 
 source("scripts/functions.R")
 
@@ -435,5 +435,5 @@ rm(t_dow_nw, t_tod_nw)
 ### saving RData ####
 
 save(month_compar, nl_po_nw, hot_nw, prot_nw, fidel_nw, urban_lists, cover,
-     net_effort, t_dow_sw, t_tod_sw, file = "data/03_presentation_IOC.RData")
+     net_effort, t_dow_sw, t_tod_sw, file = "00_data/03_presentation_IOC.RData")
 

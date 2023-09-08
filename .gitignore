@@ -20,16 +20,16 @@
 *.pptx
 
 # folders in repo
-data/in_LULC/
-data/in_LULC_USGS/
+00_data/in_LULC/
+00_data/in_LULC_USGS/
 
 # Zoom recording
-Recording/
+Recording_IOC/
 
 01_abstract-conference.Rmd
 10_lit-review.html
 11_manuscript.html
-data/ebd_users_GA_relMay-2022.csv
+00_data/ebd_users_GA_relMay-2022.csv
 
 
 
