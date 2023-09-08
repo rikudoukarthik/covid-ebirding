@@ -29,7 +29,7 @@ Lines 80--92 should be unhashed when running the analysis for the first time, as
 
 ### Analysis
 
-Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`03_wrap_figs/`) and summary data (`outputs/`), which can be directly utilised further downstream.
+Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`03_wrap_figs/`) and summary data (`00_outputs/`), which can be directly utilised further downstream.
 
 ### Manuscript
 
@@ -43,7 +43,7 @@ Some aspects or elements of the final manuscript are **non-reproducible**. They 
 
 **Model summary tables**
 
-Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`outputs/`) into a simple and neat table using `knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
+Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`00_outputs/`) into a simple and neat table using `knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
 
 **Main text and supplementary material**
 

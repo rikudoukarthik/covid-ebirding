@@ -39,7 +39,7 @@ month_lab <- data.frame(M.YEAR = 2018:2021) %>%
   arrange(M.YEAR, MONTH.LAB)
 
 # loading data required for various summaries, tables and figures
-load("outputs/data_for_ms.RData")
+load("00_outputs/data_for_ms.RData")
 
 
 knitr::opts_chunk$set(
@@ -290,13 +290,13 @@ Although the number of participating birders and the number of checklists upload
 
 ```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load("outputs/d01_group_po.RData")
+load("00_outputs/d01_group_po.RData")
 d1 <- data0_a %>% left_join(month_lab)
-load("outputs/d02_fidelity_po.RData")
+load("00_outputs/d02_fidelity_po.RData")
 d2 <- data0_a %>% left_join(month_lab)
-load("outputs/d04_hotspot.RData")
+load("00_outputs/d04_hotspot.RData")
 d3 <- data0_a %>% left_join(month_lab)
-load("outputs/d05_protocol.RData")
+load("00_outputs/d05_protocol.RData")
 d4 <- data0_a %>% left_join(month_lab)
 
 
@@ -344,7 +344,7 @@ Birding in urban areas was slightly higher during the peak periods of both pande
 
 ```{r urban, fig.cap="Urban bias at the national level: Y-axis shows the proportion of checklists that are from urban areas. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, out.width="100%", fig.height=5, out.height="100%", dpi=300, dev="jpeg"}
 
-load("outputs/d09a_s_UNU.RData")
+load("00_outputs/d09a_s_UNU.RData")
 
 ggplot(data0_a %>% left_join(month_lab), 
        aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -370,9 +370,9 @@ Major proportional declines (bright yellow) in both birding effort and grid cove
 
 ```{r time-cov, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
 
-load("outputs/d03_time_po.RData")
+load("00_outputs/d03_time_po.RData")
 d1 <- data0_a %>% left_join(month_lab)
-load("outputs/d09b_s_cover.RData")
+load("00_outputs/d09b_s_cover.RData")
 d2 <- data0_a %>% left_join(month_lab)
 
 p1 <- ggplot(d1, 
@@ -401,7 +401,7 @@ p2 <- ggplot(d2,
 
 ```{r s-spread-figs-raw, fig.cap="Spatial spread: raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("outputs/d09c_s_spread.RData")
+load("00_outputs/d09c_s_spread.RData")
 
 d1 <- temp1 %>% left_join(grid_dist_base0)
 d2 <- temp5 %>% left_join(grid_dist_base0) %>% filter(METRIC == "GRID.COV.T")
@@ -448,7 +448,7 @@ p2 <- ggplot(d2) +
 
 ```{r s-spread-figs-prop, fig.cap="Spatial spread: proportional declines in number of lists per district in forward (top row) and backward (bottom row) transitions. Districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("outputs/d09c_s_spread.RData")
+load("00_outputs/d09c_s_spread.RData")
 
 d1 <- temp3 %>% left_join(grid_dist_base0)
 d2 <- temp4 %>% left_join(grid_dist_base0) 
@@ -544,16 +544,16 @@ With consistent effort, species reporting patterns show a different picture at t
 
 ```{r overall-212m, fig.cap="Modelled species reporting frequencies for the months of April and May (top row) and separately for all twelve months of a year (bottom row), for the states of Karnataka (A1, B1), Kerala (A2, B2), Maharashtra (A3, B3) and Assam (A4, B4). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=13, dpi=300, dev="jpeg"}
 
-load("outputs/b01_overall_s1c_model.RData")
+load("00_outputs/b01_overall_s1c_model.RData")
 d1 <- birds_pred %>% filter(MONTHS.TYPE == "LD")
 d5 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("outputs/b01_overall_s2c_model.RData")
+load("00_outputs/b01_overall_s2c_model.RData")
 d2 <- birds_pred %>% filter(MONTHS.TYPE == "LD")
 d6 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("outputs/b01_overall_s3c_model.RData")
+load("00_outputs/b01_overall_s3c_model.RData")
 d3 <- birds_pred %>% filter(MONTHS.TYPE == "LD")
 d7 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("outputs/b01_overall_s4c_model.RData")
+load("00_outputs/b01_overall_s4c_model.RData")
 d4 <- birds_pred %>% filter(MONTHS.TYPE == "LD") 
 d8 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
 
@@ -656,7 +656,7 @@ pB <- (p5 | p6 | p7 | p8) + plot_layout(tag_level = "new")
 
 ```{r prolific, fig.cap="Species reporting frequencies with consistent effort data, separately modelled for the months of April and May (A), the other ten months (B), and all twelve months of a year (C). Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text. Each translucent line connecting points represents reporting frequencies from a single location/patch across the four years. Points with error bars represent means with 95% confidence intervals.", out.width="100%", fig.width=8, fig.height=6, dpi=300, dev="jpeg"}
 
-load("outputs/b02_prolific_model.RData")
+load("00_outputs/b02_prolific_model.RData")
 
 d1a <- prolific_pred %>% filter(MONTHS.TYPE == "LD")
 d1b <- prolific_points %>% filter(MONTHS.TYPE == "LD")

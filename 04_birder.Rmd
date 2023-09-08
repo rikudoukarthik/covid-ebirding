@@ -172,7 +172,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -336,7 +336,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -497,7 +497,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -655,7 +655,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -814,7 +814,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -976,7 +976,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -1137,7 +1137,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -1295,7 +1295,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -1461,7 +1461,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -1613,7 +1613,7 @@ data0_b <- data0_b %>%
 ##### Saving analysis objects ####
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ##### Graphs ####
 
@@ -2097,7 +2097,7 @@ temp7 <- data_spread6 %>% st_drop_geometry() %>% dplyr::select(-geometry)
 
 
 save(grid_dist_base0, temp1, temp2, temp3, temp4, temp5, temp6, temp7, indiamap,
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ```
 
@@ -2202,7 +2202,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 ##### Saving analysis objects ####
 
 save(data_a, data_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 
 ```
@@ -2280,6 +2280,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 ##### Saving analysis objects ####
 
 save(data_a, data_b, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 ```

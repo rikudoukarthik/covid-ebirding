@@ -15,7 +15,7 @@ anals <- c("d02_fidelity_po", "d03_time_po", "d06_distance", "d07_duration",
 
 anal_name <- anals[10]
 
-load(glue("outputs/{anal_name}.RData"))
+load(glue("00_outputs/{anal_name}.RData"))
 
 
 

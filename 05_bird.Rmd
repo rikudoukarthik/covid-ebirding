@@ -241,13 +241,13 @@ anal_name <- "b01_overall_s1a_m"
 
 b01_overall_monthly("Karnataka")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 anal_name <- "b01_overall_s1b_y"
 
 b01_overall_annual("Karnataka")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 ```
 
@@ -268,12 +268,12 @@ source("00_scripts/b01_overall_model.R")
 
 # saving modelled data
 save(birds_pred, data_occ, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 
 
 # loading modelled data
-load(glue("outputs/{anal_name}.RData"))
+load(glue("00_outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
@@ -293,14 +293,14 @@ anal_name <- "b01_overall_s2a_m"
 
 b01_overall_monthly("Kerala")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 
 anal_name <- "b01_overall_s2b_y"
 
 b01_overall_annual("Kerala")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 ```
 
@@ -319,12 +319,12 @@ source("00_scripts/b01_overall_model.R")
 
 # saving modelled data
 save(birds_pred, data_occ, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 
 
 # loading modelled data
-load(glue("outputs/{anal_name}.RData"))
+load(glue("00_outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
@@ -344,14 +344,14 @@ anal_name <- "b01_overall_s3a_m"
 
 b01_overall_monthly("Maharashtra")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 
 anal_name <- "b01_overall_s3b_y"
 
 b01_overall_annual("Maharashtra")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 ```
 
@@ -370,12 +370,12 @@ source("00_scripts/b01_overall_model.R")
 
 # saving modelled data
 save(birds_pred, data_occ, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 
 
 # loading modelled data
-load(glue("outputs/{anal_name}.RData"))
+load(glue("00_outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
@@ -395,14 +395,14 @@ anal_name <- "b01_overall_s4a_m"
 
 b01_overall_monthly("Assam")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 
 anal_name <- "b01_overall_s4b_y"
 
 b01_overall_annual("Assam")
 
-save(data_a, data_b, file = glue("outputs/{anal_name}.RData"))
+save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
 
 ```
 
@@ -420,12 +420,12 @@ source("00_scripts/b01_overall_model.R")
 
 # saving modelled data
 save(birds_pred, data_occ, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 
 
 # loading modelled data
-load(glue("outputs/{anal_name}.RData"))
+load(glue("00_outputs/{anal_name}.RData"))
 
 birds_plot <- gg_b_model(birds_pred, type = "overall")
 
@@ -572,7 +572,7 @@ prolific_pred <- prolific_points %>%
 # graphs ------------------------------------------------------------
 
 save(prolific_pred, prolific_points, 
-     file = glue("outputs/{anal_name}.RData"))
+     file = glue("00_outputs/{anal_name}.RData"))
 
 prolific_plot <- gg_b_model(prolific_pred, type = "prolific", prolific_points)
 
