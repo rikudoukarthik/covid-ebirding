@@ -15,7 +15,7 @@ The analysis is centred around eBird data from India, which is publicly availabl
 
 **Reproducible**
 
--   [*MODIS Land Cover Type Product MCD12Q1*](https://lpdaac.usgs.gov/products/mcd12q1v006/): The data used in the study is available in `00_data/in_LULC_MODIS/` & `00_data/rast_UNU.RData`, but it is recommended to delete those files before starting the analysis. This will then force `getmodisdata()` from `scripts/functions.R` to run and produce fresh LULC data files from MODIS.
+-   [*MODIS Land Cover Type Product MCD12Q1*](https://lpdaac.usgs.gov/products/mcd12q1v006/): The data used in the study is available in `00_data/in_LULC_MODIS/` & `00_data/rast_UNU.RData`, but it is recommended to delete those files before starting the analysis. This will then force `getmodisdata()` from `00_scripts/functions.R` to run and produce fresh LULC data files from MODIS.
 -   *List of group accounts*: Available `00_data/ebd_users_GA_relMay-2022.csv`. See [here](https://github.com/birdcountindia/ebird-datasets#group-accounts) for rationale on why group account data need to be filtered out in these analyses.
 -   *Timeline of COVID classification*: Available `00_data/covid_classification.csv`. Classification of the timeline of interest into various COVID categories.
 
@@ -23,9 +23,9 @@ The analysis is centred around eBird data from India, which is publicly availabl
 
 ### Data preparation
 
-`03_wrap.Rmd` is the place to start for the main analyses. This loads all necessary data (and processes it where required), packages and other scripts/functions. It is essentially a setup file.
+`03_wrap.Rmd` is the place to start for the main analyses. This loads all necessary data (and processes it where required), packages and other 00_scripts/functions. It is essentially a setup file.
 
-Lines 80--92 should be unhashed when running the analysis for the first time, as this will activate `data_qualfilt_prep()` from `scripts/functions.R`. In subsequent runs, the lines can be hashed again, since various `.RData` and other data files will have been generated in the original data filtering, processing and preparation step.
+Lines 80--92 should be unhashed when running the analysis for the first time, as this will activate `data_qualfilt_prep()` from `00_scripts/functions.R`. In subsequent runs, the lines can be hashed again, since various `.RData` and other data files will have been generated in the original data filtering, processing and preparation step.
 
 ### Analysis
 

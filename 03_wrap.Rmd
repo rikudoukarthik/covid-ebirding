@@ -63,7 +63,7 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE,
 
 ```{r data, cache=TRUE}
 
-source("scripts/functions.R")
+source("00_scripts/functions.R")
 
 # Only needed once in the beginning to obtain the data.
 

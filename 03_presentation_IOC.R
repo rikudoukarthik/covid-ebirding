@@ -17,7 +17,7 @@ load("00_data/data0_slice.RData")
 load("00_data/rast_UNU.RData")
 load("00_data/rast_SoIB.RData")
 
-source("scripts/functions.R")
+source("00_scripts/functions.R")
 
 # choosing only months with data from all 3 COVID categories
 month_compar <- data0_slice_S %>% 
