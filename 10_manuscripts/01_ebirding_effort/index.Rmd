@@ -1,7 +1,7 @@
 ---
-title: "Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference"
+title: "Birdwatchers' resilience to perturbation buffers citizen science from pandemic-induced shifts in effort at the large scale"
 bibliography: ../covid-ebirding.json
-# csl: 
+csl: ../the-condor.csl
 link-citations: yes
 output: 
   bookdown::word_document2:
