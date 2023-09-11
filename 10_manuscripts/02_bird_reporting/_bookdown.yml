@@ -1,3 +1,5 @@
-rmd_files: ["10_manuscripts/01_ebirding_effort/index.Rmd", 
-"10_manuscripts/01_ebirding_effort/manuscript.Rmd", 
-"10_manuscripts/01_ebirding_effort/manuscript_supp.Rmd"]
+book_filename: "manuscript_ebirding_effort.Rmd"
+delete_merged_file: true
+rmd_files: ["index.Rmd", "01_main.Rmd", "02_supp.Rmd"]
+rmd_subdir: "10_manuscripts/02_bird_reporting/"
+output_dir: "./"

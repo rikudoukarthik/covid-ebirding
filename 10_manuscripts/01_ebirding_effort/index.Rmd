@@ -19,6 +19,4 @@ output:
 
 <!-- </style> -->
 
-<!-- Knit the manuscript using: -->
-
-<!-- bookdown::render_book("10_manuscripts/01_ebirding_effort/") -->
+<!-- Knit the manuscript using: bookdown::render_book("10_manuscripts/01_ebirding_effort/") -->
