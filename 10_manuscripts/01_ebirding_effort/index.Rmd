@@ -1,5 +1,5 @@
 ---
-title: "Birdwatchers' resilience to perturbation buffers citizen science from pandemic-induced shifts in effort at the large scale"
+title: "Birdwatchers' resilience to perturbation buffers citizen science from pandemic-induced biases/(shifts in effort) at the large scale"
 bibliography: ../covid-ebirding.json
 csl: ../the-condor.csl
 link-citations: yes

@@ -16,6 +16,32 @@ TBD
 
 # Introduction
 
+## Birds in the anthropause
+
+COVID-19 was the deadliest pandemic of the 21st century, and resulted in major widespread disruption in human life [see @bates2020]. This anthropause [@rutz2020] has had several cascading impacts, including on wildlife and the environment. Researchers put in effort towards utilising this unique opportunity (of greatly reduced human activity) to better understand the impact of human activities on wildlife, by studying how wildlife responded to the anthropause [@bates2020].
+
+Following the multitude of anecdotal evidence of wildlife "returning" to urban areas, studies presented formal evidence for this phenomenon from different places. Birds adjusted song traits in response to lowered anthropogenic noise in San Francisco, USA [@derryberry2020], and in parts of Spain became more detectable in urban areas despite similar occurrence rates [@gordo2021]. In the Pacific Northwest of USA, many bird species responded behaviourally to day-to-day changes in human activity [@sanderfoot2022]. Across North America, during the period of most stringent restrictions, some species showed a decline but most increased in abundance in areas that saw a decrease in human activity [@schrimpf2021].
+
+In contrast, abundances of some species tightly linked to human presence and activity like the Feral Pigeon in Singapore went down [@soh2021]. Reduced human activity/disturbance in urban areas did not necessarily result in increased reproductive output [@seress2021], and in fact even had adverse fitness consequences through increased predation rates [e.g., @hentati-sundberg2021]. Importantly, there is substantial evidence that humans have both positive and negative impacts on wildlife and the environment [@bates2021], and that there are several idiosyncrasies and nuances that need to be taken into consideration before generalising local patterns.
+
+## Estimating bird trends in India
+
+India is a large country with diverse landscapes, habitats, and even social and policy environments. Analysing pandemic-induced changes to wildlife across India would require considering nuances over this large area. One of the only ways to meaningfully do this for birds is by using citizen science (CS) projects like eBird [@sullivan2014; see @viswanathanetalinpress]. In the case of eBird, birdwatchers (hereafter birders) are the citizen scientists, collecting data through their birding "checklists" which they upload to this global platform. Because of this, eBird enables robust scientific analysis and output at large scales [@kelling2019].
+
+Among its various utilities is the estimation and monitoring of large-scale trends in bird abundance over time. This in turn enables countrywide assessments of bird populations, such as the State of India's Birds (SoIB) 2023 report [@soib2023] which assessed range size, abundance trends and conservation status of 942 Indian bird species. Such studies of bird abundance trends using eBird data do not claim to estimate true population sizes; rather, they use an index of abundance---calculated for each species as its reporting frequency, taken as a proxy for its true abundance---to track changes over time [see e.g., @viswanathanetalinpress].
+
+Therefore, we wanted to understand whether or not this index of abundance changed during the pandemic for bird species in India. If so, this would signal some behavioural (changes in detectability or boldness) or population-level (true abundance, occupancy, etc.) changes associated with the pandemic. Not only would this illuminate the impact that human activity has on birds in India, but it would also show that birds are plastic and can respond to environmental changes at the short time scale. However, the semi-structured eBird data, and the index of abundance derived from it, are particularly sensitive to effort expended for data collection. Since eBirders generally do not follow strict protocols that ensure homogeneity of data in space and time (they instead bird when and where they want to), this can result in spurious patterns in the data if not sufficiently accounted for analytically [@johnston2021].
+
+## Disentangling true patterns from potential confounds
+
+Given the significance of eBird data today for nationwide biodiversity assessments and conservation planning such as @soib2023, it is important that the data from the pandemic years is comparable with the rest of the dataset, and that results derived from this full dataset are reliable. We know that there was a long-lasting (relative to other pandemic-induced changes) urban bias in eBirding in India during the pandemic years [@thrikkadeeriinpress]. This difference in effort between urban and rural areas could theoretically, depending on the scale, result in higher apparent reporting frequencies for species largely restricted to urban areas. In this case, any adverse effects of the reduced human activity during the peak pandemic months would be cancelled out by this overinflated reporting of urban species, whereas any increases in urban bird detectability or abundance would become even more prominent. On the other hand, if comparisons between urban and rural species were made while keeping effort constant, any difference in reporting frequencies related to real changes in bird behaviour or abundance should become unambiguously evident.
+
+Aside from this urban bias, most other changes to birder behaviour, and therefore effort, in India were restricted to a small number of months during the peak pandemic period, and these did not translate over to larger scales such as years [@thrikkadeeriinpress]. Spatially, there was no specific pattern that was consistent across individual units or scales. Aside from contributing to advancement of ornithological knowledge in other ways [@thrikkadeeriWHBWinpress], birders can also help maintain citizen science data quality by means of their resilience to perturbations such as the pandemic [@thrikkadeeriinpress].
+
+## Our aim
+
+With this background, we looked at patterns of species reporting in eBird data from India, to explore the impact of the COVID-19 pandemic on birds. First, we asked whether or not bird reporting patterns changed at all during the pandemic. If so, we wanted to determine whether these patterns were due to birds indeed responding to the anthropause by changes in their behaviour or abundance, or if the few short-lived changes in birder behaviour were in fact responsible for artefactual patterns in bird reporting.
+
 # References
 
 ::: {#refs}
