@@ -1,5 +1,5 @@
 ---
-title: "Birdwatchers' resilience to perturbation buffers citizen science in India from pandemic-induced biases"
+title: "Birdwatchers' resilience to perturbation in India buffers citizen science from pandemic-induced biases"
 bibliography: ../covid-ebirding.json
 csl: ../the-condor.csl
 link-citations: yes

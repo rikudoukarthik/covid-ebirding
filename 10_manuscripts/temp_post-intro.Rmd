@@ -183,6 +183,20 @@ Diagnostics were not inspected separately for the bird reporting models due to t
 
 All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@positteam2022]. Figures were made using the packages *ggplot2* [@wickham2016] and *patchwork* [@pedersen2020]. In addition, packages *sf* [@pebesma2018], *spdep* [@bivand2022], *raster* [@hijmans2022], *terra* [@hijmans2022a] and *geodata* [@hijmans2022b] for spatial analyses, as well as *lubridate* [@grolemund2011], *glue* [@hester2022] and *tictoc* [@izrailev2021] were used. The source code for the entire analysis, from data preparation to statistical validation of metrics and to producing the final manuscript, is available on the [GitHub repository](https://github.com/rikudoukarthik/covid-ebirding) for the study.
 
+## Paper 2
+
+Analysing pandemic-induced changes to wildlife across India would require considering nuances over this large area. In the case of eBird, birdwatchers (hereafter birders) are the citizen scientists, collecting data through their birding "checklists" which they upload to this global platform. Because of this, eBird enables robust scientific analysis and output at large scales (Kelling et al. 2019).
+
+This in turn enables countrywide assessments of bird populations, such as the State of India's Birds (SoIB) 2023 report (SoIB 2023) which assessed range size, abundance trends and conservation status of 942 Indian bird species.
+
+However, the semi-structured eBird data, and the index of abundance derived from it, are particularly sensitive to effort expended for data collection. Since eBirders generally do not follow strict protocols that ensure homogeneity of data in space and time (they instead bird when and where they want to), this can result in spurious patterns in the data if not sufficiently accounted for analytically [@johnston2021].
+
+true abundance x detectability as you will justify as a caveat of the method you used)
+
+rationale behind prolific birders
+
+we wanted to determine whether these patterns were due to birds indeed responding to the anthropause by changes in their behaviour or abundance, or if the few short-lived changes in birder behaviour were in fact responsible for artefactual patterns in bird reporting.
+
 # Results
 
 ## Data quantity
@@ -940,6 +954,16 @@ Therefore, it is important to account for this variability in effort in any anal
 ### Guidelines for using pandemic eBird data from India
 
 Our findings suggest that there is still tremendous potential for CS data like eBird, even during the pandemic. When formulating a question to be answered using this data, the researcher must first consider the scale (spatial and temporal) of the question. Questions of larger scale can be tackled directly, whereas small-scale questions will benefit from a deep-dive into artefacts in the raw data that can produce misleading patterns. In the latter cases, the researcher is recommended to conduct similar analyses to the ones in this study in order to first assess the suitability of the data before attempting to answer the question. Variability in sampling effort is likely to be an issue at smaller scales, but its effect can be minimised by including effort variables such as list length as well as by using methods of spatial subsampling in the analyses.
+
+## Paper 2
+
+If so, this would signal some behavioural (changes in detectability or boldness) or population-level (true abundance, occupancy, etc.) changes associated with the pandemic. Not only would this illuminate the impact that human activity has on birds in India, but it would also show that birds are plastic and can respond to environmental changes at the short time scale.
+
+We know that there was a long-lasting (relative to other pandemic-induced changes) urban bias in eBirding in India during the pandemic years [@thrikkadeeriCOVIDp1]. This difference in effort between urban and rural areas could theoretically, depending on the scale, result in higher apparent reporting frequencies for species largely restricted to urban areas. In this case, any adverse effects of the reduced human activity during the peak pandemic months would be cancelled out by this overinflated reporting of urban species, whereas any increases in urban bird detectability or abundance would become even more prominent. On the other hand, if comparisons between urban and rural species were made while keeping effort constant, any difference in reporting frequencies related to real changes in bird behaviour or abundance should become unambiguously evident.
+
+"Disentangling true patterns from potential confounds"
+
+rationale behind prolific birders
 
 # Conclusion
 
