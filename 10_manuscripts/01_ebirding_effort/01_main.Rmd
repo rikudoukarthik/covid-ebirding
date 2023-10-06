@@ -90,127 +90,166 @@ In this study, we sought a comprehensive understanding of how birders in India m
 
 ```{r pcplot, fig.cap="Test parallel coordinates plot.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d01_group_po.RData")
+# getting CI limits from SE
+get_CI_lims <- function(data) {
+  
+  data %>% 
+    mutate(CI.L = PRED - 1.96*SE,
+           CI.U = PRED + 1.96*SE)
+  
+}
+
+load("00_outputs/d01_group_po.RData")
 d1 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d02_fidelity_po.RData")
+load("00_outputs/d02_fidelity_po.RData")
 d2 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d03_time_po.RData")
+load("00_outputs/d03_time_po.RData")
 d3 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d04_hotspot.RData")
+load("00_outputs/d04_hotspot.RData")
 d4 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d05_protocol.RData")
+load("00_outputs/d05_protocol.RData")
 d5 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d06_distance.RData")
+load("00_outputs/d06_distance.RData")
 d6 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d07_duration.RData")
+load("00_outputs/d07_duration.RData")
 d7 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d08_length.RData")
+load("00_outputs/d08_length.RData")
 d8 <- data0_a %>% left_join(month_lab)
 
-load("../../00_outputs/d09a_s_UNU.RData")
-d9a <- data0_a %>% left_join(month_lab)
+load("00_outputs/d09a_s_UNU.RData")
+d9a <- data0_a %>% left_join(month_lab) %>% 
+  # we want to show declines due to COVID in the vis, so we need 1 - urb. prop.
+  mutate(PRED = 1 - PRED) %>% 
+  get_CI_lims()
 
-load("../../00_outputs/d09b_s_cover.RData")
+load("00_outputs/d09b_s_cover.RData")
 d9b <- data0_a %>% left_join(month_lab)
 
 
 # proportion metrics already between 0 and 1
 # for non-proportion metrics, we scale approximately to [0, 1]
 
-# min-max or 0-1 scaling
-scale01 <- function(x, x_min, x_max) {
+# propagating SE when averaging
+propagate_se_formean <- function(x, N = n()) {
+  sqrt(sum(x^2)/N)
+}
+
+summarise_mean_and_se <- function(data_grouped, col_est, col_se) {
   
-  (x - x_min)/(x_max - x_min)
+  data_grouped %>% 
+    reframe({{ col_se }} := (sd({{ col_est }})/sqrt(n())) + propagate_se_formean({{ col_se }}),
+            {{ col_est }} := mean({{ col_est }}))
   
 }
 
-join_metric_pcplot <- function(base, tojoin, metric_colname, scale = FALSE) {
+# min-max or 0-1 scaling (normalisation)
+scale01 <- function(x, x_min, x_max, se = FALSE) {
   
+  # for SE, we scale only by slope and not intercept
+  
+  if (se == TRUE) {
+    (x)/(x_max - x_min)
+  } else {
+    (x - x_min)/(x_max - x_min)
+  }
+  
+}
+
+# composite of metrics summarise across months (COVID month yes/no) within the metric
+# - scales estimates
+# - averages across months while propagating error
+# - calculates CI limits from propagated error
+join_metric_composite <- function(base, tojoin, metric_colname, scale = FALSE) {
+
   tojoin <- tojoin %>% 
-    mutate(COVID.MONTH = ifelse(MONTH.LAB %in% c("Apr", "May"), TRUE, FALSE)) %>% 
     {if (scale == TRUE) {
-      mutate(., PRED = scale01(PRED, min(PRED), max(PRED)))
+      mutate(., 
+             PRED = scale01(PRED, min(CI.L), max(CI.U)),
+             SE = scale01(SE, min(CI.L), max(CI.U), se = TRUE))
     } else {
       .
     }} %>% 
     group_by(M.YEAR, COVID.MONTH) %>% 
-    reframe(PRED = mean(PRED)) %>% 
-    magrittr::set_colnames(c("M.YEAR", "COVID.MONTH", metric_colname))
-  
-  base %>% left_join(tojoin, by = c("M.YEAR", "COVID.MONTH"))
+    summarise_mean_and_se(PRED, SE) %>% 
+    get_CI_lims() %>% 
+    mutate(METRIC = metric_colname)
+
+  if (is.null(base)) {
+    return(tojoin)
+  } else {
+    return(bind_rows(base, tojoin))
+  }
   
 }
 
 
-data0 <- d1 %>% 
-  mutate(COVID.MONTH = ifelse(MONTH.LAB %in% c("Apr", "May"), TRUE, FALSE)) %>% 
-  distinct(M.YEAR, COVID.MONTH, COL1, COL2, COL3) %>% 
-  join_metric_pcplot(d1, "GROUP") %>% 
-  join_metric_pcplot(d2, "SITES", scale = TRUE) %>% 
-  join_metric_pcplot(d3, "TIME", scale = TRUE) %>% 
-  join_metric_pcplot(d4, "HOTSPOT") %>% 
-  join_metric_pcplot(d5, "TRAVELLING") %>% 
-  join_metric_pcplot(d6, "DISTANCE", scale = TRUE) %>% 
-  join_metric_pcplot(d7, "DURATION", scale = TRUE) %>% 
-  join_metric_pcplot(d8, "LENGTH", scale = TRUE) %>% 
-  join_metric_pcplot(d9a, "URBAN") %>% 
-  join_metric_pcplot(d9b, "COVER") %>% 
-  # years as parallel coordinates
-  dplyr::select(-COL2, -COL3) %>% 
-  pivot_longer(c("GROUP", "SITES", "TIME", "HOTSPOT", "TRAVELLING",
-                 "DISTANCE", "DURATION", "LENGTH", "URBAN", "COVER"), 
-               names_to = "METRIC", values_to = "VALUE") %>% 
-  pivot_wider(names_from = "M.YEAR", values_from = "VALUE")
+data0 <- join_metric_composite(base = NULL, d1, "GROUP") %>% 
+  join_metric_composite(d2, "SITES", scale = TRUE) %>% 
+  join_metric_composite(d3, "TIME", scale = TRUE) %>% 
+  join_metric_composite(d4, "HOTSPOT") %>% 
+  join_metric_composite(d5, "TRAVELLING") %>% 
+  join_metric_composite(d6, "DISTANCE", scale = TRUE) %>% 
+  join_metric_composite(d7, "DURATION", scale = TRUE) %>% 
+  join_metric_composite(d8, "LENGTH", scale = TRUE) %>% 
+  join_metric_composite(d9a, "URBAN") %>% 
+  join_metric_composite(d9b, "COVER") %>% 
+  # summarising across metrics
+  group_by(M.YEAR, COVID.MONTH) %>% 
+  summarise_mean_and_se(PRED, SE) %>% 
+  get_CI_lims() %>% 
+  # truncating CIs to [0, 1]
+  mutate(CI.L = case_when(CI.L < 0 ~ 0,
+                          TRUE ~ CI.L),
+         CI.U = case_when(CI.U > 1 ~ 1,
+                          TRUE ~ CI.U))
 
 data0 %>% 
-  ggparcoord(columns = 4:7, groupColumn = "COVID.MONTH",
-             scale = "globalminmax", showPoints = TRUE, alphaLines = 0.3) + # no scaling
-  scale_colour_manual(values = covid_palette[1:2])
+  ggplot(aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
+  geom_ribbon(mapping = aes(ymin = CI.L, ymax = CI.U, fill = COVID.MONTH, colour = COVID.MONTH),
+              alpha = 0.5, linewidth = 1) +
+  scale_colour_manual(values = covid_palette[1:2],
+                      name = "Months of year", 
+                      labels = c("Rest of year (Jun\u2013Mar)", "Peak impact (Apr\u2013May)")) +
+  scale_fill_manual(values = covid_palette[1:2],
+                    name = "Months of year", 
+                    labels = c("Rest of year (Jun\u2013Mar)", "Peak impact (Apr\u2013May)")) +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322")) +
+  labs(x = "Migratory Year", y = "Data quality metrics") +
+  # coord_cartesian(expand = FALSE) +
+  theme(legend.position = c(0.8, 0.9))
+# caption: (normalised to [0, 1])
 
-ggsave("00_outputs/birder_metrics_parcoord.png", width = 11, height = 7, units = "in", dpi = 300)
 
-# https://www.data-to-viz.com/graph/parallel.html
+# d1 %>% 
+#   filter(M.YEAR == 2018) %>% 
+#   dplyr::select(MONTH, M.YEAR, PRED, SE) %>% 
+#   mutate(NUM = sum((SE)^2),
+#          DENOM = n(),
+#          MEAN = mean(PRED),
+#          SE.NEW = sqrt(NUM/DENOM)) %>% 
+#   dplyr::select(-NUM, -DENOM)
 
-# for CI, maybe just errorbar on points with geom
 
+d2 %>% 
+  mutate(PRED = scale01(PRED, min(CI.L), max(CI.U)),
+         SE = scale01(SE, min(CI.L), max(CI.U), se = TRUE)) %>% 
+  group_by(M.YEAR, COVID.MONTH) %>%
+  summarise_mean_and_se(PRED, SE) %>%
+  get_CI_lims() %>%
+  # dplyr::select(-c(PRED.LINK, SE.LINK, SE.L, COL1, COL2, COL3, YEAR, COVID, MONTH.LAB)) %>%
+  filter(M.YEAR == 2018)
+  
 
-
-
-# PCA
-library(vegan)
-library(ggfortify)
-
-x <- data0 %>% 
-  dplyr::select(-c(COVID.MONTH, COL1, METRIC)) %>%
-  rda(scale = FALSE) %>% 
-  # scores()
-  #
-  # biplot(display = "sites") %>% 
-  # ordihull(group = data0$COVID.MONTH, 
-  #          col = covid_palette[1:2])
-  pluck("CA", "u") %>% # uscores (samples, not species; i.e., metric-month values, not years)
-  bind_cols(data0) 
-
-# convex hull
-x_hull <- x %>% 
-  group_by(COVID.MONTH) %>% 
-  slice(chull(PC1, PC2))
-
-x %>% 
-  pivot_longer(cols = c("2018", "2019", "2020", "2021"),
-               names_to = "COVID.YEAR", values_to = "YEAR.VALUE") %>% 
-  ggplot() +
-  geom_point(aes(x = PC1, y = PC2)) +
-  geom_polygon(data = x_hull, aes(x = PC1, y = PC2, colour = COVID.MONTH), 
-               fill = NA)
-#col = c(rep(covid_palette[1], 6), rep(covid_palette[1], 4))
+# average both together, not twice separately
+  
 
 ```
 
