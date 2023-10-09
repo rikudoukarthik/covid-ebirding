@@ -1,3 +1,9 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
 # Supplementary Material
 
 ## Methods
@@ -50,23 +56,7 @@ Proportional change in a metric $a$ from period $x$ to period $y$ was calculated
 
 We visualised only the negative values of proportional change, since a general increase in birding effort or grid coverage is not worrisome and is in fact even expected. Here, the values were coloured based on magnitude and once again the high magnitude changes are of interest, but we are also interested in transitions in both directions. For example, if the same districts with high magnitudes of negative proportional change from BEF to DUR have similar values also from AFT to DUR, this would suggest a clear and direct impact of the pandemic in lower birding effort or grid coverage.
 
-### Temporal spread {#tspreadmeth}
-
-#### Days of the week
-
-For each week of a migratory year, we calculated the proportion of lists submitted in each of the seven days of the week. These seven proportions were then averaged across all weeks of the year using bootstrapping (see Section \@ref(explboot)) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the seven days of a week and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
-
-#### Times of the day
-
-For each day of a migratory year, we calculated the proportion of lists submitted in each of the 24 hours of the day. These were then averaged across all days of the year using bootstrapping (see Section \@ref(explboot)) to get means and associated CIs for the entire year. We visualised this distribution of birding effort across the hours of a day and compared the four migratory years. These calculations were done separately for the whole country and for the four individual states of interest.
-
-### Prolific birders {#prolific-def}
-
-An eBirder was considered "prolific" if they had uploaded, from a single location, at least 800 qualifying checklists over the course of the four years being analysed (sufficient effort), as well as a minimum of 15 qualifying checklists per month in at least ten months of a year in all four years of the study (consistent effort)---thus translating to about 200 qualifying checklists per year. Since the observer remains constant, and the observer is sufficiently experienced (as inferred from their prolificacy), we assume that detection rates of birds in the location also remains similar over the years (given the short time period).
-
-### Model specifications
-
-#### Data quality {#modelspecs-d}
+### Model specifications {#modelspecs}
 
 For the observer-level group birding metric, a GLMM was fitted with the following specification:
 
@@ -84,60 +74,63 @@ For birding distance, list duration and list length, LMMs were fitted with the f
 
 $$log(metric) \sim year + year:month + (1/cell)$$
 
-#### Bird species reporting {#modelspecs-b}
-
-GLMMs for species reporting across all locations were fit for each species and for different periods ("lockdown", "non-lockdown", "all") separately. These models, with detection (yes or no) as the response variable, were specified as follows:
-
-$$detection \sim year*month + month:length + (1/cell)$$
-
-Models for species reporting at locations with consistent effort were fit for each locations and for different periods ("lockdown", "non-lockdown", "all") separately. The models were specified as follows:
-
-$$detection \sim year + year:month + month:length + category + (1/species)$$
-
-where $length$ refers to the median number of species reported in the respective month, $category$ is the species category and $species$ is the name of the species.
-
 ## Figures
 
-### Data quantity increased
+```{r fig-main-states, fig.cap="Proportional change in data quality metrics per year and month category, relative to values in MY 2018.", fig.width=6, fig.height=9.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-```{r lists-ebirders, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBirders; B). Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="100%", fig.width=8, fig.height=9, dpi=300, dev="jpeg"}
+fig1 <- create_composite_graph("state", "Karnataka")
+fig2 <- create_composite_graph("state", "Kerala", ylab = FALSE)
+fig3 <- create_composite_graph("state", "Maharashtra", ylab = FALSE)
+fig4 <- create_composite_graph("state", "Assam", ylab = FALSE)
 
-x <- month_lab %>% 
-  mutate(YEAR = ifelse(MONTH %in% 6:12, 
-                       as.numeric(as.character(M.YEAR)), 
-                       as.numeric(as.character(M.YEAR)) + 1)) %>% 
-  mutate(DATE = as.Date(paste(YEAR, MONTH, "01", sep = "-")))
-
-d1 <- dataquant_a %>% left_join(x) %>% arrange(DATE)
-
-
-p1 <- ggplot(d1, aes(x = DATE, y = NO.LISTS, colour = M.YEAR)) +
-  labs(x = "Months", y = "No. of qualifying lists") +
-  geom_point(size = 2) +
-  geom_line(size = 1) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_y_continuous(label = comma) +
-  scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
-
-p2 <- ggplot(d1, aes(x = DATE, y = NO.EBIRDERS, colour = M.YEAR)) +
-  labs(x = "Months", y = "No. of active eBirders") +
-  geom_point(size = 2) +
-  geom_line(size = 1) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_y_continuous(label = comma) +
-  scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.margin = margin(t = 0, unit = "cm"),
-        legend.position = "bottom",
-        axis.text.y = element_text(angle = 90, vjust = 0, hjust = 0.5),
-        axis.text.x = element_text(colour = d1$COL2, angle = 90, size = 8, vjust = 0.5))
+fig_main_states <- (fig1 | fig2 | fig3 | fig4) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
 
 ```
 
-### Birding sessions became shorter
+```{r time-cov, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
+
+load("../../00_outputs/d03_time_po.RData")
+d1 <-
+  data0_a %>% left_join(month_lab)
+load("../../00_outputs/d09b_s_cover.RData")
+d2 <-
+  data0_a %>% left_join(month_lab)
+
+p1 <-
+  ggplot(d1,
+         aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Time spent birding\n(mins)") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  ) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")
+
+p2 <-
+  ggplot(d2,
+         aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Proportion of\ncells covered") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  ) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year")
+
+(p1 / guide_area() / p2) +
+  plot_layout(guides = "collect", heights = c(5, 1, 5)) +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(colour = month_lab$COL1))
+
+```
 
 ```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
@@ -177,521 +170,144 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r dist-dur-length-state1, fig.cap="Graphs of birding distance, list duration and list length for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r s-spread-figs-raw, fig.cap="Spatial spread: raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/d06_distance.RData")
-d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d07_duration.RData")
-d2 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d08_length.RData")
-d3 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
+load("../../00_outputs/d09c_s_spread.RData")
 
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Birding distance\n(km)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+d1 <-
+  temp1 %>% left_join(grid_dist_base0)
+d2 <-
+  temp5 %>% left_join(grid_dist_base0) %>% filter(METRIC == "GRID.COV.T")
 
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List duration\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+# raw change maps (except gridcov w/o threshold)
 
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List length\n(no. of species)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+p1 <-
+  ggplot(d1) +
+  geom_polygon(
+    data = indiamap,
+    aes(long, lat, group = group),
+    fill = "#ACACAC",
+    colour = "black",
+    size = 0.4
+  ) +
+  geom_sf(aes(fill = VALUE, geometry = geometry),
+          col = "#ACACAC",
+          size = 0.1) +
+  facet_wrap( ~ T.LABEL) +
+  scale_fill_stepsn(
+    colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+    breaks = c(-1000, -500, -100, -50, 50, 100, 500, 1000),
+    values = scales::rescale(c(
+      -11000, -1000, -500, -100, -50,
+      50, 100, 500, 1000, 11000
+    )),
+    limits = c(-11000, 11000),
+    na.value = "#ACACAC"
+  ) +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Difference in\nno. of lists")
 
-(p1 / p2 / p3) +
-  plot_layout(guides = "collect") +
+
+p2 <-
+  ggplot(d2) +
+  geom_polygon(
+    data = indiamap,
+    aes(long, lat, group = group),
+    fill = "#ACACAC",
+    colour = "black",
+    size = 0.4
+  ) +
+  geom_sf(aes(fill = VALUE, geometry = geometry),
+          col = "#ACACAC",
+          size = 0.1) +
+  facet_wrap( ~ T.LABEL) +
+  scale_fill_stepsn(
+    colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+    breaks = c(-40, -25, -10, -1, 1, 10, 25, 40),
+    values = scales::rescale(c(-100, -40, -25, -10, -1, 1, 10, 25, 40, 100)),
+    limits = c(-100, 100),
+    na.value = "#ACACAC"
+  ) +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Difference in\ngrid coverage")
+
+
+(p1 / p2) +
   plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
+        legend.key.width = unit(3, "cm"))
 
 ```
 
-```{r dist-dur-length-state2, fig.cap="Graphs of birding distance, list duration and list length for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r s-spread-figs-prop, fig.cap="Spatial spread: proportional declines in number of lists per district in forward (top row) and backward (bottom row) transitions. Districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+
+load("../../00_outputs/d09c_s_spread.RData")
+
+d1 <-
+  temp3 %>% left_join(grid_dist_base0)
+d2 <-
+  temp4 %>% left_join(grid_dist_base0)
+
+
+p1 <-
+  ggplot(d1) +
+  geom_polygon(
+    data = indiamap,
+    aes(long, lat, group = group),
+    fill = "white",
+    colour = "black",
+    size = 0.4
+  ) +
+  geom_sf(aes(fill = VALUE, geometry = geometry),
+          col = "#E0E0E0",
+          size = 0.1) +
+  facet_wrap( ~ T.LABEL) +
+  scale_fill_steps2(
+    low = viridisLite::cividis(5, direction = -1)[1],
+    mid = viridisLite::cividis(5, direction = -1)[3],
+    high = viridisLite::cividis(5, direction = -1)[5],
+    midpoint = -0.45,
+    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+    limits = c(-1, 0),
+    na.value = "#E0E0E0"
+  ) +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Proportional change")
+
+p2 <-
+  ggplot(d2) +
+  geom_polygon(
+    data = indiamap,
+    aes(long, lat, group = group),
+    fill = "white",
+    colour = "black",
+    size = 0.4
+  ) +
+  geom_sf(aes(fill = VALUE, geometry = geometry),
+          col = "#E0E0E0",
+          size = 0.1) +
+  facet_wrap( ~ T.LABEL) +
+  scale_fill_steps2(
+    low = viridisLite::cividis(5, direction = -1)[1],
+    mid = viridisLite::cividis(5, direction = -1)[3],
+    high = viridisLite::cividis(5, direction = -1)[5],
+    midpoint = -0.45,
+    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+    limits = c(-1, 0),
+    na.value = "#E0E0E0"
+  ) +
+  labs(x = "Longitude", y = "Latitude",
+       fill = "Proportional change")
 
-load("00_outputs/d06_distance.RData")
-d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d07_duration.RData")
-d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d08_length.RData")
-d3 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Birding distance\n(km)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List duration\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List length\n(no. of species)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / p3) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r dist-dur-length-state3, fig.cap="Graphs of birding distance, list duration and list length for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
-
-load("00_outputs/d06_distance.RData")
-d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d07_duration.RData")
-d2 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d08_length.RData")
-d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Birding distance\n(km)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List duration\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List length\n(no. of species)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / p3) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r dist-dur-length-state4, fig.cap="Graphs of birding distance, list duration and list length for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
-
-load("00_outputs/d06_distance.RData")
-d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d07_duration.RData")
-d2 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d08_length.RData")
-d3 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Birding distance\n(km)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List duration\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List length\n(no. of species)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / p3) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-### Birders avoided travel, groups, and public spaces
-
-```{r long-changes-state1, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d01_group_po.RData")
-d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d02_fidelity_po.RData")
-d2 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d04_hotspot.RData")
-d3 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d05_protocol.RData")
-d4 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ngroup birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "No. of sites\nvisited") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nhotspot birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ntravelling birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r long-changes-state2, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d01_group_po.RData")
-d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d02_fidelity_po.RData")
-d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d04_hotspot.RData")
-d3 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d05_protocol.RData")
-d4 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ngroup birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "No. of sites\nvisited") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nhotspot birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ntravelling birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r long-changes-state3, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d01_group_po.RData")
-d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d02_fidelity_po.RData")
-d2 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d04_hotspot.RData")
-d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d05_protocol.RData")
-d4 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ngroup birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "No. of sites\nvisited") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nhotspot birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ntravelling birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r long-changes-state4, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d01_group_po.RData")
-d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d02_fidelity_po.RData")
-d2 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d04_hotspot.RData")
-d3 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d05_protocol.RData")
-d4 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ngroup birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "No. of sites\nvisited") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nhotspot birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ntravelling birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-### Urban bias
-
-```{r urban-states, fig.cap="Urban bias in the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D): Y-axis shows the proportion of checklists that are from urban areas. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d09a_s_UNU.RData")
-d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-d4 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nurban birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nurban birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nurban birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nurban birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-### Was overall birding effort lower?
-
-```{r time-cov-state1, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d03_time_po.RData")
-d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-load("00_outputs/d09b_s_cover.RData")
-d2 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Time spent birding\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ncells covered") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
 
 (p1 / guide_area() / p2) +
   plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
   plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r time-cov-state2, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Kerala. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d03_time_po.RData")
-d1 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-load("00_outputs/d09b_s_cover.RData")
-d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Time spent birding\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ncells covered") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r time-cov-state3, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Maharashtra. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d03_time_po.RData")
-d1 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-load("00_outputs/d09b_s_cover.RData")
-d2 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Time spent birding\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ncells covered") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r time-cov-state4, fig.cap="Graphs of observer-level birding time (A), and spatial coverage (B) for the state of Assam. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d03_time_po.RData")
-d1 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-load("00_outputs/d09b_s_cover.RData")
-d2 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Time spent birding\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ncells covered") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
+  theme(
+    legend.position = "bottom",
+    legend.key.width = unit(2, "cm"),
+    legend.margin = margin(t = 0, unit = "cm")
+  )
 
 ```
 
@@ -746,779 +362,6 @@ p4 <- ggplot(d4, aes(x = T.LABEL, y = VALUE)) +
         legend.key.width = unit(3, "cm"),
         legend.margin = margin(t = 0, unit = "cm"),
         axis.text.x = element_text(size = 9))
-
-```
-
-```{r s-spread-rest2, fig.cap="Spatial spread: proportional declines in percentage grid coverage per district with no threshold in forward (top row) and backward (bottom row) transitions. Although the analysis calculated proportional change, districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-d5 <- temp7 %>% filter(METRIC == "GRID.COV") %>% left_join(grid_dist_base0)
-
-ggplot(d5) +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#E0E0E0", size = 0.1) +
-  facet_wrap(~ T.LABEL, ncol = 2) +
-  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
-                    mid = viridisLite::cividis(5, direction = -1)[3],
-                    high = viridisLite::cividis(5, direction = -1)[5],
-                    midpoint = -0.45,
-                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-                    limits = c(-1, 0),
-                    na.value = "#E0E0E0") +
-  labs(x = "Longitude", y = "Latitude",
-       fill = "Proportional change") +
-  theme(legend.position = "bottom",
-        legend.key.width = unit(2, "cm"),
-        legend.margin = margin(t = 0, unit = "cm"))
-
-```
-
-```{r s-spread-rest3, fig.cap="Spatial spread: proportional declines in thresholded percentage grid coverage per district in forward (top row) and backward (bottom row) transitions. Although the analysis calculated proportional change, districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-d6 <- temp7 %>% filter(METRIC == "GRID.COV.T") %>% left_join(grid_dist_base0)
-
-ggplot(d6) +
-  geom_polygon(data = indiamap,
-               aes(long, lat, group = group),
-               fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = geometry), col ="#E0E0E0", size = 0.1) +
-  facet_wrap(~ T.LABEL, ncol = 2) +
-  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
-                    mid = viridisLite::cividis(5, direction = -1)[3],
-                    high = viridisLite::cividis(5, direction = -1)[5],
-                    midpoint = -0.45,
-                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-                    limits = c(-1, 0),
-                    na.value = "#E0E0E0") +
-  labs(x = "Longitude", y = "Latitude",
-       fill = "Proportional change") +
-  theme(legend.position = "bottom",
-        legend.key.width = unit(2, "cm"),
-        legend.margin = margin(t = 0, unit = "cm"))
-
-```
-
-### When did birders bird?
-
-Most birding before the pandemic happened on weekends, especially on Sundays, but proportional birding on Sunday decreased in the pandemic years, and there were slight suggestions of birding being more spread out over the weekdays (Fig. \@ref(fig:t-spread)A). This could be because many people started working from home and hence had some time freed up. Similarly, much more birding happened in the evening hours (17:00--18:00 hrs) during the pandemic years than before or after, while there was a little less morning birding, around 06:00 hrs (Fig. \@ref(fig:t-spread)B). People might have done birding in the extra time that would have otherwise gone for the evening commute. Some evidence for these speculations is that the changes were much more notable in states having big metropolitan cities like Karnataka (Fig. \@ref(fig:t-spread-state1)B) and Maharashtra (Fig. \@ref(fig:t-spread-state3)A).
-
-```{r t-spread, fig.cap="Proportional spread of birding (lists submitted) at the national level across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d10a_t_dow.RData")
-d1 <- data_a
-load("00_outputs/d10b_t_tod.RData")
-d2 <- data_a
-
-
-p1 <- ggplot(d1, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.7)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.7)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  labs(x = "Day of week", y = "Proportion of lists")
-
-p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.9)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.9)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
-  labs(x = "Time of day (hours)", y = "Proportion of lists")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0))
-
-```
-
-```{r t-spread-state1, fig.cap="Proportional spread of birding (lists submitted) in Karnataka across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d10a_t_dow.RData")
-d1 <- data_b %>% filter(STATE == "Karnataka")
-load("00_outputs/d10b_t_tod.RData")
-d2 <- data_b %>% filter(STATE == "Karnataka")
-
-
-p1 <- ggplot(d1, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.7)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.7)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  labs(x = "Day of week", y = "Proportion of lists")
-
-p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.9)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.9)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
-  labs(x = "Time of day (hours)", y = "Proportion of lists")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0))
-
-```
-
-```{r t-spread-state2, fig.cap="Proportional spread of birding (lists submitted) in Kerala across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d10a_t_dow.RData")
-d1 <- data_b %>% filter(STATE == "Kerala")
-load("00_outputs/d10b_t_tod.RData")
-d2 <- data_b %>% filter(STATE == "Kerala")
-
-
-p1 <- ggplot(d1, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.7)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.7)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  labs(x = "Day of week", y = "Proportion of lists")
-
-p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.9)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.9)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
-  labs(x = "Time of day (hours)", y = "Proportion of lists")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0))
-
-```
-
-```{r t-spread-state3, fig.cap="Proportional spread of birding (lists submitted) in Maharashtra across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d10a_t_dow.RData")
-d1 <- data_b %>% filter(STATE == "Maharashtra")
-load("00_outputs/d10b_t_tod.RData")
-d2 <- data_b %>% filter(STATE == "Maharashtra")
-
-
-p1 <- ggplot(d1, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.7)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.7)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  labs(x = "Day of week", y = "Proportion of lists")
-
-p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.9)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.9)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
-  labs(x = "Time of day (hours)", y = "Proportion of lists")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0))
-
-```
-
-```{r t-spread-state4, fig.cap="Proportional spread of birding (lists submitted) in Assam across the seven days of a week (A) and the twenty-four hours of a day (B). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours.", fig.width=8, fig.height=9, out.width="100%", dpi=300, dev="jpeg"}
-
-load("00_outputs/d10a_t_dow.RData")
-d1 <- data_b %>% filter(STATE == "Assam")
-load("00_outputs/d10b_t_tod.RData")
-d2 <- data_b %>% filter(STATE == "Assam")
-
-
-p1 <- ggplot(d1, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.7)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.7)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  labs(x = "Day of week", y = "Proportion of lists")
-
-p2 <- ggplot(d2, aes(HOUR, PROP.LISTS, colour = M.YEAR)) + 
-  geom_point(size = 1.8, position = position_dodge(0.9)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.6, position = position_dodge(0.9)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_x_continuous(limits = c(-0.5, 23.5), breaks = 0:23) +
-  labs(x = "Time of day (hours)", y = "Proportion of lists")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0))
-
-```
-
-### Overall bird reporting
-
-```{r overall-non1, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s1a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non2, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Karnataka state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non3, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s1b_y.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non4, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Karnataka state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non5, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s2a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non6, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kerala state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non7, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s2b_y.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non8, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Kerala state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non9, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s3a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non10, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Maharashtra state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non11, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s3b_y.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non12, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Maharashtra state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-non13, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s4a_m.RData")
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non14, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s4b_y.RData")
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR)
-
-p1 <- ggplot(d1, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
-  geom_point(size = 2, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1, width = 0.5, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 4, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Migratory year", y = "Reporting frequency")
-
-(p1 / p2) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(M.YEAR, COL3))$COL3))
-
-```
-
-```{r overall-10m, fig.cap="Modelled species reporting frequencies for all ten months excluding April and May, for the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=6, dpi=300, dev="jpeg"}
-
-load("00_outputs/b01_overall_s1c_model.RData")
-d1 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s2c_model.RData")
-d2 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s3c_model.RData")
-d3 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s4c_model.RData")
-d4 <- birds_pred %>% filter(MONTHS.TYPE == "NL") 
-
-p1 <- ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-  scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                     name = "Species category",
-                     labels = c("Rural", "Urban")) +
-  labs(x = "", y = "Reporting frequency") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) 
-
-
-p2 <- ggplot(d2, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-  scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                     name = "Species category",
-                     labels = c("Rural", "Urban")) +
-  labs(x = "Migratory year", y = "") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) 
-
-p3 <- ggplot(d3, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-  scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                     name = "Species category",
-                     labels = c("Rural", "Urban")) +
-  labs(x = "", y = "") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) 
-
-p4 <- ggplot(d4, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-  scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                     name = "Species category",
-                     labels = c("Rural", "Urban")) +
-  labs(x = "Migratory year", y = "") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) 
-
-
-(p1 | p2 | p3 | p4) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 1),
-        axis.text.x = element_text(colour = (month_lab %>% distinct(M.YEAR, COL3))$COL3,
-                                   angle = 45, vjust = 0.5))
 
 ```
 

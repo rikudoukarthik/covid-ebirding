@@ -1,3 +1,140 @@
+
+# get labelled months ---------------------------------------------------------------
+
+# and COVID colour scheme
+
+get_labelled_months <- function() {
+
+  month_lab <- data.frame(M.YEAR = 2018:2021) %>% 
+    group_by(M.YEAR) %>% 
+    summarise(MONTH = 1:12 %>% month()) %>% 
+    mutate(MONTH.LAB = month(MONTH, label = T)) %>% 
+    mutate(MONTH = factor(MONTH, levels = month(c(6:12, 1:5))),
+           M.YEAR = factor(M.YEAR),
+           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T))) %>% 
+    mutate(COL1 = ifelse(MONTH.LAB %in% c("Apr", "May"), "red", "black"), # for normal plots
+           COL2 = ifelse((M.YEAR %in% 2019:2020) & 
+                           (MONTH.LAB %in% c("Apr", "May")), "red", "black"), # for timeline 
+           COL3 = ifelse(M.YEAR %in% 2019:2020, "red", "black")) %>% # for bird model plots
+    arrange(M.YEAR, MONTH.LAB)
+  
+  return(month_lab)
+  
+}
+
+# error functions -------------------------------------------------------------------
+
+# getting CI limits from SE
+get_CI_lims <- function(data) {
+  
+  data %>% 
+    mutate(CI.L = PRED - 1.96*SE,
+           CI.U = PRED + 1.96*SE)
+  
+}
+
+
+# propagating SE when averaging
+propagate_se_formean <- function(x, N = n()) {
+  
+  sqrt(sum(x^2)/N)
+  
+}
+
+
+# averaging an estimate with its uncertainty
+summarise_mean_and_se <- function(data_grouped, est, se) {
+  
+  data_grouped %>% 
+    reframe({{ se }} := (sd({{ est }})/sqrt(n())) + propagate_se_formean({{ se }}),
+            {{ est }} := mean({{ est }}))
+  
+}
+
+
+# dividing an estimate with its uncertainty
+summarise_div_and_se <- function(data_grouped, 
+                                 est_num, se_num, est_denom, se_denom,
+                                 est_out = {{ est_num }}, se_out = {{ se_num }}) {
+  
+  data_grouped %>% 
+    reframe(TEMP = sqrt(
+      ({{ se_num }} / {{ est_num }}) ^ 2 + ({{ se_denom }} / {{ est_denom }}) ^ 2
+    ),
+    {{ est_out }} := {{ est_num }} / {{ est_denom }},
+    {{ se_out }} := {{ est_out }} * TEMP) %>% 
+    dplyr::select(-TEMP)
+  
+}
+
+
+
+# data metrics composite ------------------------------------------------------------
+
+# min-max or 0-1 scaling (normalisation)
+scale01 <- function(x, x_min, x_max, se = FALSE) {
+  
+  # for SE, we scale only by slope and not intercept
+  
+  if (se == TRUE) {
+    (x)/(x_max - x_min)
+  } else {
+    (x - x_min)/(x_max - x_min)
+  }
+  
+}
+
+
+# composite of metrics summarise across months (COVID month yes/no) within the metric
+# - transforms estimates into proportional changes from t0
+join_metric_composite <- function(base, tojoin, metric_colname, 
+                                  scale = "country", state = NULL) {
+  
+  # tojoin is a list (actually character vector of the list name) 
+  # containing country and state results
+  if (scale == "country") {
+    pluck_which <- 1
+  } else if (scale == "state") {
+    pluck_which <- 2
+    if (is.null(state)) return("Please choose a state to filter for!")
+  }
+  
+  tojoin <- get(tojoin) %>% 
+    pluck(pluck_which) %>% 
+    dplyr::select(-c(PRED.LINK, SE.LINK, SE.L, YEAR, COVID, MONTH.LAB, COL1, COL2, COL3)) %>% 
+    {if (scale == "state") {
+      filter(., STATE == state)
+    } else {
+      .
+    }} %>% 
+    {if (metric_colname == "URBAN") {
+      # we want to show declines due to COVID in the vis, so we need 1 - urb. prop.
+      mutate(., PRED = 1 - PRED) %>% 
+        get_CI_lims()
+    } else {
+      .
+    }}
+  
+  reference <- tojoin %>% 
+    filter(M.YEAR == 2018) %>% 
+    distinct(MONTH, PRED, SE) %>% 
+    magrittr::set_colnames(c("MONTH", "PRED.REF", "SE.REF"))
+  
+  tojoin <- tojoin %>% 
+    left_join(reference) %>% 
+    group_by(MONTH, M.YEAR, COVID.MONTH) %>% 
+    summarise_div_and_se(PRED, SE, PRED.REF, SE.REF) %>% 
+    mutate(METRIC = metric_colname)
+  
+  if (is.null(base)) {
+    return(tojoin)
+  } else {
+    return(bind_rows(base, tojoin))
+  }
+  
+}
+
+
 ### joinmapvars ########################################
 
 # adapted from Ashwin's "addmapvars" function to allow use within data preparation steps
