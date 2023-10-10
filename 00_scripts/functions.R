@@ -840,9 +840,9 @@ boot_conf_GLMM = function(model,
 
   print(glue("Using {par_cores} cores."))
   
-  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun,
-                          parallel = "snow", 
-                          use.u = FALSE, type = "parametric", 
+  pred_bootMer <- bootMer(model, FUN = pred_fun, 
+                          nsim = nsim, seed = 20231010, 
+                          parallel = "snow", use.u = FALSE, type = "parametric", 
                           ncpus = par_cores, cl = par_cluster)
   
   stopCluster(par_cluster)
