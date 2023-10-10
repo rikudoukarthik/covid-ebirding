@@ -48,7 +48,7 @@ theme_set(theme_bw(base_size = 12, base_family = 'Fira Sans'))
 ```
 
 ```{r data_load, cache=TRUE, dependson="setup", echo=FALSE}
-load("data/data_sub.RData")
+load("00_data/data_sub.RData")
 ```
 
 ### Introduction
@@ -152,7 +152,7 @@ COVID--19 waves
 
 .right-column[
 ```{r nationalwaves, echo=FALSE, fig.height=4}
-nwaves <- read.csv("data/covid_19_india.csv")
+nwaves <- read.csv("00_data/covid_19_india.csv")
 nwaves <- nwaves %>% mutate(date = as.Date(date, "%d/%m/%Y")) %>% 
   group_by(date) %>% summarise(cases = sum(cases))
 nwaves <- nwaves %>% mutate(tot_cases = cases, 
@@ -194,7 +194,7 @@ knitr::include_graphics("pics/lox.png")
 .right-column[
 
 ```{r vax, echo=FALSE, fig.height=4}
-vax <- read.csv("data/covid_vaccine_statewise.csv", as.is=F)
+vax <- read.csv("00_data/covid_vaccine_statewise.csv", as.is=F)
 vax <- mutate(vax, date = as.Date(date, "%d/%m/%Y"))
 ggplot(filter(vax, state == "India"), aes(date, dose2)) + geom_line() +
   scale_y_continuous(labels = scales::label_comma()) +

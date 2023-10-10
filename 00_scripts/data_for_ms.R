@@ -54,4 +54,4 @@ save(covid_palette, # timeline graph
      species_list, # how many species (and urban, rural)
      fail_spec_KL, fail_spec_MH, # for how many spp in overall bird models used logit
      tot_qual_prolific,
-     file = "outputs/data_for_ms.RData")
+     file = "00_outputs/data_for_ms.RData")

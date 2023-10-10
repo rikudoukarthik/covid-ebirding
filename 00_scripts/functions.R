@@ -1,3 +1,140 @@
+
+# get labelled months ---------------------------------------------------------------
+
+# and COVID colour scheme
+
+get_labelled_months <- function() {
+
+  month_lab <- data.frame(M.YEAR = 2018:2021) %>% 
+    group_by(M.YEAR) %>% 
+    summarise(MONTH = 1:12 %>% month()) %>% 
+    mutate(MONTH.LAB = month(MONTH, label = T)) %>% 
+    mutate(MONTH = factor(MONTH, levels = month(c(6:12, 1:5))),
+           M.YEAR = factor(M.YEAR),
+           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T))) %>% 
+    mutate(COL1 = ifelse(MONTH.LAB %in% c("Apr", "May"), "red", "black"), # for normal plots
+           COL2 = ifelse((M.YEAR %in% 2019:2020) & 
+                           (MONTH.LAB %in% c("Apr", "May")), "red", "black"), # for timeline 
+           COL3 = ifelse(M.YEAR %in% 2019:2020, "red", "black")) %>% # for bird model plots
+    arrange(M.YEAR, MONTH.LAB)
+  
+  return(month_lab)
+  
+}
+
+# error functions -------------------------------------------------------------------
+
+# getting CI limits from SE
+get_CI_lims <- function(data) {
+  
+  data %>% 
+    mutate(CI.L = PRED - 1.96*SE,
+           CI.U = PRED + 1.96*SE)
+  
+}
+
+
+# propagating SE when averaging
+propagate_se_formean <- function(x, N = n()) {
+  
+  sqrt(sum(x^2)/N)
+  
+}
+
+
+# averaging an estimate with its uncertainty
+summarise_mean_and_se <- function(data_grouped, est, se) {
+  
+  data_grouped %>% 
+    reframe({{ se }} := (sd({{ est }})/sqrt(n())) + propagate_se_formean({{ se }}),
+            {{ est }} := mean({{ est }}))
+  
+}
+
+
+# dividing an estimate with its uncertainty
+summarise_div_and_se <- function(data_grouped, 
+                                 est_num, se_num, est_denom, se_denom,
+                                 est_out = {{ est_num }}, se_out = {{ se_num }}) {
+  
+  data_grouped %>% 
+    reframe(TEMP = sqrt(
+      ({{ se_num }} / {{ est_num }}) ^ 2 + ({{ se_denom }} / {{ est_denom }}) ^ 2
+    ),
+    {{ est_out }} := {{ est_num }} / {{ est_denom }},
+    {{ se_out }} := {{ est_out }} * TEMP) %>% 
+    dplyr::select(-TEMP)
+  
+}
+
+
+
+# data metrics composite ------------------------------------------------------------
+
+# min-max or 0-1 scaling (normalisation)
+scale01 <- function(x, x_min, x_max, se = FALSE) {
+  
+  # for SE, we scale only by slope and not intercept
+  
+  if (se == TRUE) {
+    (x)/(x_max - x_min)
+  } else {
+    (x - x_min)/(x_max - x_min)
+  }
+  
+}
+
+
+# composite of metrics summarise across months (COVID month yes/no) within the metric
+# - transforms estimates into proportional changes from t0
+join_metric_composite <- function(base, tojoin, metric_colname, 
+                                  scale = "country", state = NULL) {
+  
+  # tojoin is a list (actually character vector of the list name) 
+  # containing country and state results
+  if (scale == "country") {
+    pluck_which <- 1
+  } else if (scale == "state") {
+    pluck_which <- 2
+    if (is.null(state)) return("Please choose a state to filter for!")
+  }
+  
+  tojoin <- get(tojoin) %>% 
+    pluck(pluck_which) %>% 
+    dplyr::select(-c(PRED.LINK, SE.LINK, SE.L, YEAR, COVID, MONTH.LAB, COL1, COL2, COL3)) %>% 
+    {if (scale == "state") {
+      filter(., STATE == state)
+    } else {
+      .
+    }} %>% 
+    {if (metric_colname == "URBAN") {
+      # we want to show declines due to COVID in the vis, so we need 1 - urb. prop.
+      mutate(., PRED = 1 - PRED) %>% 
+        get_CI_lims()
+    } else {
+      .
+    }}
+  
+  reference <- tojoin %>% 
+    filter(M.YEAR == 2018) %>% 
+    distinct(MONTH, PRED, SE) %>% 
+    magrittr::set_colnames(c("MONTH", "PRED.REF", "SE.REF"))
+  
+  tojoin <- tojoin %>% 
+    left_join(reference) %>% 
+    group_by(MONTH, M.YEAR, COVID.MONTH) %>% 
+    summarise_div_and_se(PRED, SE, PRED.REF, SE.REF) %>% 
+    mutate(METRIC = metric_colname)
+  
+  if (is.null(base)) {
+    return(tojoin)
+  } else {
+    return(bind_rows(base, tojoin))
+  }
+  
+}
+
+
 ### joinmapvars ########################################
 
 # adapted from Ashwin's "addmapvars" function to allow use within data preparation steps
@@ -137,7 +274,7 @@ end <- "2021-12-31" # time period of mapping
 
 
 # creating folder to store MODIS data that will be downloaded
-MODISpath <- "data/in_LULC_MODIS/"
+MODISpath <- "00_data/in_LULC_MODIS/"
 dir.create(MODISpath, showWarnings=FALSE)
 
 
@@ -201,7 +338,7 @@ print("Created merged TIFF file")
 ### Modifying the MODIS data #######
 
 ## read in cropped and masked .tif
-rast <- raster::raster("data/in_LULC_MODIS/in_LULC_MODIS.tif")
+rast <- raster::raster("00_data/in_LULC_MODIS/in_LULC_MODIS.tif")
 
 
 ## reclassifying the raster as urban vs. non-urban 
@@ -225,7 +362,7 @@ rast_UNU <- rast_UNU %>%
   raster::aggregate(fact = 2, fun = rast_agg_fn) %>% 
   raster::aggregate(fact = 2, fun = rast_agg_fn)
 
-save(rast_UNU, file = "data/rast_UNU.RData")
+save(rast_UNU, file = "00_data/rast_UNU.RData")
 
 print("Reclassified and aggregated MODIS data")
 
@@ -365,7 +502,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     filter(!is.na(URBAN)) %>% 
     dplyr::select(-LONGITUDE, -LATITUDE)
   
-  save(lists_UNU, file = "data/lists_UNU.RData")
+  save(lists_UNU, file = "00_data/lists_UNU.RData")
   
   print("Added UNU information")
   
@@ -402,7 +539,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
 
   # filtering
   new_obsr_data <- new_obsr_data %>% anti_join(filtGA_d)
-  save(new_obsr_data, file = "data/new_obsr_data.RData")
+  save(new_obsr_data, file = "00_data/new_obsr_data.RData")
   
   print("Obtained new observer data")
   
@@ -420,8 +557,6 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ## for bird analyses (group acc filter different) ####
   
   data0_MY_b <- data %>% 
-    # this data (including latter months of 2018 only needed for bird behaviour section)
-    # so will later save separate data filtering out 2018 months
     filter(M.YEAR >= 2018) %>%
     anti_join(filtGA_b) %>% # removing data from group accounts
     # creating COVID factor
@@ -447,8 +582,11 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
   temp1 <- data0_MY_b %>%
+    # only complete
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
-    group_by(GROUP.ID) %>% slice(1) %>%
+    # false complete
+    group_by(GROUP.ID) %>% 
+    slice(1) %>%
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
              (DURATION.MINUTES < 3) | 
              (SUT < minsut & NO.SP <= 3)) %>%
@@ -495,17 +633,20 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   
   # sliced data which is what is required for analyses
+  
   data0_MY_b_slice_S <- data0_MY_b %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     slice(1) %>% 
     ungroup()
+  
+  set.seed(10)
   data0_MY_b_slice_G <- data0_MY_b %>% 
     group_by(GROUP.ID) %>% 
-    slice(1) %>%
+    slice_sample(n = 1) %>%
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
+  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
   lists_grids <- data0_MY_b_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
@@ -517,8 +658,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   data0_MY_b_slice_S <- data0_MY_b_slice_S %>% left_join(lists_grids)
   data0_MY_b_slice_G <- data0_MY_b_slice_G %>% left_join(lists_grids)
   
-  save(data0_MY_b, file = "data/data0_MY_b.RData")
-  save(data0_MY_b_slice_S, data0_MY_b_slice_G, file = "data/data0_MY_b_slice.RData")
+  save(data0_MY_b, file = "00_data/data0_MY_b.RData")
+  save(data0_MY_b_slice_S, data0_MY_b_slice_G, file = "00_data/data0_MY_b_slice.RData")
   
   print("Complete main data filtering for bird analyses!")
   
@@ -526,8 +667,6 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ## for birder analyses (group acc filter different) ####
   
   data0_MY_d <- data %>% 
-    # this data (including latter months of 2018 only needed for bird behaviour section)
-    # so will later save separate data filtering out 2018 months
     filter(M.YEAR >= 2018) %>%
     anti_join(filtGA_d) %>% # removing data from group accounts
     # creating COVID factor
@@ -553,8 +692,11 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
   temp1 <- data0_MY_d %>%
+    # only complete
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
-    group_by(GROUP.ID) %>% slice(1) %>%
+    # false complete
+    group_by(GROUP.ID) %>% 
+    slice(1) %>%
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
              (DURATION.MINUTES < 3) | 
              (SUT < minsut & NO.SP <= 3)) %>%
@@ -601,17 +743,20 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   
   # sliced data which is what is required for analyses
+  
   data0_MY_d_slice_S <- data0_MY_d %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     slice(1) %>% 
     ungroup()
+  
+  set.seed(10)
   data0_MY_d_slice_G <- data0_MY_d %>% 
     group_by(GROUP.ID) %>% 
-    slice(1) %>%
+    slice_sample(n = 1) %>%
     ungroup()
   
   # adding map variables (CELL.ID) to main data
-  load("data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
+  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
   
   lists_grids <- data0_MY_d_slice_G %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
@@ -623,8 +768,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   data0_MY_d_slice_S <- data0_MY_d_slice_S %>% left_join(lists_grids)
   data0_MY_d_slice_G <- data0_MY_d_slice_G %>% left_join(lists_grids)
   
-  save(data0_MY_d, file = "data/data0_MY_d.RData")
-  save(data0_MY_d_slice_S, data0_MY_d_slice_G, file = "data/data0_MY_d_slice.RData")
+  save(data0_MY_d, file = "00_data/data0_MY_d.RData")
+  save(data0_MY_d_slice_S, data0_MY_d_slice_G, file = "00_data/data0_MY_d_slice.RData")
   
   print("Completed main data filtering for birder analyses!")
   
@@ -703,9 +848,9 @@ boot_conf_GLMM = function(model,
 
   print(glue("Using {par_cores} cores."))
   
-  pred_bootMer <- bootMer(model, nsim = nsim, FUN = pred_fun,
-                          parallel = "snow", 
-                          use.u = FALSE, type = "parametric", 
+  pred_bootMer <- bootMer(model, FUN = pred_fun, 
+                          nsim = nsim, seed = 20231010, 
+                          parallel = "snow", use.u = FALSE, type = "parametric", 
                           ncpus = par_cores, cl = par_cluster)
   
   stopCluster(par_cluster)

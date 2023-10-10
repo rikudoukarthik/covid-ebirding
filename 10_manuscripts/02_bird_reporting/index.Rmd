@@ -1,0 +1,52 @@
+---
+title: 'No evidence at large scale for "return" of bird life in the Indian anthropause'
+bibliography: ../covid-ebirding.json
+csl: ../the-condor.csl
+link-citations: yes
+output: 
+  bookdown::word_document2:
+    number_sections: true
+    global_numbering: true
+    fig_caption: yes
+    reference_docx: ../rmd_word_template_journ_guide.docx
+---
+
+<!-- Knit the manuscript using: bookdown::render_book("10_manuscripts/02_bird_reporting/") -->
+
+```{r setup, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE}
+
+require(tidyverse)
+require(patchwork)
+require(glue)
+require(lubridate)
+# require(sf)
+# require(magick)
+require(flextable)
+
+
+theme_set(theme_classic(base_size = 16))
+
+covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
+urbrur_palette <- c("#8F85C1", "#A3383C")
+
+
+# functions
+source("../../00_scripts/functions.R")
+
+# month labels
+month_lab <- get_labelled_months()
+
+# loading data required for various summaries, tables and figures
+load("../../00_outputs/data_for_ms.RData")
+
+
+knitr::opts_chunk$set(
+  fig.retina=3,
+  echo = FALSE,
+  cache = FALSE, 
+  include = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```

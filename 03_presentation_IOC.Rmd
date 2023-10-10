@@ -75,9 +75,9 @@ theme(panel.grid = element_blank(),
 
 covid_palette <- c("#1B9E77", "#E89005", "#EF4050", "#9678B6")
 
-load("data/03_presentation_IOC.RData")
+load("00_data/03_presentation_IOC.RData")
 
-source("scripts/functions.R")
+source("00_scripts/functions.R")
 
 ```
 
@@ -443,7 +443,7 @@ class: middle
 library(tidyverse)
 library(lubridate)
 
-x <- read_csv("data/covid_classification.csv") %>% 
+x <- read_csv("00_data/covid_classification.csv") %>% 
   filter(!is.na(COVID)) %>% 
   mutate(DATE = as.Date(paste(YEAR, MONTH, "01", sep = "-")),
          COVID = factor(COVID, levels = c("BEF", "DUR_20", "DUR_21", "AFT")))
@@ -760,7 +760,7 @@ class: center, middle
 
 ```{r fig.dim=c(16,6)}
 
-load("data/birds_bang.RData")
+load("00_data/birds_bang.RData")
 
 (ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
@@ -788,7 +788,7 @@ class: center, middle
 
 ```{r fig.dim=c(16,6)}
 
-load("data/birds_bang.RData")
+load("00_data/birds_bang.RData")
 
 (ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
@@ -815,7 +815,7 @@ class: center, middle
 
 ```{r fig.dim=c(16,6)}
 
-load("data/birds_bang.RData")
+load("00_data/birds_bang.RData")
 
 (ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),
@@ -845,7 +845,7 @@ class: center, middle
 
 ```{r fig.dim=c(16,6)}
 
-load("data/birds_bang.RData")
+load("00_data/birds_bang.RData")
 
 (ggplot(bang1, aes(M.YEAR, REP.FREQ.PRED, col = SP.CATEGORY)) +
     scale_color_manual(values = c("#8F85C1", "#A3383C"),

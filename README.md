@@ -15,21 +15,21 @@ The analysis is centred around eBird data from India, which is publicly availabl
 
 **Reproducible**
 
--   [*MODIS Land Cover Type Product MCD12Q1*](https://lpdaac.usgs.gov/products/mcd12q1v006/): The data used in the study is available in `data/in_LULC_MODIS/` & `data/rast_UNU.RData`, but it is recommended to delete those files before starting the analysis. This will then force `getmodisdata()` from `scripts/functions.R` to run and produce fresh LULC data files from MODIS.
--   *List of group accounts*: Available `data/ebd_users_GA_relMay-2022.csv`. See [here](https://github.com/birdcountindia/ebird-datasets#group-accounts) for rationale on why group account data need to be filtered out in these analyses.
--   *Timeline of COVID classification*: Available `data/covid_classification.csv`. Classification of the timeline of interest into various COVID categories.
+-   [*MODIS Land Cover Type Product MCD12Q1*](https://lpdaac.usgs.gov/products/mcd12q1v006/): The data used in the study is available in `00_data/in_LULC_MODIS/` & `00_data/rast_UNU.RData`, but it is recommended to delete those files before starting the analysis. This will then force `getmodisdata()` from `00_scripts/functions.R` to run and produce fresh LULC data files from MODIS.
+-   *List of group accounts*: Available `00_data/ebd_users_GA_relMay-2022.csv`. See [here](https://github.com/birdcountindia/ebird-datasets#group-accounts) for rationale on why group account data need to be filtered out in these analyses.
+-   *Timeline of COVID classification*: Available `00_data/covid_classification.csv`. Classification of the timeline of interest into various COVID categories.
 
 ## Workflow
 
 ### Data preparation
 
-`03_wrap.Rmd` is the place to start for the main analyses. This loads all necessary data (and processes it where required), packages and other scripts/functions. It is essentially a setup file.
+`03_wrap.Rmd` is the place to start for the main analyses. This loads all necessary data (and processes it where required), packages and other 00_scripts/functions. It is essentially a setup file.
 
-Lines 80--92 should be unhashed when running the analysis for the first time, as this will activate `data_qualfilt_prep()` from `scripts/functions.R`. In subsequent runs, the lines can be hashed again, since various `.RData` and other data files will have been generated in the original data filtering, processing and preparation step.
+Lines 80--92 should be unhashed when running the analysis for the first time, as this will activate `data_qualfilt_prep()` from `00_scripts/functions.R`. In subsequent runs, the lines can be hashed again, since various `.RData` and other data files will have been generated in the original data filtering, processing and preparation step.
 
 ### Analysis
 
-Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`03_wrap_figs/`) and summary data (`outputs/`), which can be directly utilised further downstream.
+Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`03_wrap_figs/`) and summary data (`00_outputs/`), which can be directly utilised further downstream.
 
 ### Manuscript
 
@@ -43,7 +43,7 @@ Some aspects or elements of the final manuscript are **non-reproducible**. They 
 
 **Model summary tables**
 
-Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`outputs/`) into a simple and neat table using `knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
+Due to the difficulty in converting the raw summary objects of LMMs/GLMMs into informative summary tables programmatically, the current heuristic is to take fixed effects information directly from the model summary output (`00_outputs/`) into a simple and neat table using `knitr::kable()`, while the random effects information as well as other elements of the table caption are altered manually each time. See last section of `12_manuscript_supp.Rmd` for details.
 
 **Main text and supplementary material**
 

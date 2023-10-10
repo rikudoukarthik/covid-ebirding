@@ -1,0 +1,108 @@
+# Abstract {.unnumbered}
+
+The recent anthropause has had impacts on not just human life but also wildlife. In many cases across North America and Europe, birds seemed to respond to lowered human activity with rapid changes in behaviour (e.g., song, detectability), abundance or even occurrence. The anthropause and associated changes, however, did not always benefit the birds, suggesting that the relationships between birds and human activity are complex and context-dependent. To investigate how birds responded to lowered human activity during the pandemic in India, we explored how bird species reporting on a citizen science platform, eBird, changed during the pandemic. We examined patterns of modelled reporting frequencies for select species across different years. Our analysis revealed no predictable difference between these reporting frequencies in the pandemic years and those in the previous and following years. We also found no clear evidence of bird communities becoming more or less abundant during the pandemic, or of urban bird species being reported more frequently than birds of rural areas where the magnitude of the anthropause was likely to be lower (after accounting for existing differences). Therefore, our study finds no compelling evidence for the popular sentiment of birds "returning" to human-inhabited areas in India during the COVID-19 anthropause. This underscores the importance of appropriate, data-driven, and context-specific analyses, and cautions against making broad global generalisations.
+
+# Keywords {.unnumbered}
+
+Anthropause, bird monitoring, COVID-19 pandemic, eBird, urban birds
+
+\newpage
+
+# Introduction
+
+## The anthropause in India
+
+COVID-19 was the deadliest pandemic of the 21st century, and resulted in major widespread disruption in human life [see @bates2020]. This anthropause [@rutz2020] has had several cascading impacts, including on wildlife and the environment. Researchers put in effort towards utilising this unique opportunity (of greatly reduced human activity) to better understand the impact of human activities on wildlife, by studying how wildlife responded to the anthropause [@bates2020].
+
+The government in India, like elsewhere, had taken several steps to minimise the spread of the COVID-19 pandemic. The most severe restrictions and regulations such as curfews, quarantines, and shutting down of non-essential public services and activities, happened to fall in the months of April--May in both 2020 and 2021. A nationwide total lockdown was implemented just before April 2020 [@bbcnews2020] and continued until late May [@banerjea2020] when the first wave started to subside. The second wave in India started to peak in May 2021, with a higher fatality rate than the first wave, provoking numerous statewide lockdowns and regulations in the absence of a nationwide lockdown [@theindianexpress2021]. The other months of the pandemic years saw lower and varying degrees of regulations and preventive measures across space and time.
+
+In the big picture, this could have led to lower overall impact of and adherence to regulations due to India's unique socioeconomic, cultural and political position. For instance, social distancing measures have much lower epidemiological and welfare value in lower-income countries such as India than higher-income countries, because they usually necessitate economic sacrifices [@barnett-howell2021]. Indeed, there was a decline in adherence to social distancing measures that cut across socioeconomic strata in India [@schaner2022]. For all these reasons, the magnitude of the anthropause itself could have been more muted in India than in other countries, particularly in the West.
+
+Nevertheless, these periods of restricted human activity were accompanied by the strong media narrative of wildlife making a comeback, "[reclaiming] their territory" [@karmakar2020] both in India as well as across the globe [@downtoearth2020; see @grandoni2023]. While this surge of anecdotal accounts was followed by empirical tests in certain countries, such formal analyses have been very limited in India, and more broadly the Global South. Moreover, the few existing studies in India that did find pandemic-induced changes were focused on mammals, which are a group of large-ranging animals and showed novel ranging dynamics that were inconsistent across species [@behera2022; see also @tucker2023]. As such, there is currently no clear and consistent evidence in India of direct pandemic impacts on bird life, i.e., of birds "making a comeback" to urban areas in India.
+
+## Birds in the anthropause
+
+Our knowledge of bird behavioural traits and abundances changing rapidly during the anthropause---and evidence that the popular "comeback" narrative was not just a result of people paying more attention---is limited to individual (often contradictory) cases from outside India. Birds adjusted song traits in response to lowered anthropogenic noise in San Francisco, USA [@derryberry2020], and in parts of Spain became more detectable in urban areas despite similar occurrence rates [@gordo2021]. In the Pacific Northwest of USA, many bird species responded behaviourally to day-to-day changes in human activity [@sanderfoot2022]. Across North America, during the period of most stringent restrictions, some species showed a decline but most increased in abundance in areas that saw a decrease in human activity [@schrimpf2021].
+
+In contrast, abundances of some species tightly linked to human presence and activity like the Feral Pigeon in Singapore went down [@soh2021]. Reduced human disturbance in urban areas did not necessarily result in increased reproductive output [@seress2021], and in fact even had adverse fitness consequences on some species through increased predation rates [e.g., @hentati-sundberg2021].
+
+Further, from the definition of anthropause as the substantial decline in human mobility and activity during COVID-19 lockdowns [@rutz2020], it follows that the anthropause was more pronounced in urban areas where human mobility and activity are highest. Therefore, any impacts of the pandemic should be stronger in urban bird species than species of rural areas where the decline in human activity was likely less substantial. For instance, species that prefer urban habitats could have been reported more regularly during the pandemic than in the years before and after.
+
+India is a large country with diverse landscapes, habitats, and even social and policy environments, in addition to harbouring 12% of the world's bird species---all of which can affect how birds responded to the anthropause and the consequent large-scale patterns of pandemic impacts. Importantly, there is substantial evidence that humans have both positive and negative impacts on wildlife and the environment [@bates2021], and that there are several idiosyncrasies and nuances that need to be taken into consideration before generalising local patterns. Because of the uniqueness of India's response to the pandemic outlined earlier, we can also expect bird responses to the Indian anthropause to have been unique.
+
+## Our aim
+
+The question therefore remains about whether or not abundances of Indian birds were impacted by the pandemic, and whether notable changes were consistent across species, space and time. To answer this question, a large-scale analytical approach that considers nuances over this vast area is required. The data uploaded by birdwatchers (hereafter birders) to citizen science (CS) projects like eBird [@sullivan2014] enables robust scientific analysis and output at large scales [@kelling2019] and represents a good option. Among its various utilities is the estimation and monitoring of large-scale trends in bird abundance over time, using an index of abundance [see e.g., @viswanathanetalSoIB]. Therefore, we wanted to understand whether or not this index of abundance changed predictably during the COVID-19 pandemic for Indian bird species, and how consistently they did so across species, space and time.
+
+# Methods
+
+we wanted to determine whether these patterns were due to birds indeed responding to the anthropause by changes in their behaviour or abundance (true abundance x detectability, as a caveat of method used), or if the few short-lived changes in birder behaviour were in fact responsible for artefactual patterns in bird reporting.
+
+All the metrics except temporal spread were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in response to the pandemic owing to differences in local governance, policy and general public perspective.
+
+...
+
+We obtained eBird data in a form appropriate for our analyses by filtering and processing the dataset following the steps outlined in @thrikkadeerip1inpress. thus obtaining.. linking checklists to grids, urban rural etc.
+
+Since the magnitude of the anthropause was higher in urban areas than in rural areas, its impacts on bird life would also have been more prominent in urban birds. For instance, if species became more abundant or detectable during the pandemic due to lowered noise levels and other human disturbances, this should correlate with consistent increases in reporting frequencies across urban species. On the other hand, spurious patterns due to the sensitivity of eBird data to effort expended for data collection by birders [@johnston2021] could make it difficult to infer about actual responses of birds. For instance, the short-term pandemic-induced urban bias [@thrikkadeerip1inpress] could have manifested as consistent declines in reporting frequencies across rural species.
+
+Thus, to ascertain whether bird species reporting changed at all during the pandemic, we conducted two major analyses (see below), each involving two sets of regularly and easily observed bird species. One set comprised "urban" species common in human-dominated areas and the other comprised common non-urban or "rural" species that are often found even just adjacent to urban areas. Since not all species are widespread and equally abundant in different parts of the country, there were a few replacements in the species sets for different regions. Overall, we considered `r n_distinct(species_list$COMMON.NAME)` species in this study, of which `r n_distinct((species_list %>% filter(SP.CATEGORY == "U"))$COMMON.NAME)` were classified as urban and `r n_distinct((species_list %>% filter(SP.CATEGORY == "R"))$COMMON.NAME)` as rural. Details of the region-wise species sets are provided in Table \@ref(tab:reg-spec).
+
+```{r reg-spec, tab.cap='Region-wise species sets for which overall reporting patterns were analysed. “+” indicates species that were included in the analysis for the different states.'}
+
+# regionwise species sets used in analyses
+
+species_list %>% 
+  mutate(STATE = factor(STATE, levels = c("Karnataka", "Kerala", "Maharashtra", "Assam")),
+         SP.CATEGORY = factor(SP.CATEGORY, levels = c("U", "R"))) %>% 
+  distinct(SP.CATEGORY, STATE, COMMON.NAME) %>% 
+  arrange(SP.CATEGORY, STATE) %>% 
+  mutate(PRESENT = "+") %>% 
+  pivot_wider(names_from = "STATE", values_from = "PRESENT") %>% 
+  mutate(SP.CATEGORY = ifelse(SP.CATEGORY == "U", "Urban", "Rural")) %>% 
+  rename(Species = COMMON.NAME, `Species category` = SP.CATEGORY) %>% 
+  # flextable
+  flextable() %>% 
+  set_table_properties(layout = "autofit") %>% 
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  align(align = "center", part = "all") %>% 
+  align(align = "left", j = "Species", part = "all")
+
+```
+
+## Species reporting across all locations
+
+country level?
+
+In each of the four states analysed in our study, we also selected one of their large metropolitan (urban) cities. For every species in the corresponding regional species set, we visualised individual species reporting patterns at two temporal (months, years) and spatial (city, state) scales. This was done by calculating the reporting frequency (proportion of qualifying checklists in which a species was reported), taken as an index of abundance, for each species at each scale. In this study, "years" refer to "migratory years" (MY) which start in June of one calendar year and end in May of the next [see Supplementary Material in @thrikkadeerip1inpress for rationale].
+
+We then pooled data from all urban and all rural species, and analysed whether overall species reporting patterns at the large scale (migratory year & state) were affected by the pandemic. This gave us an idea of how urban and rural species idiosyncratically differed in terms of general reporting, how species reporting varied across multiple urban areas and how this averaged out over a large spatial scale, and how species reporting varied over the course of a year and how this variation was expressed at the large temporal scale. Kamrup Metropolitan, the metropolitan capital of the state of Assam, did not have sufficient data for visualisation of month-level or year-level patterns, so this combination was dropped.
+
+## Species reporting at locations with consistent effort
+
+rationale behind prolific birders
+
+The quality of CS data is contingent on observer effort; it is possible for changes in observer effort (driven by observer behaviour) to produce artefactual changes in metrics such as reporting frequency [@johnston2021], which makes it difficult to make inferences from such data. Hence, in order to ensure that the patterns visible in overall bird species reporting at the large scale are not driven by changes in data quantity and quality, we conducted a similar analysis using data only from "prolific" birders having both sufficient and consistent effort (see Section \@ref(prolific-def) for definitions). Since effort and detection rates are relatively unchanged, this analysis allows us to make a reasonable conclusion regarding true changes in bird abundance, which is a combination of the bird's true abundance and its behavioural characteristics like detectability and boldness.
+
+From the set of species analysed in the previous section, we first filtered out species uncommon at each "prolific" birding location, retaining only those with an overall reporting frequency (over the entire study period) of at least 15%. Next, from the set of species that passed the first filter, we removed those that appeared in only one location (i.e., was observed by only one prolific birder), since a factor with only one level cannot be used as a random effect in a GLMM. Finally, if any prolific birder (their location) was left with species falling in only a single species category (i.e., only urban or only rural) after the filters, they were excluded from the analysis.
+
+## Statistics
+
+We followed the same hierarchy of analyses described in Section \@ref(model-boot). Due to strikingly obvious differences in birding conditions between the lockdown and non-lockdown periods (and due to large differences in results from both approaches), we ran three separate models: one for the months of April and May ("lockdown"), one for the other ten months ("non-lockdown"), and one for all twelve months together ("all"). This was to avoid any disproportionate influence of all other months on the parameter estimates for the "lockdown" period.
+
+For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided in Section \@ref(modelspecs-b). All GLMMs were fit with binomial error distribution and cloglog link function, using the BOBYQA optimiser, except in `r (length(fail_spec_KL) + length(fail_spec_MH))` (`r length(fail_spec_KL)` of Kerala, `r length(fail_spec_MH)` of Maharashtra) of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
+
+Diagnostics were not inspected separately for the bird reporting models due to the large number of models fitted. Mean and CI estimates were obtained in the same way as outlined in Section \@ref(model-boot), but with 500 simulations instead of 1000, due to computational limitations.
+
+## Software
+
+All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@positteam2022]. Figures were made using the packages *ggplot2* [@wickham2016] and *patchwork* [@pedersen2020]. In addition, packages *sf* [@pebesma2018], *spdep* [@bivand2022], *raster* [@hijmans2022], *terra* [@hijmans2022a] and *geodata* [@hijmans2022b] for spatial analyses, as well as *lubridate* [@grolemund2011], *glue* [@hester2022] and *tictoc* [@izrailev2021] were used. The source code for the entire analysis, from data preparation to statistical validation of metrics and to producing the final manuscript, is available on the [GitHub repository](https://github.com/rikudoukarthik/covid-ebirding) for the study.
+
+# References
+
+::: {#refs}
+:::
+
+\newpage
+
+Supplementary Online Material (SOM) is available.

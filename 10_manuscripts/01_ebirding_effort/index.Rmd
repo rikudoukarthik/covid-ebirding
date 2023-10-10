@@ -1,0 +1,137 @@
+---
+title: "Birdwatchers' resilience to perturbation in India buffers citizen science from pandemic-induced biases"
+bibliography: ../covid-ebirding.json
+csl: ../the-condor.csl
+link-citations: yes
+output: 
+  bookdown::word_document2:
+    number_sections: true
+    global_numbering: true
+    fig_caption: yes
+    reference_docx: ../rmd_word_template_journ_guide.docx
+---
+
+<!-- Knit the manuscript using: bookdown::render_book("10_manuscripts/01_ebirding_effort/") -->
+
+```{r setup, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE}
+
+require(tidyverse)
+require(patchwork)
+require(glue)
+require(lubridate)
+require(sf)
+require(magick)
+require(scales)
+require(ggpubr) # parallel coordinates plot
+require(ggtext) # markdown in ggplot text
+
+
+# theme
+theme_set(theme_classic(base_size = 16))
+
+covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
+covid_bin_palette <- c("#00B8B8", "#CC0000")
+# covid_bin_palette <- c("#369FD3", "#930000")
+urbrur_palette <- c("#8F85C1", "#A3383C")
+
+
+# functions
+source("../../00_scripts/functions.R")
+
+create_composite_graph <- function(scale = "country", state = NULL, 
+                                   data_master = data_list, ylab = TRUE) {
+  
+data0 <- join_metric_composite(base = NULL, 
+                               data_master[1], "GROUP", scale, state) %>% 
+  join_metric_composite(data_master[2], "SITES", scale, state) %>% 
+  join_metric_composite(data_master[3], "TIME", scale, state) %>% 
+  join_metric_composite(data_master[4], "HOTSPOT", scale, state) %>% 
+  join_metric_composite(data_master[5], "TRAVELLING", scale, state) %>% 
+  join_metric_composite(data_master[6], "DISTANCE", scale, state) %>% 
+  join_metric_composite(data_master[7], "DURATION", scale, state) %>% 
+  join_metric_composite(data_master[8], "LENGTH", scale, state) %>% 
+  join_metric_composite(data_master[9], "URBAN", scale, state) %>% 
+  join_metric_composite(data_master[10], "COVER", scale, state) %>% 
+  # summarising across metrics and months while propagating error
+  group_by(M.YEAR, COVID.MONTH) %>% 
+  summarise_mean_and_se(PRED, SE) %>% 
+  get_CI_lims()
+
+lab_y <- if (ylab == FALSE) NA else "Data quality metrics<br>(prop. change from t~0~ = 2018\u201319)"
+
+plot0 <- data0 %>% 
+  ggplot(aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
+  geom_ribbon(mapping = aes(ymin = CI.L, ymax = CI.U, fill = COVID.MONTH, colour = COVID.MONTH),
+              alpha = 0.5, linewidth = 1) +
+  geom_hline(yintercept = 1, linewidth = 1) +
+  geom_vline(xintercept = c(2019, 2020, 2021), linetype = "dashed", linewidth = 0.5) +
+  annotate("text",
+           y = 0.2, x = c(2018.92, 2019.92, 2020.92), angle = 90, size = 5,
+           label = c("2019\u201320", "2020\u201321", "2021\u201322")) +
+  scale_colour_manual(values = covid_bin_palette,
+                      name = "Months of year", 
+                      labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
+  scale_fill_manual(values = covid_bin_palette,
+                    name = "Months of year", 
+                    labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
+  scale_y_continuous(limits = c(-0.002, 2.1)) +
+  scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322"),
+                     limits = c(2018, 2021.003)) +
+  labs(x = "Migratory Year", 
+       y = lab_y) +
+  coord_cartesian(expand = FALSE) +
+  guides(fill = guide_legend(byrow = TRUE), colour = guide_legend(byrow = TRUE)) +
+  theme(legend.position = c(0.84, 0.9),
+        axis.line.y = element_line(linewidth = 1, arrow = grid::arrow()),
+        axis.title.y = element_markdown(lineheight = 1.2, margin = margin(0, 10, 0, 0),
+                                        colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.ticks.length.y.left = unit(0.3, "cm"),
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.key.size = unit(0.5, "cm"),
+        legend.spacing.y = unit(0.3, "cm"),
+        plot.margin = margin(10, 20, 10, 20))
+
+return(plot0)
+  
+}
+
+# data
+
+# month labels
+month_lab <- get_labelled_months() %>% 
+    mutate(COVID.MONTH = ifelse(MONTH.LAB %in% c("Apr", "May"), TRUE, FALSE))
+
+# loading data required for various summaries, tables and figures
+load("../../00_outputs/data_for_ms.RData")
+
+
+# loading data of individual metrics
+data_list <- c("d01_group_po", "d02_fidelity_po", "d03_time_po", "d04_hotspot",
+               "d05_protocol", "d06_distance", "d07_duration", "d08_length", 
+               "d09a_s_UNU", "d09b_s_cover")
+data_pre <- "../../00_outputs/"
+# data_pre <- "00_outputs/"
+data_suf <- ".RData"
+
+walk(data_list, ~ {
+  load(glue("{data_pre}{.x}{data_suf}"))
+  data_int <- list(data0_a %>% left_join(month_lab), 
+                   data0_b %>% left_join(month_lab))
+  assign(x = .x, value = data_int, envir = .GlobalEnv)
+})
+
+
+knitr::opts_chunk$set(
+  fig.retina=3,
+  echo = FALSE,
+  cache = TRUE, 
+  include = TRUE,
+  message = FALSE, 
+  warning = FALSE
+)
+
+```
