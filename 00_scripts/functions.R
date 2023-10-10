@@ -557,8 +557,6 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ## for bird analyses (group acc filter different) ####
   
   data0_MY_b <- data %>% 
-    # this data (including latter months of 2018 only needed for bird behaviour section)
-    # so will later save separate data filtering out 2018 months
     filter(M.YEAR >= 2018) %>%
     anti_join(filtGA_b) %>% # removing data from group accounts
     # creating COVID factor
@@ -584,8 +582,11 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
   temp1 <- data0_MY_b %>%
+    # only complete
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
-    group_by(GROUP.ID) %>% slice(1) %>%
+    # false complete
+    group_by(GROUP.ID) %>% 
+    slice(1) %>%
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
              (DURATION.MINUTES < 3) | 
              (SUT < minsut & NO.SP <= 3)) %>%
@@ -632,13 +633,16 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   
   # sliced data which is what is required for analyses
+  
   data0_MY_b_slice_S <- data0_MY_b %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     slice(1) %>% 
     ungroup()
+  
+  set.seed(10)
   data0_MY_b_slice_G <- data0_MY_b %>% 
     group_by(GROUP.ID) %>% 
-    slice(1) %>%
+    slice_sample(n = 1) %>%
     ungroup()
   
   # adding map variables (CELL.ID) to main data
@@ -663,8 +667,6 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   ## for birder analyses (group acc filter different) ####
   
   data0_MY_d <- data %>% 
-    # this data (including latter months of 2018 only needed for bird behaviour section)
-    # so will later save separate data filtering out 2018 months
     filter(M.YEAR >= 2018) %>%
     anti_join(filtGA_d) %>% # removing data from group accounts
     # creating COVID factor
@@ -690,8 +692,11 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   # false complete lists (without duration info & 3 or fewer species, <3min, low SUT)
   temp1 <- data0_MY_d %>%
+    # only complete
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
-    group_by(GROUP.ID) %>% slice(1) %>%
+    # false complete
+    group_by(GROUP.ID) %>% 
+    slice(1) %>%
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
              (DURATION.MINUTES < 3) | 
              (SUT < minsut & NO.SP <= 3)) %>%
@@ -738,13 +743,16 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   
   
   # sliced data which is what is required for analyses
+  
   data0_MY_d_slice_S <- data0_MY_d %>% 
     group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
     slice(1) %>% 
     ungroup()
+  
+  set.seed(10)
   data0_MY_d_slice_G <- data0_MY_d %>% 
     group_by(GROUP.ID) %>% 
-    slice(1) %>%
+    slice_sample(n = 1) %>%
     ungroup()
   
   # adding map variables (CELL.ID) to main data

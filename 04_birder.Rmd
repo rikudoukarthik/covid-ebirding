@@ -8,35 +8,6 @@ editor_options:
 
 Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
 
-1.  Number of submitted checklists
-    1.  Total lists\
-    2.  Shared lists (use no. of obs.)\
-2.  Number of submitted checklists per observer
-    1.  Total lists\
-    2.  Shared lists (use no. of obs.)\
-3.  Hotspot birding\
-4.  Birding protocol\
-5.  Birding distance
-6.  Site fidelity per observer\
-7.  Habitats surveyed\
-8.  Spatial spread of birding activity. These spatial patterns will be explored at two scales too: nationwide and regional.
-    1.  Spatial spread by absences\
-    2.  Spatial spread by densities\
-9.  List duration
-10. List length\
-11. Birding time per observer (monthly for prelim, later maybe daily)\
-12. Temporal spread of birding activity
-    1.  Temporal spread within day (time-of-day)\
-    2.  Temporal spread within week (day-of-week)\
-13. Media\
-14. Number of new birders
-
-When running the actual models, observer will be used as a random effect because all of these metrics would vary differently from observer to observer.
-
-Post-presentation: regarding averaging national level patterns by state for some metrics, this means that means are manually calculated for states and the points plotted in the graph are only these single points per state (instead of all the raw data points).
-
-GLMMs for birder behaviour run only for the following metrics:
-
 -   Group birding per observer
 -   Site fidelity per observer
 -   Birding time per observer
@@ -47,8 +18,7 @@ GLMMs for birder behaviour run only for the following metrics:
 -   List length
 -   Proportion of urban birding
 -   Spatial coverage
--   Spatial spread (slightly different)
--   Temporal spread
+-   Spatial spread (not GLMM)
 
 These are usually driven by decision at the state level, so since the models are being run for the states individually, no need to consider district.
 
@@ -63,12 +33,12 @@ anal_name <- "d01_group_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_d_slice_S %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_d_slice_S %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
   ungroup()
@@ -101,8 +71,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -110,7 +79,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_d_slice_S %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -123,7 +92,7 @@ for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_d_slice_S %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(GROUP.BIRDING = if_else(NUMBER.OBSERVERS > 2, 1, 0)) %>%
@@ -165,8 +134,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -214,12 +182,12 @@ anal_name <- "d02_fidelity_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_d_slice_S %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_d_slice_S %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
   # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
@@ -259,8 +227,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -268,7 +235,7 @@ data0_a <- data0_a %>%
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_d_slice_S %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -281,7 +248,7 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_d_slice_S %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
@@ -329,8 +296,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -381,12 +347,12 @@ anal_name <- "d03_time_po"
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
 # taking data from all states instead of just chosen 4
-data0_a <- data0_MY_d_slice_S %>% 
+data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
          SE.LINK = NA)
 
-data_a <- data0_MY_d_slice_S %>% 
+data_a <- data0_MY_d_slice_G %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
   dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
   # log-transforming because Poisson GLMM won't be appropriate (zero is not a possible 
@@ -423,15 +389,14 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise LMMs ####
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
-data0_b <- data0_MY_d_slice_S %>% 
+data0_b <- data0_MY_d_slice_G %>% 
   filter(STATE %in% anal_states[1,]) %>% 
   tidyr::expand(nesting(STATE, MONTH, M.YEAR)) %>% 
   mutate(PRED.LINK = NA,
@@ -444,7 +409,7 @@ for (i in 1:4) { # for each state
 
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
-  data_b <- data0_MY_d_slice_S %>% 
+  data_b <- data0_MY_d_slice_G %>% 
     left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
     filter(MAIN.STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
@@ -490,8 +455,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -535,8 +499,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### Hotspot birding
 
-Not "per observer", as this metric from data POV.
-
 ```{r d04_hotspot, cache=TRUE, message=FALSE}
 
 anal_name <- "d04_hotspot"
@@ -552,12 +514,12 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
   ungroup()
 
 tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
@@ -584,8 +546,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -607,12 +568,12 @@ for (i in 1:4) { # for each state
     
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(HOTSPOT = if_else(LOCALITY.TYPE == "H", 1, 0)) %>%
     ungroup() 
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- glmer(HOTSPOT ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
@@ -647,8 +608,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -692,8 +652,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### Birding protocol
 
-Not "per observer", as this metric from data POV.
-
 ```{r d05_protocol, cache=TRUE, message=FALSE}
 
 anal_name <- "d05_protocol"
@@ -709,13 +667,13 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
                                            EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
   ungroup()
 
 tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 110 sec
@@ -741,8 +699,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -764,13 +721,13 @@ for (i in 1:4) { # for each state
     
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(TRAVELLING = if_else((PROTOCOL.TYPE == "Traveling" & 
                                              EFFORT.DISTANCE.KM > 0.3), 1, 0)) %>%
     ungroup()
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- glmer(TRAVELLING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
@@ -807,8 +764,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -850,8 +806,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### Birding distance
 
-Not "per observer", as this metric from data POV. Only considers travelling lists.
-
 ```{r d06_distance, cache=TRUE, message=FALSE}
 
 anal_name <- "d06_distance"
@@ -868,14 +822,14 @@ data0_a <- data0_MY_d_slice_G %>%
 
 data_a <- data0_MY_d_slice_G %>% 
   filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DISTANCE = log(EFFORT.DISTANCE.KM)) %>% 
   # because no other distribution family fits 
   ungroup() 
 
 
 tictoc::tic(glue("LMM for India"))
-model_a <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, 
                  control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 18 sec
@@ -901,8 +855,7 @@ data0_a <- data0_a %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>%
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise LMMs ####
@@ -925,13 +878,13 @@ for (i in 1:4) { # for each state
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
-    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(DISTANCE = log(EFFORT.DISTANCE.KM)) %>% 
     # because no other distribution family fits 
     ungroup() 
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
-  model_b <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, 
                    control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
@@ -967,8 +920,7 @@ data0_b <- data0_b %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -1013,8 +965,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### List duration
 
-Not "per observer", as this metric from data POV.
-
 ```{r d07_duration, cache=TRUE, message=FALSE}
 
 anal_name <- "d07_duration"
@@ -1030,14 +980,14 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
   # because no other distribution family fits 
   ungroup() 
 
 
 tictoc::tic(glue("LMM for India"))
-model_a <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, 
                  control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 35 sec
@@ -1063,8 +1013,7 @@ data0_a <- data0_a %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>%
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -1087,13 +1036,13 @@ for (i in 1:4) { # for each state
     
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(DURATION = log(DURATION.MINUTES)) %>% 
     # because no other distribution family fits 
     ungroup() 
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
-  model_b <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, 
                    control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
@@ -1129,8 +1078,7 @@ data0_b <- data0_b %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -1174,8 +1122,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 
 ### List length
 
-Not "per observer", as this metric from data POV.
-
 ```{r d08_length, cache=TRUE, message=FALSE}
 
 anal_name <- "d08_length"
@@ -1191,13 +1137,13 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
-  group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+  group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(LENGTH = log(NO.SP)) %>%
   # because no other distribution family fits 
   ungroup() 
 
 tictoc::tic(glue("LMM for India"))
-model_a <- lmer(LENGTH ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- lmer(LENGTH ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                 data = data_a, 
                 control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 38 sec
@@ -1224,8 +1170,7 @@ data0_a <- data0_a %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>%
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise LMMs ####
@@ -1247,13 +1192,13 @@ for (i in 1:4) { # for each state
     
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    group_by(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
+    group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
     dplyr::summarise(LENGTH = log(NO.SP)) %>%
     # because no other distribution family fits 
     ungroup() 
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
-  model_b <- lmer(LENGTH ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- lmer(LENGTH ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, 
                    control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() 
@@ -1288,8 +1233,7 @@ data0_b <- data0_b %>%
   mutate(PRED = exp(PRED.LINK),
          SE.L = exp(PRED.LINK - SE.LINK)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Saving analysis objects ####
@@ -1333,10 +1277,8 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
 ### Spatial spread and coverage
 
 1.  Urban:non-urban ratio in birding effort
-    -   Proportion of lists that are urban per grid cell\
     -   Proportion of lists that are urban per grid cell GLMM\
 2.  Spatial coverage (min. 10 lists per grid cell)
-    -   Proportion of total cells in country/state covered across months
     -   Proportion of total cells in country/state covered across months GLMM\
 3.  Spatial spread/evenness (25kmx25km cells; across 9 months) Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
     -   Raw change in no. of lists per district
@@ -1360,11 +1302,11 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
-  distinct(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
+  distinct(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
   ungroup()
 
 tictoc::tic(glue("GLMM for India"))
-model_a <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+model_a <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 300 sec (5 min)
@@ -1390,8 +1332,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -1413,11 +1354,11 @@ for (i in 1:4) { # for each state
   
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
-    distinct(M.YEAR, MONTH, CELL.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
+    distinct(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER, URBAN) %>%
     ungroup()
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
-  model_b <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|CELL.ID),
+  model_b <- glmer(URBAN ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
@@ -1453,8 +1394,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
@@ -1537,8 +1477,7 @@ data0_a <- data0_a %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 ##### Final analysis: statewise GLMMs ####
@@ -1605,8 +1544,7 @@ data0_b <- data0_b %>%
          # to transform lower bound of SE (not CI.L! think "mean +- SE")
          SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
   mutate(SE = PRED - SE.L) %>% 
-  mutate(CI.U = PRED + 1.96*SE,
-         CI.L = PRED - 1.96*SE) %>% 
+  get_CI_lims() %>% 
   left_join(timeline)
 
 
