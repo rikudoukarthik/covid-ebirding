@@ -24,6 +24,7 @@ require(magick)
 require(scales)
 require(ggpubr) # parallel coordinates plot
 require(ggtext) # markdown in ggplot text
+require(flextable)
 
 
 # theme
@@ -67,19 +68,20 @@ plot0 <- data0 %>%
   geom_vline(xintercept = c(2019, 2020, 2021), linetype = "dashed", linewidth = 0.5) +
   annotate("text",
            y = 0.2, x = c(2018.92, 2019.92, 2020.92), angle = 90, size = 5,
-           label = c("2019\u201320", "2020\u201321", "2021\u201322")) +
+           label = c("2019\u201320", "2020\u201321", "2021\u201322"),
+           colour = c("red", "red", "black")) +
   scale_colour_manual(values = covid_bin_palette,
                       name = "Months of year", 
                       labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
   scale_fill_manual(values = covid_bin_palette,
                     name = "Months of year", 
                     labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
-  scale_y_continuous(limits = c(-0.002, 2.1)) +
   scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322"),
                      limits = c(2018, 2021.003)) +
   labs(x = "Migratory Year", 
-       y = lab_y) +
-  coord_cartesian(expand = FALSE) +
+       y = lab_y,
+       title = if (scale == "state") (state) else NULL) +
+  coord_cartesian(expand = FALSE, ylim = c(-0.002, 2.1)) +
   guides(fill = guide_legend(byrow = TRUE), colour = guide_legend(byrow = TRUE)) +
   theme(legend.position = c(0.84, 0.9),
         axis.line.y = element_line(linewidth = 1, arrow = grid::arrow()),
@@ -93,13 +95,19 @@ plot0 <- data0 %>%
         axis.text.x = element_blank(),
         legend.key.size = unit(0.5, "cm"),
         legend.spacing.y = unit(0.3, "cm"),
-        plot.margin = margin(10, 20, 10, 20))
+        plot.margin = margin(10, 20, 10, 20),
+        plot.title = if (scale == "state") {
+          element_text(colour = "black", hjust = 0.5, vjust = 1, margin = margin(0, 0, 10, 0))
+        } else element_blank())
 
 return(plot0)
   
 }
 
 # data
+
+# our grid cells defined in deg
+grid_size_deg <- round(x = 25*1000/111111, digits = 3)
 
 # month labels
 month_lab <- get_labelled_months() %>% 
@@ -131,7 +139,8 @@ knitr::opts_chunk$set(
   cache = TRUE, 
   include = TRUE,
   message = FALSE, 
-  warning = FALSE
+  warning = FALSE,
+  eval.after = c("fig.cap", "tab.cap")
 )
 
 ```
