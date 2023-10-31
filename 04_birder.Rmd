@@ -48,7 +48,7 @@ model_a <- glmer(GROUP.BIRDING ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
                  data = data_a, family = binomial(link = "cloglog"),
                  nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
 tictoc::toc()
-# 220 sec
+# 160 sec
 
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -56,7 +56,7 @@ prediction <- split_par_boot(model = model_a,
                              new_data = data0_a, 
                              new_data_string = "data0_a", 
                              mode = "extra")
-tictoc::toc() # 205 min
+tictoc::toc() # 137 min
 
 
 for (i in 1:length(data0_a$MONTH)) {
@@ -249,8 +249,7 @@ for (i in 1:4) { # for each state
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
   data_b <- data0_MY_d_slice_G %>% 
-    left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-    filter(MAIN.STATE == anal_states[, i]) %>% 
+    filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
     dplyr::summarise(NO.SITES = log(n_distinct(CELL.ID))) %>% 
     ungroup() 
@@ -410,8 +409,7 @@ for (i in 1:4) { # for each state
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
   data_b <- data0_MY_d_slice_G %>% 
-    left_join(obs_mainstates, by = "OBSERVER.ID") %>% 
-    filter(MAIN.STATE == anal_states[, i]) %>% 
+    filter(STATE %in% anal_states[1,]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID) %>% 
     dplyr::summarise(BIRDING.TIME = log(sum(DURATION.MINUTES))) %>% 
     ungroup()
@@ -1137,6 +1135,8 @@ data0_a <- data0_MY_d_slice_G %>%
          SE.LINK = NA)
 
 data_a <- data0_MY_d_slice_G %>% 
+  # one list has 1 spuh and no species (due to slice_sample)
+  filter(NO.SP != 0) %>% 
   group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   dplyr::summarise(LENGTH = log(NO.SP)) %>%
   # because no other distribution family fits 
@@ -1448,7 +1448,7 @@ data_a <- data0_MY_d_slice_G %>%
   dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
   # threshold to consider cell "covered"
   group_by(M.YEAR, MONTH) %>% 
-  complete(CELL.ID = gridmapg1_IN$CELL.ID, fill = list(COVERED = 0)) %>% 
+  complete(CELL.ID = g1_in_sf$GRID.G1, fill = list(COVERED = 0)) %>% 
   ungroup()
 
 tictoc::tic(glue("GLMM for India"))
@@ -1496,15 +1496,17 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-  gridmapg1_ST_temp <- gridmapg1_ST %>% filter(STATE == anal_states[, i])
-    
+
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
     dplyr::summarise(COVERED = if_else(n_distinct(SAMPLING.EVENT.IDENTIFIER) >= 5, 1, 0)) %>% 
     # threshold to consider cell "covered"
     group_by(M.YEAR, MONTH) %>% 
-    complete(CELL.ID = gridmapg1_ST_temp$CELL.ID, fill = list(COVERED = 0)) %>% 
+    complete(CELL.ID = g1_st_sf %>% 
+               filter(STATE.NAME == anal_states[, i]) %>% 
+               pull(GRID.G1), 
+             fill = list(COVERED = 0)) %>% 
     ungroup()
   
   tictoc::tic(glue("GLMM for {anal_states[, i]}"))
