@@ -43,17 +43,7 @@ anal_states <- data.frame(a = "Karnataka",
                           d = "Assam")
 
 
-# boundary of India 
-india <- st_read(dsn = "00_data/in_2011", layer = "India_2011") %>% 
-  st_set_crs("+proj=longlat +datum=WGS84") %>% 
-  terra::vect()
-# state boundaries
-states <- st_read(dsn = "00_data/in_states_2019", layer = "in_states_2019") %>% 
-  terra::vect()
-
-india_sf <- india %>% 
-  st_as_sf() %>% 
-  dplyr::select(-DISTRICT) 
+load("00_data/maps_sf.RData")
 
 
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, 
@@ -77,52 +67,24 @@ if (!file.exists("00_data/in_LULC_MODIS/in_LULC_MODIS.tif") &
   print("MODIS data is ready to use!")
 }
 
-#  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
-tictoc::tic("Preparing data for analyses")
-rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
-senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
-datapath <- "00_data/ebd_IN_relMay-2022.RData"
-groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
-covidclasspath <- "00_data/covid_classification.csv"
-rast_UNU_path <- "00_data/rast_UNU.RData"
+# #  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
+# tictoc::tic("Preparing data for analyses")
+# rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
+# senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
+# datapath <- "00_data/ebd_IN_relMay-2022.RData"
+# groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
+# covidclasspath <- "00_data/covid_classification.csv"
+# rast_UNU_path <- "00_data/rast_UNU.RData"
+# 
+# data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
+#                    rast_UNU_path,
+#                    maxvel = 20, minsut = 2)
+# tictoc::toc()
 
-data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
-                   rast_UNU_path,
-                   maxvel = 20, minsut = 2)
-tictoc::toc()
 
 load("00_data/data0_MY_d_slice.RData")
-load("00_data/maps.RData")
+load("00_data/grids_st_sf.RData")
 
-
-load("00_data/maps_gridmapg1_IN.RData") # all cells within India
-
-
-states_sf <- statemap %>% 
-  st_as_sf() %>% 
-  dplyr::select(stname, geometry) %>% 
-  magrittr::set_colnames(c("STATE", "geometry")) %>% 
-  mutate(STATE = str_to_title(STATE)) %>% 
-  # replacing ampersand with "and"
-  mutate(STATE = str_replace(STATE, "&", "and")) %>% 
-  # corrections for Madhu's SPDF values
-  mutate(STATE = case_when(STATE == "Dadra and Nagar Have" ~ "Dadra and Nagar Haveli",
-                           STATE == "Andaman and Nicobar" ~ "Andaman and Nicobar Islands",
-                           TRUE ~ STATE))
-
-# getting total number of cells for country and states
-totcells_india <- gridmapg1_IN %>% 
-  st_drop_geometry() %>% 
-  dplyr::summarise(TOT.CELLS = n_distinct(CELL.ID))
-
-gridmapg1_ST <- states_sf %>% 
-  st_set_crs(st_crs(gridmapg1_IN)) %>% 
-  st_join(gridmapg1_IN) 
-  
-totcells_states <- gridmapg1_ST %>% 
-  st_drop_geometry() %>% 
-  group_by(STATE) %>% 
-  dplyr::summarise(TOT.CELLS = n_distinct(CELL.ID))
 
 ```
 
@@ -151,8 +113,9 @@ month_compar <- data0_MY_d_slice_G %>%
   filter(N == 3) %>%  # all 3 COVID categories
   dplyr::select(MONTH)
 
-# removing unnecessary objects from maps.RData
-rm(areag1, areag2, areag3, areag4, gridmapg2, gridmapg3, gridmapg4)
+# removing unnecessary objects from maps_sf.RData
+rm(g2_in_sf, g3_in_sf, g4_in_sf,
+   g2_st_sf, g3_st_sf, g4_st_sf)
 
 ```
 
