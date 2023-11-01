@@ -128,9 +128,12 @@ data_suf <- ".RData"
 walk(data_list, ~ {
   load(glue("{data_pre}{.x}{data_suf}"))
   data_int <- list(data0_a %>% left_join(month_lab), 
-                   data0_b %>% left_join(month_lab))
+                   data0_b %>% left_join(month_lab),
+                   model_a)
   assign(x = .x, value = data_int, envir = .GlobalEnv)
 })
+
+load("../../00_outputs/d09c_s_spread.RData")
 
 
 knitr::opts_chunk$set(
@@ -139,8 +142,7 @@ knitr::opts_chunk$set(
   cache = TRUE, 
   include = TRUE,
   message = FALSE, 
-  warning = FALSE,
-  eval.after = c("fig.cap", "tab.cap")
+  warning = FALSE
 )
 
 ```

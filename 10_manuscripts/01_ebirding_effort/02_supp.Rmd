@@ -62,18 +62,10 @@ $$log(metric) \sim year + year:month + (1/observer)$$
 
 ```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d01_group_po.RData")
-d1 <- data0_a %>% left_join(month_lab)
-
-load("../../00_outputs/d02_fidelity_po.RData")
-d2 <- data0_a %>% left_join(month_lab)
-
-load("../../00_outputs/d04_hotspot.RData")
-d3 <- data0_a %>% left_join(month_lab)
-
-load("../../00_outputs/d05_protocol.RData")
-d4 <- data0_a %>% left_join(month_lab)
-
+d1 <- d01_group_po %>% pluck(1)
+d2 <- d02_fidelity_po %>% pluck(1)
+d3 <- d04_hotspot %>% pluck(1)
+d4 <- d05_protocol %>% pluck(1)
 
 
 p1 <-
@@ -135,11 +127,18 @@ p4 <-
 
 ```{r long-changes-state, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d01_group_po.RData")
-d1 <- data0_b %>% filter(STATE == "Karnataka") %>% left_join(month_lab)
-d2 <- data0_b %>% filter(STATE == "Kerala") %>% left_join(month_lab)
-d3 <- data0_b %>% filter(STATE == "Maharashtra") %>% left_join(month_lab)
-d4 <- data0_b %>% filter(STATE == "Assam") %>% left_join(month_lab)
+d1 <- d01_group_po %>% 
+  pluck(2) %>% 
+  filter(STATE == "Karnataka")
+d2 <- d01_group_po %>% 
+  pluck(2) %>% 
+  filter(STATE == "Kerala")
+d3 <- d01_group_po %>% 
+  pluck(2) %>% 
+  filter(STATE == "Maharashtra")
+d4 <- d01_group_po %>% 
+  pluck(2) %>% 
+  filter(STATE == "Assam")
 
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -159,10 +158,8 @@ p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r urban-cov, fig.cap="Graphs of urban bias (A) and spatial coverage (B) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, out.width="100%", fig.height=9, out.height="100%", dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d09a_s_UNU.RData")
-d1 <- data0_a %>% left_join(month_lab)
-load("../../00_outputs/d09b_s_cover.RData")
-d2 <- data0_a %>% left_join(month_lab)
+d1 <- d09a_s_UNU %>% pluck(1)
+d2 <- d09b_s_cover %>% pluck(1)
 
 p1 <- ggplot(d1,
              aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -199,12 +196,9 @@ p2 <- ggplot(d2,
 
 ```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d06_distance.RData")
-d1 <- data0_a %>% left_join(month_lab)
-load("../../00_outputs/d07_duration.RData")
-d2 <- data0_a %>% left_join(month_lab)
-load("../../00_outputs/d08_length.RData")
-d3 <- data0_a %>% left_join(month_lab)
+d1 <- d06_distance %>% pluck(1)
+d2 <- d07_duration %>% pluck(1)
+d3 <- d08_length %>% pluck(1)
 
 p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   labs(x = "Month", y = "Birding distance\n(km)") +
@@ -237,9 +231,7 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```{r birding-time, fig.cap="Overall observer-level birding time at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=5, out.width="100%", dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d03_time_po.RData")
-
-  ggplot(data0_a %>% left_join(month_lab),
+  ggplot(d03_time_po %>% pluck(1),
          aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   labs(x = "Month", y = "Time spent birding\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
@@ -255,11 +247,41 @@ load("../../00_outputs/d03_time_po.RData")
 
 ```
 
+\newpage
+
 ## Tables
 
-```{r model-summ1, tab.cap='Model summary for group birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', eval.after=TRUE, out.width="100%"}
+```{r re-vars, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 
-load("../../00_outputs/d01_group_po.RData")
+# getting re_vars for table captions
+get_re_vars <- function(data) {
+  revar <- data %>% 
+    pluck(3) %>% 
+    lme4::VarCorr() %>% 
+    as.data.frame() %>% 
+    filter(grp != "Residual") %>%  # LMMs output additional row for residuals
+    pull(vcov) %>% 
+    round(digits = 3)
+  
+  return(revar)
+}
+
+re_var01 <- get_re_vars(d01_group_po)
+re_var02 <- get_re_vars(d02_fidelity_po)
+re_var03 <- get_re_vars(d03_time_po)
+re_var04 <- get_re_vars(d04_hotspot)
+re_var05 <- get_re_vars(d05_protocol)
+re_var06 <- get_re_vars(d06_distance)
+re_var07 <- get_re_vars(d07_duration)
+re_var08 <- get_re_vars(d08_length)
+re_var09a <- get_re_vars(d09a_s_UNU)
+re_var09b <- get_re_vars(d09b_s_cover)
+
+```
+
+```{r model-summ1, eval.after = "tab.cap", tab.cap=glue('Model summary for group birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var01}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d01_group_po %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -299,51 +321,11 @@ summary(model_a) %>%
 
 ```
 
-```{r model-summ2, tab.cap='Model summary for site fidelity at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
+\newpage
 
-load("../../00_outputs/d02_fidelity_po.RData")
+```{r model-summ2, eval.after = "tab.cap", tab.cap=glue('Model summary for site fidelity at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var02}. See model specifications described earlier.'), out.width="100%"}
 
-# random effect variance
-re_var <- model_a %>% 
-  lme4::VarCorr() %>% 
-  as.data.frame() %>% 
-  pull(vcov) %>% 
-  round(digits = 3)
-
-summary(model_a) %>% 
-  coef() %>% 
-  as.data.frame() %>% 
-  dplyr::select(1:2) %>% # estimate and SE only
-  rownames_to_column() %>% # fixef
-  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
-  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
-                                              "MONTH3" = "March",
-                                              "MONTH4" = "April",
-                                              "MONTH5" = "May",
-                                              "MONTH6" = "June",
-                                              "MONTH7" = "July",
-                                              "MONTH8" = "August",
-                                              "MONTH9" = "September",
-                                              "MONTH10" = "October",
-                                              "MONTH11" = "November",
-                                              "MONTH12" = "December"))) %>% 
-  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
-  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
-  flextable() %>%
-  set_table_properties(layout = "autofit") %>%
-  align(align = "center", part = "all") %>%
-  align(align = "left", j = "Fixed effect", part = "all") %>%
-  line_spacing(space = 1, part = "all") %>% 
-  padding(padding = 1.5, part = "body") %>%
-  fontsize(size = 7, part = "all") %>%
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  paginate(init = TRUE, hdr_ftr = TRUE)
-
-```
-
-```{r model-summ3, tab.cap='Model summary for hotspot birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
-
-load("../../00_outputs/d04_hotspot.RData")
+model_a <- d02_fidelity_po %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -383,51 +365,11 @@ summary(model_a) %>%
 
 ```
 
-```{r model-summ4, tab.cap='Model summary for travelling protocol birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
+\newpage
 
-load("../../00_outputs/d05_protocol.RData")
+```{r model-summ3, eval.after = "tab.cap", tab.cap=glue('Model summary for hotspot birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var04}. See model specifications described earlier.'), out.width="100%"}
 
-# random effect variance
-re_var <- model_a %>% 
-  lme4::VarCorr() %>% 
-  as.data.frame() %>% 
-  pull(vcov) %>% 
-  round(digits = 3)
-
-summary(model_a) %>% 
-  coef() %>% 
-  as.data.frame() %>% 
-  dplyr::select(1:2) %>% # estimate and SE only
-  rownames_to_column() %>% # fixef
-  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
-  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
-                                              "MONTH3" = "March",
-                                              "MONTH4" = "April",
-                                              "MONTH5" = "May",
-                                              "MONTH6" = "June",
-                                              "MONTH7" = "July",
-                                              "MONTH8" = "August",
-                                              "MONTH9" = "September",
-                                              "MONTH10" = "October",
-                                              "MONTH11" = "November",
-                                              "MONTH12" = "December"))) %>% 
-  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
-  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
-  flextable() %>%
-  set_table_properties(layout = "autofit") %>%
-  align(align = "center", part = "all") %>%
-  align(align = "left", j = "Fixed effect", part = "all") %>%
-  line_spacing(space = 1, part = "all") %>% 
-  padding(padding = 1.5, part = "body") %>%
-  fontsize(size = 7, part = "all") %>%
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  paginate(init = TRUE, hdr_ftr = TRUE)
-
-```
-
-```{r model-summ5, tab.cap='Model summary for list distance at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
-
-load("../../00_outputs/d06_distance.RData")
+model_a <- d04_hotspot %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -467,51 +409,11 @@ summary(model_a) %>%
 
 ```
 
-```{r model-summ6, tab.cap='Model summary for list duration at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
+\newpage
 
-# random effect variance
-re_var <- model_a %>% 
-  lme4::VarCorr() %>% 
-  as.data.frame() %>% 
-  pull(vcov) %>% 
-  round(digits = 3)
+```{r model-summ4, eval.after = "tab.cap", tab.cap=glue('Model summary for travelling protocol birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var05}. See model specifications described earlier.'), out.width="100%"}
 
-load("../../00_outputs/d07_duration.RData")
-
-summary(model_a) %>% 
-  coef() %>% 
-  as.data.frame() %>% 
-  dplyr::select(1:2) %>% # estimate and SE only
-  rownames_to_column() %>% # fixef
-  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
-  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
-                                              "MONTH3" = "March",
-                                              "MONTH4" = "April",
-                                              "MONTH5" = "May",
-                                              "MONTH6" = "June",
-                                              "MONTH7" = "July",
-                                              "MONTH8" = "August",
-                                              "MONTH9" = "September",
-                                              "MONTH10" = "October",
-                                              "MONTH11" = "November",
-                                              "MONTH12" = "December"))) %>% 
-  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
-  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
-  flextable() %>%
-  set_table_properties(layout = "autofit") %>%
-  align(align = "center", part = "all") %>%
-  align(align = "left", j = "Fixed effect", part = "all") %>%
-  line_spacing(space = 1, part = "all") %>% 
-  padding(padding = 1.5, part = "body") %>%
-  fontsize(size = 7, part = "all") %>%
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  paginate(init = TRUE, hdr_ftr = TRUE)
-
-```
-
-```{r model-summ7, tab.cap='Model summary for list length at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
-
-load("../../00_outputs/d08_length.RData")
+model_a <- d05_protocol %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -551,51 +453,11 @@ summary(model_a) %>%
 
 ```
 
-```{r model-summ8, tab.cap='Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
+\newpage
 
-load("../../00_outputs/d09a_s_UNU.RData")
+```{r model-summ5, eval.after = "tab.cap", tab.cap=glue('Model summary for list distance at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var06}. See model specifications described earlier.'), out.width="100%"}
 
-# random effect variance
-re_var <- model_a %>% 
-  lme4::VarCorr() %>% 
-  as.data.frame() %>% 
-  pull(vcov) %>% 
-  round(digits = 3)
-
-summary(model_a) %>% 
-  coef() %>% 
-  as.data.frame() %>% 
-  dplyr::select(1:2) %>% # estimate and SE only
-  rownames_to_column() %>% # fixef
-  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
-  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
-                                              "MONTH3" = "March",
-                                              "MONTH4" = "April",
-                                              "MONTH5" = "May",
-                                              "MONTH6" = "June",
-                                              "MONTH7" = "July",
-                                              "MONTH8" = "August",
-                                              "MONTH9" = "September",
-                                              "MONTH10" = "October",
-                                              "MONTH11" = "November",
-                                              "MONTH12" = "December"))) %>% 
-  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
-  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
-  flextable() %>%
-  set_table_properties(layout = "autofit") %>%
-  align(align = "center", part = "all") %>%
-  align(align = "left", j = "Fixed effect", part = "all") %>%
-  line_spacing(space = 1, part = "all") %>% 
-  padding(padding = 1.5, part = "body") %>%
-  fontsize(size = 7, part = "all") %>%
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  paginate(init = TRUE, hdr_ftr = TRUE)
-
-```
-
-```{r model-summ9, tab.cap='Model summary for birding time at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
-
-load("../../00_outputs/d03_time_po.RData")
+model_a <- d06_distance %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -635,7 +497,11 @@ summary(model_a) %>%
 
 ```
 
-```{r model-summ10, tab.cap='Model summary for spatial coverage at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is paste0(re_var). See model specifications described earlier.', out.width="100%"}
+\newpage
+
+```{r model-summ6, eval.after = "tab.cap", tab.cap=glue('Model summary for list duration at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var07}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d07_duration %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
@@ -644,7 +510,181 @@ re_var <- model_a %>%
   pull(vcov) %>% 
   round(digits = 3)
 
-load("../../00_outputs/d09b_s_cover.RData")
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
+  flextable() %>%
+  set_table_properties(layout = "autofit") %>%
+  align(align = "center", part = "all") %>%
+  align(align = "left", j = "Fixed effect", part = "all") %>%
+  line_spacing(space = 1, part = "all") %>% 
+  padding(padding = 1.5, part = "body") %>%
+  fontsize(size = 7, part = "all") %>%
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  paginate(init = TRUE, hdr_ftr = TRUE)
+
+```
+
+\newpage
+
+```{r model-summ7, eval.after = "tab.cap", tab.cap=glue('Model summary for list length at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var08}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d08_length %>% pluck(3)
+
+# random effect variance
+re_var <- model_a %>% 
+  lme4::VarCorr() %>% 
+  as.data.frame() %>% 
+  pull(vcov) %>% 
+  round(digits = 3)
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
+  flextable() %>%
+  set_table_properties(layout = "autofit") %>%
+  align(align = "center", part = "all") %>%
+  align(align = "left", j = "Fixed effect", part = "all") %>%
+  line_spacing(space = 1, part = "all") %>% 
+  padding(padding = 1.5, part = "body") %>%
+  fontsize(size = 7, part = "all") %>%
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  paginate(init = TRUE, hdr_ftr = TRUE)
+
+```
+
+\newpage
+
+```{r model-summ8, eval.after = "tab.cap", tab.cap=glue('Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var09a}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d09a_s_UNU %>% pluck(3)
+
+# random effect variance
+re_var <- model_a %>% 
+  lme4::VarCorr() %>% 
+  as.data.frame() %>% 
+  pull(vcov) %>% 
+  round(digits = 3)
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
+  flextable() %>%
+  set_table_properties(layout = "autofit") %>%
+  align(align = "center", part = "all") %>%
+  align(align = "left", j = "Fixed effect", part = "all") %>%
+  line_spacing(space = 1, part = "all") %>% 
+  padding(padding = 1.5, part = "body") %>%
+  fontsize(size = 7, part = "all") %>%
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  paginate(init = TRUE, hdr_ftr = TRUE)
+
+```
+
+\newpage
+
+```{r model-summ9, eval.after = "tab.cap", tab.cap=glue('Model summary for birding time at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var03}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d03_time_po %>% pluck(3)
+
+# random effect variance
+re_var <- model_a %>% 
+  lme4::VarCorr() %>% 
+  as.data.frame() %>% 
+  pull(vcov) %>% 
+  round(digits = 3)
+
+summary(model_a) %>% 
+  coef() %>% 
+  as.data.frame() %>% 
+  dplyr::select(1:2) %>% # estimate and SE only
+  rownames_to_column() %>% # fixef
+  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
+  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
+                                              "MONTH3" = "March",
+                                              "MONTH4" = "April",
+                                              "MONTH5" = "May",
+                                              "MONTH6" = "June",
+                                              "MONTH7" = "July",
+                                              "MONTH8" = "August",
+                                              "MONTH9" = "September",
+                                              "MONTH10" = "October",
+                                              "MONTH11" = "November",
+                                              "MONTH12" = "December"))) %>% 
+  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
+  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
+  flextable() %>%
+  set_table_properties(layout = "autofit") %>%
+  align(align = "center", part = "all") %>%
+  align(align = "left", j = "Fixed effect", part = "all") %>%
+  line_spacing(space = 1, part = "all") %>% 
+  padding(padding = 1.5, part = "body") %>%
+  fontsize(size = 7, part = "all") %>%
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  paginate(init = TRUE, hdr_ftr = TRUE)
+
+```
+
+\newpage
+
+```{r model-summ10, eval.after = "tab.cap", tab.cap=glue('Model summary for spatial coverage at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is {re_var09b}. See model specifications described earlier.'), out.width="100%"}
+
+model_a <- d09b_s_cover %>% pluck(3)
+
+# random effect variance
+re_var <- model_a %>% 
+  lme4::VarCorr() %>% 
+  as.data.frame() %>% 
+  pull(vcov) %>% 
+  round(digits = 3)
 
 summary(model_a) %>% 
   coef() %>% 

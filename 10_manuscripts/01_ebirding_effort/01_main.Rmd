@@ -46,7 +46,7 @@ Regardless of how much more or less data was generated during the pandemic, the 
 
 ## Our aim
 
-India's rapid recent progress in volunteer-driven bird monitoring is both unique and pioneering, showing the way forward to many countries in the Global South where large-scale resource-intensive systematic surveys may not be possible in the near future. The State of India's Birds reports [-@soib2020 and -@soib2023] have demonstrated that semi-structured monitoring can be immensely valuable for assessing the health of a region's birds. Because such assessments are intended to inform conservation policy, there is an urgent need to ensure robustness of birding and of the data to disruptive events like the COVID-19 pandemic or even potential future climate crises. Birders in India and elsewhere in the Global South, under such circumstances, may be expected to behave differently from those in North America and Europe (and therefore respond differently to events such as the COVID-19 pandemic) due to different socioeconomic realities, aspirations, and politics.
+India's rapid recent progress in volunteer-driven bird monitoring is both unique and pioneering, showing the way forward to many countries in the Global South where large-scale resource-intensive systematic surveys may not be possible in the near future. The State of India's Birds reports [-@soib2020] and [-@soib2023] have demonstrated that semi-structured monitoring can be immensely valuable for assessing the health of a region's birds. Because such assessments are intended to inform conservation policy, there is an urgent need to ensure robustness of birding and of the data to disruptive events like the COVID-19 pandemic or even potential future climate crises. Birders in India and elsewhere in the Global South, under such circumstances, may be expected to behave differently from those in North America and Europe (and therefore respond differently to events such as the COVID-19 pandemic) due to different socioeconomic realities, aspirations, and politics.
 
 In this study, we sought a comprehensive understanding of how birders in India may have changed their behaviour during the pandemic, and what this may indicate about the utility of the generated data. We specifically focused on the use of the platform eBird in India, and asked whether or not eBird data quantity and quality (characteristics) were similar before, during and after the pandemic. When not similar, we then tried to ascertain the extent of these changes, by assessing transience (peak pandemic months vs years) and spatial variation (states vs country). Finally, we used this understanding to synthesise the implications of the pandemic on the utility of eBird data for long-term bird monitoring---specifically for abundance trend estimation (in India and elsewhere in the Global South)---and also outlined guidelines for using this data for such applications.
 
@@ -316,8 +316,6 @@ Aside from these suggestions of direct impacts of the pandemic on birder behavio
 
 ```{r s-spread-figs-raw, fig.cap="Spatial spread: raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d09c_s_spread.RData")
-
 d1 <-
   temp1 %>% left_join(grid_dist_base0)
 d2 <-
@@ -387,8 +385,6 @@ Both transition periods (BEF--DUR and DUR--AFT) witnessed an overall positive ra
 
 ```{r s-spread-net, fig.cap="Net change across districts in number of lists (A), percentage grid coverage with no threshold (B) and thresholded percentage grid coverage (C) from before to during (BEF--DUR) and from during to after (DUR--AFT) the pandemic.", out.width="100%", fig.width=8, fig.height=7, dpi=300, dev="jpeg"}
 
-load("../../00_outputs/d09c_s_spread.RData")
-
 d1 <- temp2
 d2 <- temp6 %>% filter(METRIC == "GRID.COV")
 d3 <- temp6 %>% filter(METRIC == "GRID.COV.T")
@@ -425,8 +421,6 @@ p3 <- ggplot(d3, aes(x = T.LABEL, y = VALUE)) +
 ```
 
 ```{r s-spread-figs-prop, fig.cap="Spatial spread: proportional declines in number of lists per district in forward (top row) and backward (bottom row) transitions. Districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("../../00_outputs/d09c_s_spread.RData")
 
 d1 <-
   temp3 %>% left_join(grid_dist_base0)
