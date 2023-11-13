@@ -1,3 +1,41 @@
+# map EBD admin units to sf admin units ---------------------------------------------
+
+# main use is to resolve issue of same CELL.ID or COUNTY.CODE getting mapped to multiple
+# sf states/districts
+# we use similarity to limit this mapping to 1:1
+
+
+# function to calc similarity of two strings (https://stackoverflow.com/a/11535768/13000254)
+str_similarity <- function(x, y) {
+  
+  # Levenshtein edit distance
+  str_dist <- adist(x, y) %>% as.vector()
+  str_longer_length <- max(str_length(c(x, y)))
+  
+  str_simil <- 1 - (str_dist/str_longer_length)
+  return(str_simil)
+  
+}
+
+map_admin_ebd_sf <- function(data) {
+
+  mapping <- data %>% 
+    group_by(STATE, COUNTY.CODE, COUNTY, STATE.NAME, DISTRICT.NAME) %>% 
+    filter(!is.na(COUNTY.CODE)) %>% 
+    reframe(NO.LISTS = n_distinct(GROUP.ID)) %>% 
+    rowwise() %>% 
+    mutate(NAME.SIMILARITY = str_similarity(COUNTY, DISTRICT.NAME)) %>% 
+    arrange(desc(NAME.SIMILARITY), desc(NO.LISTS)) %>% 
+    group_by(STATE, COUNTY.CODE, COUNTY) %>% 
+    slice_head(n = 1) %>%
+    ungroup() %>% 
+    dplyr::select(-c(NAME.SIMILARITY, NO.LISTS)) %>% 
+    arrange(STATE, COUNTY.CODE)
+  
+  return(mapping)
+  
+}
+
 
 # get labelled months ---------------------------------------------------------------
 

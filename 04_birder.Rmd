@@ -1610,30 +1610,35 @@ data_spat <- data0_MY_d_slice_G %>%
                 DISTRICT.NAME, STATE.NAME, CELL.ID) %>% 
   left_join(region_codes, by = c("STATE", "COUNTY"))
 
+
+map_ebd_sf <- map_admin_ebd_sf(data_spat)
+
+
 # linking sf districts to EBD districts and grid cells
-dists_sf_ebd <- data_spat %>% 
-  distinct(CELL.ID, COUNTY.CODE, DISTRICT.NAME, STATE.NAME) %>% 
-  filter(!is.na(CELL.ID), !is.na(COUNTY.CODE), !is.na(DISTRICT.NAME), !is.na(STATE.NAME)) %>% 
+dists_ebd_sf <- data_spat %>% 
+  distinct(CELL.ID, COUNTY.CODE) %>% 
+  filter(!is.na(CELL.ID), !is.na(COUNTY.CODE)) %>% 
+  left_join(map_ebd_sf, by = "COUNTY.CODE") %>% 
   left_join(dists_sf %>% distinct(STATE.NAME, DISTRICT.NAME, DISTRICT.GEOM),
             by = c("STATE.NAME", "DISTRICT.NAME"))
 
 
-# for number of lists where no threshold for district consideration
 set.seed(31)
-grid_dist1 <- dists_sf_ebd %>% 
+# for number of lists 
+grid_dist_NL <- dists_ebd_sf %>% 
   st_drop_geometry() %>% 
   # Ensuring that a grid cell is only linked with one district
   group_by(CELL.ID) %>% 
-  slice_sample() %>% 
+  slice_sample(n = 1) %>% 
   group_by(COUNTY.CODE) %>% 
   mutate(NO.CELLS.TOT = n_distinct(CELL.ID)) %>% 
   ungroup() %>% 
   st_as_sf()
 
-grid_dist <- grid_dist1 %>% 
-  # considering only districts with at least 5 grid cells for grid coverage
+# for grid coverage
+grid_dist_GC <- grid_dist_NL %>% 
+  # considering only districts with at least 5 grid cells 
   filter(NO.CELLS.TOT >= 5)
-
 
 
 data_slice_G <- data0_MY_d_slice_G %>% 
@@ -1643,80 +1648,89 @@ data_slice_G <- data0_MY_d_slice_G %>%
                            M.YEAR == 2021 ~ "AFT")) %>% 
   mutate(COVID = factor(COVID, levels = c("BEF", "DUR", "AFT")))
 
-temp01 <- data_slice_G %>% 
-  inner_join(grid_dist1, by = c("CELL.ID")) 
 
-temp0 <- data_slice_G %>% 
-  inner_join(grid_dist, by = c("CELL.ID"))
+# starting data 
+temp0_NL <- data_slice_G %>% 
+  inner_join(grid_dist_NL, by = c("CELL.ID")) 
 
-dist_cons1 <- temp01 %>% 
+temp0_GC <- data_slice_G %>% 
+  inner_join(grid_dist_GC, by = c("CELL.ID"))
+
+
+# districts being considered for each
+dist_cons_NL <- temp0_NL %>% 
   distinct(COUNTY.CODE, NO.CELLS.TOT) %>% 
   arrange(COUNTY.CODE)
-dist_cons <- temp0 %>% 
+
+dist_cons_GC <- temp0_GC %>% 
   distinct(COUNTY.CODE, NO.CELLS.TOT) %>% 
   arrange(COUNTY.CODE)
 
-
-temp1 <- temp0 %>% 
-  # average gridcov across two DUR years
-  group_by(M.YEAR, STATE.NAME, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
-                   GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT),
-                   COVID = first(COVID)) %>% 
-  group_by(COVID, STATE.NAME, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  dplyr::summarise(GRID.COV = mean(GRID.COV)) %>% 
-  ungroup() %>% 
-  # only considering districts covered at least once in the four years
-  right_join(dist_cons %>% distinct(STATE.NAME, DISTRICT.NAME)) %>% 
-  group_by(STATE.NAME, DISTRICT.NAME) %>% 
-  complete(COVID, 
-           fill = list(GRID.COV = 0)) %>% 
-  ungroup() %>% 
-  dplyr::select(-NO.CELLS.TOT) %>% 
-  left_join(dist_cons)
-
-# for grid coverage per district with threshold
-temp2 <- temp0 %>% 
-  # average gridcov across two DUR years
-  group_by(M.YEAR, STATE.NAME, DISTRICT.NAME, NO.CELLS.TOT, CELL.ID) %>% 
-  dplyr::summarise(CELL.LISTS = n_distinct(GROUP.ID),
-                   COVID = first(COVID)) %>% 
-  # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
-  filter(CELL.LISTS >= 5) %>% 
-  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
-                   GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT),
-                   COVID = first(COVID)) %>% 
-  group_by(COVID, STATE.NAME, DISTRICT.NAME, NO.CELLS.TOT) %>% 
-  dplyr::summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
-  ungroup() %>% 
-  # only considering districts covered at least once in the four years
-  right_join(dist_cons %>% distinct(STATE.NAME, DISTRICT.NAME)) %>% 
-  group_by(STATE.NAME, DISTRICT.NAME) %>% 
-  complete(COVID, 
-           fill = list(GRID.COV = 0)) %>% 
-  ungroup() %>% 
-  dplyr::select(-NO.CELLS.TOT) %>% 
-  left_join(dist_cons)
 
 # for number of lists per district
-temp3 <- temp01 %>% 
+temp_NL <- temp0_NL %>% 
   # summarising metrics of interest (more districts for no.lists than for coverage)
-  group_by(COVID, STATE.NAME, DISTRICT.NAME) %>% 
+  group_by(COVID, COUNTY.CODE) %>% 
   dplyr::summarise(NO.LISTS = n_distinct(GROUP.ID)) %>% 
   ungroup() %>% 
   # only considering districts covered at least once in the four years
-  right_join(dist_cons1 %>% distinct(STATE.NAME, DISTRICT.NAME)) %>% 
-  group_by(STATE.NAME, DISTRICT.NAME) %>% 
+  inner_join(dist_cons_NL %>% distinct(COUNTY.CODE),
+             by = "COUNTY.CODE") %>% 
+  group_by(COUNTY.CODE) %>% 
   complete(COVID, 
            fill = list(NO.LISTS = 0)) %>% 
   ungroup() %>% 
   # since DUR is two years
   mutate(NO.LISTS = ifelse(COVID == "DUR", floor(NO.LISTS/2), NO.LISTS)) %>% 
-  left_join(dist_cons1)
+  left_join(dist_cons_NL, by = "COUNTY.CODE")
 
-data_spread0 <- temp3 %>% 
-  left_join(temp1) %>% 
-  left_join(temp2) %>% 
+# for grid coverage per district without threshold
+temp_GC1 <- temp0_GC %>% 
+  # average gridcov across two DUR years (since DUR is two years)
+  group_by(M.YEAR, COUNTY.CODE, NO.CELLS.TOT) %>% 
+  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
+                   GRID.COV = 100*NO.CELLS/min(NO.CELLS.TOT),
+                   COVID = first(COVID)) %>% 
+  group_by(COVID, COUNTY.CODE) %>% 
+  dplyr::summarise(GRID.COV = mean(GRID.COV)) %>% 
+  ungroup() %>% 
+  # only considering districts covered at least once in the four years
+  inner_join(dist_cons_GC %>% distinct(COUNTY.CODE),
+             by = "COUNTY.CODE") %>% 
+  group_by(COUNTY.CODE) %>% 
+  complete(COVID, 
+           fill = list(GRID.COV = 0)) %>% 
+  ungroup() %>% 
+  left_join(dist_cons_GC, by = "COUNTY.CODE")
+
+# for grid coverage per district with threshold
+temp_GC2 <- temp0_GC %>% 
+  # average gridcov across two DUR years (since DUR is two years)
+  group_by(M.YEAR, COUNTY.CODE, NO.CELLS.TOT, CELL.ID) %>% 
+  # threshold of 5 lists in a grid cell (per year) for the cell to be considered "covered"
+  dplyr::summarise(CELL.LISTS = n_distinct(GROUP.ID),
+                   COVID = first(COVID)) %>% 
+  filter(CELL.LISTS >= 5) %>% 
+  # grid coverage with threshold
+  dplyr::summarise(NO.CELLS = n_distinct(CELL.ID),
+                   GRID.COV.T = 100*NO.CELLS/min(NO.CELLS.TOT),
+                   COVID = first(COVID)) %>% 
+  group_by(COVID, COUNTY.CODE) %>% 
+  dplyr::summarise(GRID.COV.T = mean(GRID.COV.T)) %>% 
+  ungroup() %>% 
+  # only considering districts covered at least once in the four years
+  inner_join(dist_cons_GC %>% distinct(COUNTY.CODE),
+             by = "COUNTY.CODE") %>% 
+  group_by(COUNTY.CODE) %>% 
+  complete(COVID, 
+           fill = list(GRID.COV = 0)) %>% 
+  ungroup() %>% 
+  left_join(dist_cons_GC, by = "COUNTY.CODE")
+
+
+data_spread0 <- temp_NL %>% # NL has most districts
+  left_join(temp_GC1, by = c("COUNTY.CODE", "COVID", "NO.CELLS.TOT")) %>% 
+  left_join(temp_GC2, by = c("COUNTY.CODE", "COVID", "NO.CELLS.TOT")) %>% 
   pivot_longer(cols = c("NO.LISTS", "GRID.COV", "GRID.COV.T"),
                names_to = "METRIC", values_to = "VALUE") %>% 
   # some NAs produced for grid coverage because those districts don't qualify for coverage
@@ -1729,10 +1743,12 @@ data_spread0 <- temp3 %>%
          RAW.CHANGE2 = s_spread_change(DUR, AFT),
          PROP.CHANGE1a = s_spread_propchange(METRIC, BEF, DUR),
          PROP.CHANGE1b = s_spread_propchange(METRIC, DUR, AFT),
+         # reverse direction
          PROP.CHANGE2a = s_spread_propchange(METRIC, DUR, BEF),
          PROP.CHANGE2b = s_spread_propchange(METRIC, AFT, DUR)) %>% 
   # for district geometry
-  left_join(dists_sf)
+  left_join(dists_ebd_sf %>% distinct(COUNTY.CODE, STATE, COUNTY, DISTRICT.GEOM),
+            by = "COUNTY.CODE")
 
 
 transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
@@ -1740,7 +1756,7 @@ transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
                                            "During to Before", "After to During"))
 
 
-##### Change in birding effort per district ####
+##### Change in number of lists per district ####
 
 # 1. map of raw change
 # 2. with SEs of raw change
@@ -1750,13 +1766,13 @@ transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
 
 data_spread1 <- data_spread0 %>% 
   filter(METRIC == "NO.LISTS") %>% 
-  distinct(DISTRICT.NAME, DISTRICT.GEOM, RAW.CHANGE1, RAW.CHANGE2) %>% 
+  distinct(COUNTY.CODE, DISTRICT.GEOM, RAW.CHANGE1, RAW.CHANGE2) %>% 
   # pivoting longer for facetting
   pivot_longer(cols = c("RAW.CHANGE1", "RAW.CHANGE2"),
                names_to = "METRIC", values_to = "VALUE") %>% 
   mutate(T.CODE = case_when(str_detect(METRIC, "1") ~ "T1",
                             str_detect(METRIC, "2") ~ "T2")) %>% 
-  left_join(transition_names)
+  left_join(transition_names, by = "T.CODE")
 
 s_spread_map <- ggplot(data_spread1) +
   geom_sf(data = india_sf,
@@ -1791,16 +1807,16 @@ data_spread2 <- data_spread1 %>%
   filter(!is.na(VALUE)) %>% 
   group_by(T.CODE, T.LABEL) %>% 
   # this gives B number of means of bootstrapped samples
-  dplyr::summarise(VALUE = boot_conf(x = VALUE)) %>% 
+  reframe(VALUE = boot_conf(x = VALUE)) %>% 
   group_by(T.CODE, T.LABEL) %>% 
-  dplyr::summarise(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
-                   CI.U = stats::quantile(VALUE, 0.975),
-                   VALUE = median(VALUE)) 
+  reframe(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
+          CI.U = stats::quantile(VALUE, 0.975),
+          VALUE = median(VALUE)) 
 
 s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 4, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.75, width = 0.08, position = position_dodge(0.5)) +
+                linewidth = 1.75, width = 0.08, position = position_dodge(0.5)) +
   # scale_y_continuous(limits = c(1.1, 2.3), breaks = seq(1, 3, 0.2)) +
   labs(title = "Net change in birding effort (no. of lists) across districts\nin transition periods",
        x = "Transition", y = "Difference in no. of lists") 
@@ -1820,7 +1836,7 @@ ggplot(data_spread1) +
 # forward direction
 data_spread3a <- data_spread0 %>% 
   filter(METRIC == "NO.LISTS") %>% 
-  distinct(DISTRICT.NAME, DISTRICT.GEOM, PROP.CHANGE1a, PROP.CHANGE1b) %>% 
+  distinct(COUNTY.CODE, DISTRICT.GEOM, PROP.CHANGE1a, PROP.CHANGE1b) %>% 
   # pivoting longer for facetting
   pivot_longer(cols = c("PROP.CHANGE1a", "PROP.CHANGE1b"),
                names_to = "METRIC", values_to = "VALUE") %>% 
@@ -1833,7 +1849,7 @@ data_spread3a <- data_spread0 %>%
 # backward direction
 data_spread3b <- data_spread0 %>% 
   filter(METRIC == "NO.LISTS") %>% 
-  distinct(DISTRICT.NAME, DISTRICT.GEOM, PROP.CHANGE2a, PROP.CHANGE2b) %>% 
+  distinct(COUNTY.CODE, DISTRICT.GEOM, PROP.CHANGE2a, PROP.CHANGE2b) %>% 
   # pivoting longer for facetting
   pivot_longer(cols = c("PROP.CHANGE2a", "PROP.CHANGE2b"),
                names_to = "METRIC", values_to = "VALUE") %>% 
@@ -1848,7 +1864,7 @@ data_spread3b <- data_spread0 %>%
 
 s_spread_mapprop <- (ggplot(data_spread3a) +
   geom_sf(data = india_sf,
-          fill = "#ACACAC", colour = "black", size = 0.4) +
+          fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
@@ -1864,7 +1880,7 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
        fill = "Proportional change")) /
   (ggplot(data_spread3b) +
   geom_sf(data = india_sf,
-          fill = "#ACACAC", colour = "black", size = 0.4) +
+          fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL) +
   # scale_fill_viridis_b(option = "cividis", direction = -1, na.value = "grey",
@@ -1900,7 +1916,7 @@ coverage_types <- data.frame(METRIC = c("GRID.COV", "GRID.COV.T"),
 
 data_spread4 <- data_spread0 %>% 
   filter(METRIC == "GRID.COV" | METRIC == "GRID.COV.T") %>% 
-  distinct(METRIC, DISTRICT.NAME, DISTRICT.GEOM, RAW.CHANGE1, RAW.CHANGE2) %>% 
+  distinct(METRIC, COUNTY.CODE, DISTRICT.GEOM, RAW.CHANGE1, RAW.CHANGE2) %>% 
   # pivoting longer for facetting
   pivot_longer(cols = c("RAW.CHANGE1", "RAW.CHANGE2"),
                names_to = "CHANGE.TYPE", values_to = "VALUE") %>% 
@@ -1936,11 +1952,11 @@ data_spread5 <- data_spread4 %>%
   filter(!is.na(VALUE)) %>% 
   group_by(METRIC, METRIC.LABEL, T.CODE, T.LABEL) %>% 
   # this gives B number of means of bootstrapped samples
-  dplyr::summarise(VALUE = boot_conf(x = VALUE)) %>% 
+  reframe(VALUE = boot_conf(x = VALUE)) %>% 
   group_by(METRIC, METRIC.LABEL, T.CODE, T.LABEL) %>% 
-  dplyr::summarise(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
-                   CI.U = stats::quantile(VALUE, 0.975),
-                   VALUE = median(VALUE)) 
+  reframe(CI.L = stats::quantile(VALUE, 0.025), # Obtain the CIs
+          CI.U = stats::quantile(VALUE, 0.975),
+          VALUE = median(VALUE)) 
 
 s_spread_gridcov_rawchange <- ggplot(data_spread5, aes(x = T.LABEL, y = VALUE)) + 
   facet_wrap(~ METRIC.LABEL, nrow = 2) +
@@ -1960,7 +1976,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_b.png"),
 
 data_spread6 <- data_spread0 %>% 
   filter(METRIC == "GRID.COV" | METRIC == "GRID.COV.T") %>% 
-  distinct(METRIC, DISTRICT.NAME, DISTRICT.GEOM, 
+  distinct(METRIC, COUNTY.CODE, DISTRICT.GEOM, 
            PROP.CHANGE1a, PROP.CHANGE1b, PROP.CHANGE2a, PROP.CHANGE2b) %>% 
   # pivoting longer for facetting
   pivot_longer(cols = c("PROP.CHANGE1a", "PROP.CHANGE1b",
@@ -1987,7 +2003,7 @@ data_spread6 <- data_spread0 %>%
 s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>% 
                                        filter(METRIC == "GRID.COV")) +
   geom_sf(data = india_sf,
-          fill = "#ACACAC", colour = "black", size = 0.4) +
+          fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
@@ -2009,7 +2025,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c1.png"),
 s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>% 
                                        filter(METRIC == "GRID.COV.T")) +
   geom_sf(data = india_sf,
-          fill = "#ACACAC", colour = "black", size = 0.4) +
+          fill = "white", colour = "black", size = 0.4) +
   geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
   facet_wrap(~ T.LABEL, ncol = 2) +
   scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
