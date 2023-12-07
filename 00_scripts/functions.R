@@ -37,6 +37,107 @@ map_admin_ebd_sf <- function(data) {
 }
 
 
+# calculate cell dim of extremes ----------------------------------------------------
+
+calc_celldim_extremes <- function() {
+  
+  load("../../00_data/maps_sf.RData")
+  load("../../00_data/grids_sf_full.RData")
+  
+  g1_dims <- map(g1_in_sf$GEOM.G1, ~ st_bbox(.x) %>% 
+                   as.matrix() %>% 
+                   t() %>% 
+                   as.data.frame()) %>% 
+    list_rbind() %>% 
+    bind_cols(g1_in_sf %>% dplyr::select(GRID.G1) %>% st_drop_geometry())
+  
+  g1_extremes <- g1_dims %>% 
+    mutate(LIMITS = case_when(
+      xmin == min(xmin) ~ "West",
+      xmax == max(xmax) ~ "East",
+      ymin == min(ymin) ~ "South",
+      ymax == max(ymax) ~ "North",
+      TRUE ~ NA
+    )) %>% 
+    filter(!is.na(LIMITS))
+  
+  # we need the full cells for dimensions (g1_in_sf is clipped at borders)
+  # so use g1_sf
+  g1_sel <- map(g1_sf$GEOM.G1, ~ st_bbox(.x) %>% 
+                  as.matrix() %>% 
+                  t() %>% 
+                  as.data.frame()) %>% 
+    list_rbind() %>% 
+    bind_cols(g1_sf %>% dplyr::select(GRID.G1) %>% st_drop_geometry()) %>% 
+    filter(GRID.G1 %in% g1_extremes$GRID.G1) %>% 
+    mutate(X1 = map2(xmin, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(X1 = geometry)) %>% 
+             list_rbind(),
+           X2 = map2(xmax, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(X2 = geometry)) %>% 
+             list_rbind(),
+           Y1 = map2(xmin, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(Y1 = geometry)) %>% 
+             list_rbind(),
+           Y2 = map2(xmin, ymax, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(Y2 = geometry)) %>% 
+             list_rbind())
+  
+  
+  temp_fn <- function(a, b, c, ...) {
+    x <- tibble(DIST = c(a, b),
+                GRID.G1 = rep(c, 2))
+    return(x)
+  }
+  
+  x <- pmap(list(a = g1_sel$X1$X1, b = g1_sel$X2$X2, c = g1_sel$GRID.G1), 
+            temp_fn) %>% 
+    list_rbind() %>% 
+    rowwise() %>% 
+    reframe(st_point(DIST) %>% 
+              st_sfc(crs = st_crs(g1_in_sf)) %>% 
+              st_sf(),
+            GRID.G1 = GRID.G1) %>% 
+    st_as_sf(crs = st_crs(g1_in_sf)) %>% 
+    mutate(GRID.G1 = as.numeric(GRID.G1)) %>% 
+    group_by(GRID.G1) %>% 
+    reframe(X = st_distance(.)[2*cur_group_id() - 1, 2*cur_group_id()]) %>% 
+    mutate(GRID.G1 = as.character(GRID.G1)) 
+  
+  y <- pmap(list(a = g1_sel$Y1$Y1, b = g1_sel$Y2$Y2, c = g1_sel$GRID.G1), 
+            temp_fn) %>% 
+    list_rbind() %>% 
+    rowwise() %>% 
+    reframe(st_point(DIST) %>% 
+              st_sfc(crs = st_crs(g1_in_sf)) %>% 
+              st_sf(),
+            GRID.G1 = GRID.G1) %>% 
+    st_as_sf(crs = st_crs(g1_in_sf)) %>% 
+    mutate(GRID.G1 = as.numeric(GRID.G1)) %>% 
+    group_by(GRID.G1) %>% 
+    reframe(Y = st_distance(.)[2*cur_group_id() - 1, 2*cur_group_id()]) %>% 
+    mutate(GRID.G1 = as.character(GRID.G1)) 
+  
+  g1_celldim_extremes <- g1_extremes %>% 
+    dplyr::select(GRID.G1, LIMITS) %>% 
+    left_join(x, by = "GRID.G1") %>% 
+    left_join(y, by = "GRID.G1") %>% 
+    mutate(across(c(X, Y),
+                  ~ round(units::set_units(., "km"), 1)))
+  
+  return(g1_celldim_extremes)
+  
+}
+
+
 # get labelled months ---------------------------------------------------------------
 
 # and COVID colour scheme
