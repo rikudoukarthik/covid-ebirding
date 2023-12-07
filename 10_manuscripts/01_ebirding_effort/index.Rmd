@@ -108,6 +108,8 @@ return(plot0)
 
 # our grid cells defined in deg
 grid_size_deg <- round(x = 25*1000/111111, digits = 3)
+# cell dim in km of extremes
+grid_sizes_km <- calc_celldim_extremes()
 
 # month labels
 month_lab <- get_labelled_months() %>% 
