@@ -229,24 +229,6 @@ p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r birding-time, fig.cap="Overall observer-level birding time at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=5, out.width="100%", dpi=300, dev="jpeg"}
-
-  ggplot(d03_time_po %>% pluck(1),
-         aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Time spent birding\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
 \newpage
 
 ## Tables
@@ -268,7 +250,6 @@ get_re_vars <- function(data) {
 
 re_var01 <- get_re_vars(d01_group_po)
 re_var02 <- get_re_vars(d02_fidelity_po)
-re_var03 <- get_re_vars(d03_time_po)
 re_var04 <- get_re_vars(d04_hotspot)
 re_var05 <- get_re_vars(d05_protocol)
 re_var06 <- get_re_vars(d06_distance)
@@ -590,50 +571,6 @@ summary(model_a) %>%
 ```{r model-summ8, eval.after = "tab.cap", tab.cap=glue('Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var09a}. See model specifications described earlier.'), out.width="100%"}
 
 model_a <- d09a_s_UNU %>% pluck(3)
-
-# random effect variance
-re_var <- model_a %>% 
-  lme4::VarCorr() %>% 
-  as.data.frame() %>% 
-  pull(vcov) %>% 
-  round(digits = 3)
-
-summary(model_a) %>% 
-  coef() %>% 
-  as.data.frame() %>% 
-  dplyr::select(1:2) %>% # estimate and SE only
-  rownames_to_column() %>% # fixef
-  mutate(rowname = str_replace(rowname, "M.YEAR", "")) %>% 
-  mutate(rowname = str_replace_all(rowname, c("MONTH2" = "February",
-                                              "MONTH3" = "March",
-                                              "MONTH4" = "April",
-                                              "MONTH5" = "May",
-                                              "MONTH6" = "June",
-                                              "MONTH7" = "July",
-                                              "MONTH8" = "August",
-                                              "MONTH9" = "September",
-                                              "MONTH10" = "October",
-                                              "MONTH11" = "November",
-                                              "MONTH12" = "December"))) %>% 
-  magrittr::set_colnames(c("Fixed effect", "Estimate", "Standard error")) %>% 
-  mutate(across(c("Estimate", "Standard error"), ~ round(., 3))) %>% 
-  flextable() %>%
-  set_table_properties(layout = "autofit") %>%
-  align(align = "center", part = "all") %>%
-  align(align = "left", j = "Fixed effect", part = "all") %>%
-  line_spacing(space = 1, part = "all") %>% 
-  padding(padding = 1.5, part = "body") %>%
-  fontsize(size = 7, part = "all") %>%
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  paginate(init = TRUE, hdr_ftr = TRUE)
-
-```
-
-\newpage
-
-```{r model-summ9, eval.after = "tab.cap", tab.cap=glue('Model summary for birding time at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var03}. See model specifications described earlier.'), out.width="100%"}
-
-model_a <- d03_time_po %>% pluck(3)
 
 # random effect variance
 re_var <- model_a %>% 
