@@ -45,13 +45,13 @@ create_composite_graph <- function(scale = "country", state = NULL,
 data0 <- join_metric_composite(base = NULL, 
                                data_master[1], "GROUP", scale, state) %>% 
   join_metric_composite(data_master[2], "SITES", scale, state) %>% 
-  join_metric_composite(data_master[4], "HOTSPOT", scale, state) %>% 
-  join_metric_composite(data_master[5], "TRAVELLING", scale, state) %>% 
-  join_metric_composite(data_master[6], "DISTANCE", scale, state) %>% 
-  join_metric_composite(data_master[7], "DURATION", scale, state) %>% 
-  join_metric_composite(data_master[8], "LENGTH", scale, state) %>% 
-  join_metric_composite(data_master[9], "URBAN", scale, state) %>% 
-  join_metric_composite(data_master[10], "COVER", scale, state) %>% 
+  join_metric_composite(data_master[3], "HOTSPOT", scale, state) %>% 
+  join_metric_composite(data_master[4], "TRAVELLING", scale, state) %>% 
+  join_metric_composite(data_master[5], "DISTANCE", scale, state) %>% 
+  join_metric_composite(data_master[6], "DURATION", scale, state) %>% 
+  join_metric_composite(data_master[7], "LENGTH", scale, state) %>% 
+  join_metric_composite(data_master[8], "URBAN", scale, state) %>% 
+  join_metric_composite(data_master[9], "COVER", scale, state) %>% 
   # summarising across metrics and months while propagating error
   group_by(M.YEAR, COVID.MONTH) %>% 
   summarise_mean_and_se(PRED, SE) %>% 
@@ -81,7 +81,8 @@ plot0 <- data0 %>%
        y = lab_y,
        title = if (scale == "state") (state) else NULL) +
   coord_cartesian(expand = FALSE, ylim = c(-0.002, 2.1)) +
-  guides(fill = guide_legend(byrow = TRUE), colour = guide_legend(byrow = TRUE)) +
+  guides(fill = guide_legend(byrow = TRUE, reverse = TRUE), 
+         colour = guide_legend(byrow = TRUE, reverse = TRUE)) +
   theme(legend.position = c(0.84, 0.9),
         axis.line.y = element_line(linewidth = 1, arrow = grid::arrow()),
         axis.title.y = element_markdown(lineheight = 1.2, margin = margin(0, 10, 0, 0),
