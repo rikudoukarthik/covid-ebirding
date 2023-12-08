@@ -156,7 +156,7 @@ To analyse changes in the quality of eBird data, we devised a suite of metrics (
 
 6.  *List duration*: Did eBirders make shorter-duration checklists during the pandemic? Here, we considered checklist-level effort using checklist duration from the effort metadata.
 
-7.  *List length*: List length is defined as the total number of species observed in a checklist. This metric is known to be a better predictor of effort than distance or duration [@szabo2010; @isaac2014, @ViswanathanKBA], and we used it to answer, from a different angle, the question of whether checklists became shorter during the pandemic.
+7.  *List length*: List length is defined as the total number of species observed in a checklist. This has been used as a metric of effort in several studies of avian ecology [e.g., @szabo2010; @isaac2014], and is often used as the only effort variable, with the assumption of relatively constant bird diversity and detectability. We used list length to answer, from a different angle, the question of whether checklists became shorter during the pandemic.
 
 All these metrics were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in stage and culture of the birding community as well as in response to the pandemic owing to differences in local governance, policy and general public perspective.
 
