@@ -142,7 +142,9 @@ To test whether the pandemic led to an increase or decrease in eBird data quanti
 
 ## Analyses of data quality
 
-To analyse changes in the quality of eBird data, we devised a suite of metrics (see below) that help gauge various aspects of data quality (characteristics). These metrics were all calculated per month, across the four years.
+To analyse changes in the quality of eBird data, we devised a suite of metrics (see below) that help gauge various aspects of data quality (characteristics). These metrics were all calculated per month, across the four years. Except for spatial spread (Section \@ref(spat-spread)), all the metrics were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in characteristics of the birding community as well as in response to the pandemic owing to differences in local governance, policy and general public perspective.
+
+The metrics of birder behaviour (Section \@ref(birderbehav)), urban bias (Section \@ref(urb-bias)) and spatial coverage (Section \@ref(spat-cov)) had a common directionality: if the pandemic did indeed change the characteristics of the data, we expected the values of each of these metrics to decline. The metrics are described below, and the process of summarising them and interpreting their combined meaning is detailed in Section \@ref(model-boot).
 
 ### Metrics of birder behaviour {#birderbehav}
 
@@ -160,17 +162,15 @@ To analyse changes in the quality of eBird data, we devised a suite of metrics (
 
 7.  *List length*: List length is defined as the total number of species observed in a checklist. This has been used as a metric of effort in several studies of avian ecology [e.g., @szabo2010; @isaac2014], and is often used as the only effort variable, with the assumption of relatively constant bird diversity and detectability. We used list length to answer, from a different angle, the question of whether checklists became shorter during the pandemic.
 
-All these metrics were analysed at two spatial scales: for the whole country and for each of four states. The four states we considered in our study in order to highlight nuances were Karnataka, Kerala, Maharashtra and Assam. These states have relatively high eBirding activity and cover different regions of the country, but also differ in characteristics of the birding community as well as in response to the pandemic owing to differences in local governance, policy and general public perspective.
-
-### Urban bias
+### Urban bias {#urb-bias}
 
 A majority of eBird users are likely to be urban-dwelling, both in India and across the world, but often move far and wide and can account for a large proportion of the birding in non-urban areas as well. With the pandemic limiting movement, did urban areas see an increase in birding while non-urban areas saw the opposite trend? If so, this would have implications for how well the two areas are represented in the data and analyses using this data. We calculated the proportion of lists out of an observer's total submitted qualifying lists that were from "urban" sites as defined previously. This analysis was done at both spatial scales (see above).
 
-### Spatial coverage
+### Spatial coverage {#spat-cov}
 
 Given the restrictions on travel, a decrease in overall spatial coverage of the data from the pandemic was a major concern, because the country as a whole would be less well represented than in other years. We calculated the proportion of grid cells across the country that were covered in each time period. The information threshold for a grid cell to be considered "covered" was set at 5 qualifying checklists (per month per year). This analysis was done at both spatial scales (see above).
 
-### Spatial spread
+### Spatial spread {#spat-spread}
 
 Did the pandemic create spatial clusters of positive or negative change in birding activity across grid cells in the country, or were changes in birding (if any) relatively uniformly spread out? If high magnitude changes (positive or negative) were concentrated in a specific part of the country, the representation of this region during the pandemic in the data and analyses would be very different to that in other years or to that of other regions in the country. For each grid cell, we calculated proportional change in birding activity (number of qualifying lists uploaded) for transition periods (BEF--DUR and DUR--AFT, where DUR was an aggregate of migratory years 2019 and 2020). Here, the larger scale was our temporal unit of focus (i.e., years, not months), and the analysis was only done for the entire country. See Section \@ref(sspreadmeth) for details on how this metric was calculated and interpreted.
 
@@ -182,7 +182,7 @@ Some metrics like site fidelity, list distance, list duration and list length we
 
 For all models, model diagnostics were inspected using the *DHARMa* package [@hartig2022], to ensure that there were no major violations of model assumptions. We used the "bootMer()" function in *lme4* in order to test the significance of the fitted model results, by obtaining mean and CI estimates using semi-parametric bootstrapping. The bootstrapping was done with 1000 simulations and with parallel core processing [with the help of packages *parallel*, @rcoreteam2021; and *VGAM*, @yee2010].
 
-The model results of the nine such data quality metrics were summarised as follows to give an understanding of the overall impact of the pandemic (and its scale) on birding and birder behaviour in India. Model predictions for each metric (per month and year) were first transformed into proportional change relative to corresponding months in MY 2018, while also transforming the associated uncertainty appropriately. The months of a year were classified into whether they were peak impact months (April--May) or not, and values within these were averaged across individual metrics and months, accompanied by propagation of uncertainty. Thus, we finally obtained measures of proportional change in data quality metrics (and associated confidence intervals) for each year and month category, relative to the standard of MY 2018, which allowed us to infer both magnitude and scale of the pandemic impact.
+The model results of the nine such data quality metrics were summarised as follows to give an understanding of the overall impact of the pandemic (and its scale) on birding and birder behaviour in India. Model predictions for each metric (per month and year) were first transformed into proportional change relative to corresponding months in MY 2018, while also transforming the associated uncertainty appropriately. The months of a year were classified into whether they were peak impact months (April--May) or not, and values within these were averaged across individual metrics and months, accompanied by propagation of uncertainty. Thus, we finally obtained measures of proportional change in data quality metrics (and associated confidence intervals) for each year and month category, relative to the standard of MY 2018, which allowed us to infer both magnitude and scale of the pandemic impact. Due to the common directionality, we expected the pandemic impact to manifest as proportional declines across the metrics.
 
 ## Software
 
@@ -242,7 +242,7 @@ knitr::include_graphics(fig_path)
 
 ## Data quality
 
-Overall, the characteristics of nationwide eBird data changed predictably during the first wave of the pandemic (April--May 2020), with most metrics declining (red ribbon in Fig. \@ref(fig:fig-main)). Interestingly though, these changes were short-lived and the metrics returned to their original levels in the period of June 2020--March 2021 (blue ribbon). In fact, changes were minimal even during the second peak pandemic period (April--May 2021). Individual states also showed the same overall pattern, though uncertainty in estimates was higher (Fig. \@ref(fig:fig-main-states)). Across both spatial scales, although data characteristics in MY 2021 are indistinguishable from those in MY 2018, they have much higher variability, but note the magnitude of growth in eBird data generation and participation over this period (Fig. \@ref(fig:fig-quant)A, B).
+Overall, the characteristics of nationwide eBird data changed predictably during the first wave of the pandemic (April--May 2020; red ribbon in Fig. \@ref(fig:fig-main)). Interestingly though, these changes were short-lived and the metrics returned to their original levels in the period of June 2020--March 2021 (blue ribbon). In fact, changes were minimal even during the second peak pandemic period (April--May 2021). Some individual states also showed the same overall pattern, though uncertainty in estimates was higher (Fig. \@ref(fig:fig-main-states)). Across both spatial scales, although data characteristics in MY 2021 are indistinguishable from those in MY 2018, they have much higher variability, but note the magnitude of growth in eBird data generation and participation over this period (Fig. \@ref(fig:fig-quant)A, B).
 
 ```{r fig-main, fig.cap="Proportional change in data quality metrics per year and month category, relative to values in MY 2018 (represented by the y = 1 line). The four years of interest are on the X-axis, with the pandemic years labelled in red text. Coloured ribbons represent 95% confidence intervals, obtained from propagated error, for the two sets of months. Note that means have not been depicted.", out.width="50%", out.height="50%", dpi=300, dev="jpeg"}
 
