@@ -14,7 +14,13 @@ Birdwatcher behaviour, COVID-19 pandemic, data quality, eBird, effort
 
 # Lay summary {.unnumbered}
 
-Explain your research with the general public in mind. Text should provide answers to essential questions: Why (Big Question), Background (if needed), How, Results, and Significance. Write in the active voice. Use short, clear sentences. Minimize use of jargon, scientific and technical terms, and acronyms. Get feedback on your draft from colleagues, supervisors, and ideally, at least one non-specialist.
+-   Systematic monitoring of bird populations usually requires large networks of volunteers. In parts of the world where these are absent, data from citizen science (CS) programmes can instead be used for such monitoring.
+-   However, CS data are not collected with fixed structured protocols, which means that the data can look different in two years depending on how, where, when, and for how long birdwatchers watch birds. This then hinders us from using this data to understand how bird populations are changing, such as their abundance trends.
+-   The COVID-19 pandemic could have been one such period where birdwatchers behaved differently to other years. We used data from eBird, a popular CS programme, to understand if this was the case in India, and if so, what specific aspects of birdwatcher behaviour and of the data were different during the pandemic.
+-   We found that birdwatchers birded as much if not more during the pandemic, but that the way they birded changed especially during the first wave of lockdowns in April and May of 2020. As expected, they became more isolated during this short period, avoiding travel, groups, and public spaces.
+-   However, whether or not the pandemic caused changes in the birdwatching data also varied across different parts of the country, showing that everyone everywhere behaved differently.
+-   Additionally, most of the changes were limited to the two months, April and May of 2020. In fact, even during the second wave (April and May of 2021), birdwatchers largely behaved as usual and did not change as much as in the first year.
+-   For this reason, eBird data from India is still useful for most studies on bird populations that are interested in larger patterns in time.
 
 \newpage
 
