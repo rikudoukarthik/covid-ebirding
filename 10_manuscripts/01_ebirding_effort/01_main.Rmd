@@ -280,62 +280,46 @@ Birders behaved as might be expected during the peak pandemic months, especially
 
 Aside from these suggestions of direct impacts of the pandemic on birder behaviour and data characteristics---those metrics that changed during the peak months and reverted to "normal" soon after---there were also other changes that seem to reflect broader and more general changes over time. For instance, although the pandemic-induced shift to a more sedentary lifestyle did result in shorter distances covered by the minority birders that made travelling checklists (Fig. \@ref(fig:dist-dur-length)A, Table \@ref(tab:model-summ5)), there is also a general trend towards shorter travelling lists that started before the pandemic and has persisted even after. Similarly, birders started making shorter duration checklists (Fig. \@ref(fig:dist-dur-length)B, Table \@ref(tab:model-summ6)) that reported fewer species (Fig. \@ref(fig:dist-dur-length)C, Table \@ref(tab:model-summ7)), both during the peak pandemic months as well as more generally. Temporally, the impact of the pandemic on these aspects seems minimal, as these changes were not restricted to the peak months or even the pandemic years; instead, these broader trends could be related the general growth of birding and eBirding in India and a potential accompanying change in birding attitudes (see Discussion), but note that decline in checklist-level effort does not imply decline in overall effort.
 
-```{r s-spread-figs-raw, fig.cap="Spatial spread: raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r s-spread-figs-raw, fig.cap="Raw change in number of lists (A) and thresholded percentage grid coverage (B) per district from before to during and from during to after the pandemic. Districts are shaded based on the simple difference in values between the two periods from highly negative (red) to highly positive (blue). Note the absence of spatial clustering among districts with extreme changes, especially declines. Grey districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-d1 <-
-  temp1 %>% left_join(grid_dist_base0)
-d2 <-
-  temp5 %>% left_join(grid_dist_base0) %>% filter(METRIC == "GRID.COV.T")
+d1 <- temp1 %>% 
+  left_join(map_dists_ebd_sf, by = "COUNTY.CODE") %>% 
+  left_join(dists_sf, by = c("STATE.NAME", "DISTRICT.NAME")) %>% 
+  dplyr::select(-c("STATE.NAME", "DISTRICT.NAME", "AREA"))
+d2 <- temp5 %>% 
+  filter(METRIC == "GRID.COV.T") %>% 
+  left_join(map_dists_ebd_sf, by = "COUNTY.CODE") %>% 
+  left_join(dists_sf, by = c("STATE.NAME", "DISTRICT.NAME")) %>% 
+  dplyr::select(-c("STATE.NAME", "DISTRICT.NAME", "AREA"))
 
 # raw change maps (except gridcov w/o threshold)
 
-p1 <-
-  ggplot(d1) +
-  geom_polygon(
-    data = indiamap,
-    aes(long, lat, group = group),
-    fill = "#ACACAC",
-    colour = "black",
-    size = 0.4
-  ) +
-  geom_sf(aes(fill = VALUE, geometry = geometry),
-          col = "#ACACAC",
-          size = 0.1) +
-  facet_wrap( ~ T.LABEL) +
-  scale_fill_stepsn(
-    colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
-    breaks = c(-1000, -500, -100, -50, 50, 100, 500, 1000),
-    values = scales::rescale(c(
-      -11000, -1000, -500, -100, -50,
-      50, 100, 500, 1000, 11000
-    )),
-    limits = c(-11000, 11000),
-    na.value = "#ACACAC"
-  ) +
+p1 <- ggplot(d1) +
+  geom_sf(data = india_sf,
+          fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), 
+          col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL) +
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+                    breaks = c(-1000, -500, -100, -50, 50, 100, 500, 1000),
+                    values = scales::rescale(c(-11000, -1000, -500, -100, -50, 
+                                               50, 100, 500, 1000, 11000)), 
+                    limits = c(-11000, 11000),
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\nno. of lists")
 
-
-p2 <-
-  ggplot(d2) +
-  geom_polygon(
-    data = indiamap,
-    aes(long, lat, group = group),
-    fill = "#ACACAC",
-    colour = "black",
-    size = 0.4
-  ) +
-  geom_sf(aes(fill = VALUE, geometry = geometry),
-          col = "#ACACAC",
-          size = 0.1) +
+p2 <- ggplot(d2) +
+  geom_sf(data = india_sf,
+          fill = "#ACACAC", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), 
+          col ="#ACACAC", size = 0.1) +
   facet_wrap( ~ T.LABEL) +
-  scale_fill_stepsn(
-    colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
-    breaks = c(-40, -25, -10, -1, 1, 10, 25, 40),
-    values = scales::rescale(c(-100, -40, -25, -10, -1, 1, 10, 25, 40, 100)),
-    limits = c(-100, 100),
-    na.value = "#ACACAC"
-  ) +
+  scale_fill_stepsn(colours = RColorBrewer::brewer.pal(n = 9, name = "RdBu"),
+                    breaks = c(-50, -40, -20, -5, 5, 20, 40, 50),
+                    values = scales::rescale(c(-100, -50, -40, -20, -5, 5, 20, 40, 50, 100)), 
+                    limits = c(-100, 100),
+                    na.value = "#ACACAC") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Difference in\ngrid coverage")
 
@@ -358,21 +342,21 @@ d3 <- temp6 %>% filter(METRIC == "GRID.COV.T")
 p1 <- ggplot(d1, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.25, position = position_dodge(0.5)) +
+                linewidth = 1.25, width = 0.25, position = position_dodge(0.5)) +
   scale_x_discrete(labels = c("Before to\nDuring", "During to\nAfter")) +
   labs(x = "", y = "Net change in no. of lists") 
 
 p2 <- ggplot(d2, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.25, position = position_dodge(0.5)) +
+                linewidth = 1.25, width = 0.25, position = position_dodge(0.5)) +
   scale_x_discrete(labels = c("Before to\nDuring", "During to\nAfter")) +
   labs(x = "Transition", y = "Net change in grid coverage (%)") 
 
 p3 <- ggplot(d3, aes(x = T.LABEL, y = VALUE)) + 
   geom_point(size = 3, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 1.25, width = 0.25, position = position_dodge(0.5)) +
+                linewidth = 1.25, width = 0.25, position = position_dodge(0.5)) +
   scale_x_discrete(labels = c("Before to\nDuring", "During to\nAfter")) +
   labs(x = "", y = "") 
 
@@ -386,61 +370,47 @@ p3 <- ggplot(d3, aes(x = T.LABEL, y = VALUE)) +
 
 ```
 
-```{r s-spread-figs-prop, fig.cap="Spatial spread: proportional declines in number of lists per district in forward (top row) and backward (bottom row) transitions. Districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
+```{r s-spread-figs-prop, fig.cap="Proportional changes in number of lists per district in forward (top row) and backward (bottom row) transitions. Districts with positive values are shown in grey; declines are shaded based on the magnitude of proportional change from low (dark blue) to high (yellow). Note the absence of spatial clustering among districts with major declines over time (top row). White districts are those that did not meet the criteria for inclusion in the analysis.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-d1 <-
-  temp3 %>% left_join(grid_dist_base0)
-d2 <-
-  temp4 %>% left_join(grid_dist_base0)
+d1 <- temp3 %>% 
+  left_join(map_dists_ebd_sf, by = "COUNTY.CODE") %>% 
+  left_join(dists_sf, by = c("STATE.NAME", "DISTRICT.NAME")) %>% 
+  dplyr::select(-c("STATE.NAME", "DISTRICT.NAME", "AREA"))
+d2 <- temp4 %>% 
+  left_join(map_dists_ebd_sf, by = "COUNTY.CODE") %>% 
+  left_join(dists_sf, by = c("STATE.NAME", "DISTRICT.NAME")) %>% 
+  dplyr::select(-c("STATE.NAME", "DISTRICT.NAME", "AREA"))
 
 
-p1 <-
-  ggplot(d1) +
-  geom_polygon(
-    data = indiamap,
-    aes(long, lat, group = group),
-    fill = "white",
-    colour = "black",
-    size = 0.4
-  ) +
-  geom_sf(aes(fill = VALUE, geometry = geometry),
-          col = "#E0E0E0",
-          size = 0.1) +
-  facet_wrap( ~ T.LABEL) +
-  scale_fill_steps2(
-    low = viridisLite::cividis(5, direction = -1)[1],
-    mid = viridisLite::cividis(5, direction = -1)[3],
-    high = viridisLite::cividis(5, direction = -1)[5],
-    midpoint = -0.45,
-    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-    limits = c(-1, 0),
-    na.value = "#E0E0E0"
-  ) +
+p1 <- ggplot(d1) +
+  geom_sf(data = india_sf,
+          fill = "white", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), 
+          col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL) +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#E0E0E0") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change")
 
-p2 <-
-  ggplot(d2) +
-  geom_polygon(
-    data = indiamap,
-    aes(long, lat, group = group),
-    fill = "white",
-    colour = "black",
-    size = 0.4
-  ) +
-  geom_sf(aes(fill = VALUE, geometry = geometry),
-          col = "#E0E0E0",
-          size = 0.1) +
-  facet_wrap( ~ T.LABEL) +
-  scale_fill_steps2(
-    low = viridisLite::cividis(5, direction = -1)[1],
-    mid = viridisLite::cividis(5, direction = -1)[3],
-    high = viridisLite::cividis(5, direction = -1)[5],
-    midpoint = -0.45,
-    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-    limits = c(-1, 0),
-    na.value = "#E0E0E0"
-  ) +
+p2 <- ggplot(d2) +
+  geom_sf(data = india_sf,
+          fill = "white", colour = "black", size = 0.4) +
+  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM),
+          col ="#ACACAC", size = 0.1) +
+  facet_wrap(~ T.LABEL) +
+  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                    mid = viridisLite::cividis(5, direction = -1)[3],
+                    high = viridisLite::cividis(5, direction = -1)[5],
+                    midpoint = -0.45,
+                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                    limits = c(-1, 0),
+                    na.value = "#E0E0E0") +
   labs(x = "Longitude", y = "Latitude",
        fill = "Proportional change")
 
@@ -448,11 +418,9 @@ p2 <-
 (p1 / guide_area() / p2) +
   plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
   plot_annotation(tag_levels = "A") &
-  theme(
-    legend.position = "bottom",
-    legend.key.width = unit(2, "cm"),
-    legend.margin = margin(t = 0, unit = "cm")
-  )
+  theme(legend.position = "bottom",
+        legend.key.width = unit(2, "cm"),
+        legend.margin = margin(t = 0, unit = "cm"))
 
 ```
 

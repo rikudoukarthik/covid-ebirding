@@ -2048,6 +2048,9 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"),
 
 ##### Saving analysis objects ####
 
+map_dists_ebd_sf <- dists_ebd_sf %>% 
+  distinct(COUNTY.CODE, STATE.NAME, DISTRICT.NAME)
+
 temp1 <- data_spread1 %>% st_drop_geometry() %>% dplyr::select(-DISTRICT.GEOM)
 temp2 <- data_spread2
 temp3 <- data_spread3a %>% st_drop_geometry() %>% dplyr::select(-DISTRICT.GEOM)
@@ -2057,7 +2060,7 @@ temp6 <- data_spread5
 temp7 <- data_spread6 %>% st_drop_geometry() %>% dplyr::select(-DISTRICT.GEOM)
 
 
-save(temp1, temp2, temp3, temp4, temp5, temp6, temp7,
+save(map_dists_ebd_sf, temp1, temp2, temp3, temp4, temp5, temp6, temp7,
      file = glue("00_outputs/{anal_name}.RData"))
 
 ```

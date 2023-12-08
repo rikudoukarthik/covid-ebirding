@@ -136,6 +136,7 @@ walk(data_list, ~ {
 })
 
 load("../../00_outputs/d09c_s_spread.RData")
+load("../../00_data/maps_sf.RData")
 
 
 knitr::opts_chunk$set(
