@@ -6,7 +6,7 @@ editor_options:
 
 # Abstract {.unnumbered}
 
-Conventional systematic projects to monitor bird populations, like breeding bird surveys, require large and coordinated volunteer networks that are lacking in many parts of the world such as the Global South. Data from less systematic citizen science (CS) programmes offer an alternative to data from systematic initiatives in these regions, but the semi-structured nature of such data also presents several challenges. The utility of semi-structured CS data to monitor bird species abundance is contingent on how, where, and how comparably birdwatchers watch birds, year on year. Trends inferred directly from the data can be confounded during years when birdwatchers may behave differently, such as during the COVID-19 pandemic. We wanted to ascertain how the data uploaded from India to one such CS platform, eBird, was impacted by this deadliest global pandemic of the 21st century. To understand whether eBird data from the pandemic years in India is useful and comparable to data from adjacent years, we explored several metrics of data quantity and quality (such as birdwatcher behaviour) at multiple spatial and temporal scales. We found no negative impact of the pandemic on data quantity. Data quality (i.e., characteristics) changed largely only during the peak pandemic months characterised by high fatality rates and strict lockdowns, possibly due to decreased human mobility and social interaction. It remained similar to the adjacent years during the rest of this restrictive period, therefore reducing the impact of the aberrant peak months on any annual inference. Moreover, impacts on data quality varied widely across states in India, resulting in no strong consistent trend at the national level---unlike results from elsewhere in the world. Our findings show that birdwatchers in India as contributors to CS were resilient to disturbance, and that the effects of the pandemic on birdwatching effort and birdwatcher behaviour are highly scale- and context-dependent. In summary, eBird data in India from the pandemic years remains useful and interpretable for most large-scale applications, such as abundance trend estimation, but will benefit from preliminary data quality checks when utilised at a fine scale.
+Most systematic projects to monitor bird populations, like breeding bird surveys, require large and coordinated volunteer networks that are lacking in many parts of the world such as the Global South. Data from less systematic citizen science (CS) programmes offer an alternative to data from systematic initiatives in these regions, but the semi-structured nature of such data also presents several challenges. The utility of semi-structured CS data to monitor bird species abundance is contingent on how, where, and how comparably birdwatchers watch birds, year on year. Trends inferred directly from the data can be confounded during years when birdwatchers may behave differently, such as during the COVID-19 pandemic. We wanted to ascertain how the data uploaded from India to one such CS platform, eBird, was impacted by this deadliest global pandemic of the 21st century. To understand whether eBird data from the pandemic years in India is useful and comparable to data from adjacent years, we explored several metrics of data quantity and quality (such as birdwatcher behaviour) at multiple spatial and temporal scales. We found no negative impact of the pandemic on data quantity. Data quality (i.e., characteristics) changed largely only during the peak pandemic months characterised by high fatality rates and strict lockdowns, possibly due to decreased human mobility and social interaction. It remained similar to the adjacent years during the rest of this restrictive period, therefore reducing the impact of the aberrant peak months on any annual inference. Moreover, impacts on data quality varied widely across states in India, resulting in no strong consistent trend at the national level---unlike results from elsewhere in the world. Our findings show that birdwatchers in India as contributors to CS were resilient to disturbance, and that the effects of the pandemic on birdwatching effort and birdwatcher behaviour are highly scale- and context-dependent. In summary, eBird data in India from the pandemic years remains useful and interpretable for most large-scale applications, such as abundance trend estimation, but will benefit from preliminary data quality checks when utilised at a fine scale.
 
 # Keywords {.unnumbered}
 
@@ -136,7 +136,7 @@ We gridded the spatial extent of the country into `r glue("{grid_size_deg}\u00b0
 
 ## Analysis of data quantity
 
-To test whether the pandemic led to an increase or decrease in eBird data quantity, we explored two different aspects of quantity: data volume and participation. We compared the number of qualifying lists and the number of active eBirders for every month across our years of interest, using simple summaries and visualisations. Because there has been a general and consistent increase in eBird participation in India over the last few years, we also used single-differenced detrended values (value in one month shown as its difference from the previous month's value) so as to visualise pandemic-induced changes independent of the general eBird growth trend in India.
+To test whether the pandemic led to an increase or decrease in eBird data quantity, we explored two different aspects of quantity: data volume and participation. We compared the number of qualifying lists and the number of active eBirders for every month across our years of interest, using simple summaries and visualisations.
 
 ## Analyses of data quality
 
@@ -162,15 +162,15 @@ All these metrics were analysed at two spatial scales: for the whole country and
 
 ### Urban bias
 
-A majority of eBird users are likely to be urban-dwelling, both in India and across the world. With the pandemic limiting movement, did urban areas see an increase in birding while non-urban areas saw the opposite trend? We calculated the proportion of lists out of an observer's total submitted qualifying lists that were from "urban" sites as defined previously. This analysis was done at both spatial scales (see above).
+A majority of eBird users are likely to be urban-dwelling, both in India and across the world, but often move far and wide and can account for a large proportion of the birding in non-urban areas as well. With the pandemic limiting movement, did urban areas see an increase in birding while non-urban areas saw the opposite trend? If so, this would have implications for how well the two areas are represented in the data and analyses using this data. We calculated the proportion of lists out of an observer's total submitted qualifying lists that were from "urban" sites as defined previously. This analysis was done at both spatial scales (see above).
 
 ### Spatial coverage
 
-A decrease in overall coverage of the data from the pandemic was a major concern, due to the restrictions on travel. We calculated the proportion of grid cells across the country that were covered in each time period. The information threshold for a grid cell to be considered "covered" was set at 5 qualifying checklists (per month per year). This analysis was done at both spatial scales (see above).
+Given the restrictions on travel, a decrease in overall spatial coverage of the data from the pandemic was a major concern, because the country as a whole would be less well represented than in other years. We calculated the proportion of grid cells across the country that were covered in each time period. The information threshold for a grid cell to be considered "covered" was set at 5 qualifying checklists (per month per year). This analysis was done at both spatial scales (see above).
 
 ### Spatial spread
 
-Did the pandemic create spatial clusters of positive or negative change in birding activity across grid cells in the country, or were changes in birding (if any) relatively uniformly spread out? For each grid cell, we calculated proportional change in birding activity (number of qualifying lists uploaded) for transition periods (BEF--DUR and DUR--AFT, where DUR was an aggregate of migratory years 2019 and 2020). Here, the larger scale was our temporal unit of focus (i.e., years, not months), and the analysis was only done for the entire country. See Section \@ref(sspreadmeth) for details on how this metric was calculated and interpreted.
+Did the pandemic create spatial clusters of positive or negative change in birding activity across grid cells in the country, or were changes in birding (if any) relatively uniformly spread out? If high magnitude changes (positive or negative) were concentrated in a specific part of the country, the representation of this region during the pandemic in the data and analyses would be very different to that in other years or to that of other regions in the country. For each grid cell, we calculated proportional change in birding activity (number of qualifying lists uploaded) for transition periods (BEF--DUR and DUR--AFT, where DUR was an aggregate of migratory years 2019 and 2020). Here, the larger scale was our temporal unit of focus (i.e., years, not months), and the analysis was only done for the entire country. See Section \@ref(sspreadmeth) for details on how this metric was calculated and interpreted.
 
 ### Analysis {#model-boot}
 
@@ -190,9 +190,9 @@ All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@p
 
 ## Data quantity
 
-Although the number of participating birders and the number of checklists uploaded varied considerably between months, the numbers for each individual month consistently increased year on year across the four-year period (Fig. \@ref(fig:fig-quant)), with very few exceptions. One such exception is a slightly lower participation (number of birders) in the first wave of COVID-19 in April of MY 2019 compared with April of MY 2018, but this was still associated with more checklists uploaded. But it is clear from both regular and detrended values (Fig. \@ref(fig:fig-quant)) that eBird data quantity during the pandemic years were not notably anomalous in any month. The decrease in data generation and participation following February is a normal pattern and is not limited to the pandemic years, given the extremely high participation in the global event, Great Backyard Bird Count, in February. Therefore, there is no clear evidence for data quantity being negatively impacted by the pandemic.
+Although there has been a general and consistent increase in the number of participating birders and the number of checklists uploaded over the last few years (due to a general trend of eBird growth in India), and these numbers varied considerably between months of a year, the numbers for each individual month consistently increased year on year across the four-year period (Fig. \@ref(fig:fig-quant)) with very few exceptions. One such exception is a slightly lower participation (number of birders) in the first wave of COVID-19 in April of MY 2019 compared with April of MY 2018, but this was still associated with more checklists uploaded. But it is clear that eBird data quantity during the pandemic years were not notably anomalous in any month. The decrease in data generation and participation following February is a normal pattern and is not limited to the pandemic years, given the extremely high participation in the global event, Great Backyard Bird Count, in February. In fact, there was even an uncharacteristic increase in data generation in April 2020 (Fig. \@ref(fig:fig-quant)A). Therefore, there is no clear evidence for data quantity being negatively impacted by the pandemic.
 
-```{r fig-quant, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A, C) and participation (number of active eBirders; B, D), using raw (A, B) and detrended (C, D) values. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in data generation and participation in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="70%", out.height="70%", dpi=300, dev="jpeg"}
+```{r fig-quant, fig.cap="Graphs of change in data quantity over time, in terms of data generation (number of qualifying lists; A) and participation (number of active eBirders; B). Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note the peak in data generation and participation in February of each year, which coincides with the global event, Great Backyard Bird Count.", out.width="70%", out.height="50%", dpi=300, dev="jpeg"}
 
 month_lab_dates <- month_lab %>% 
   mutate(YEAR = ifelse(MONTH %in% 6:12, 
@@ -202,24 +202,12 @@ month_lab_dates <- month_lab %>%
 
 d1 <- dataquant_a %>% 
   left_join(month_lab_dates) %>% 
-  arrange(DATE) %>% 
-  mutate(LAG1.LISTS = replace_na((NO.LISTS - lag(NO.LISTS)), 0),
-         LAG1.EBIRDERS = replace_na((NO.EBIRDERS - lag(NO.EBIRDERS)), 0),
-         # t0 value
-         T0.LISTS = case_when(
-           NO.LISTS == first(NO.LISTS) ~ scales::label_comma()(first(NO.LISTS)),
-           TRUE ~ ""
-         ),
-         T0.EBIRDERS = case_when(
-           NO.EBIRDERS == first(NO.EBIRDERS) ~ scales::label_comma()(first(NO.EBIRDERS)),
-           TRUE ~ ""
-         )) 
-
+  arrange(DATE)
 
 p1 <- ggplot(d1, aes(x = DATE, y = NO.LISTS, colour = M.YEAR)) +
   labs(x = "Months", y = "No. of qualifying lists") +
   geom_point(size = 2) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
   scale_y_continuous(label = comma) +
   scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
@@ -227,33 +215,13 @@ p1 <- ggplot(d1, aes(x = DATE, y = NO.LISTS, colour = M.YEAR)) +
 p2 <- ggplot(d1, aes(x = DATE, y = NO.EBIRDERS, colour = M.YEAR)) +
   labs(x = "Months", y = "No. of active eBirders") +
   geom_point(size = 2) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   scale_colour_manual(values = covid_palette, name = "Migratory year") +
   scale_y_continuous(label = comma) +
   scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
 
-p3 <- ggplot(d1, aes(x = DATE, y = LAG1.LISTS, colour = M.YEAR)) +
-  labs(x = "Months", y = "Monthly difference in\nqualifying lists") +
-  geom_point(size = 2) +
-  geom_line(size = 1) +
-  # text label of t0 value
-  geom_text(aes(label = T0.LISTS), colour = "black", vjust = -1) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_y_continuous(label = comma) +
-  scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
-
-p4 <- ggplot(d1, aes(x = DATE, y = LAG1.EBIRDERS, colour = M.YEAR)) +
-  labs(x = "Months", y = "Monthly difference in\nactive eBirders") +
-  geom_point(size = 2) +
-  geom_line(size = 1) +
-  # text label of t0 value
-  geom_text(aes(label = T0.EBIRDERS), colour = "black", vjust = -1) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  scale_y_continuous(label = comma) +
-  scale_x_date(labels = d1$MONTH.LAB, breaks = d1$DATE)
-
-fig_quant <- (p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3), ncol = 1) +
+fig_quant <- (p1 / guide_area() / p2) +
+  plot_layout(guides = "collect", heights = c(5, 1, 5), ncol = 1) +
   plot_annotation(tag_levels = "A") &
   theme(legend.margin = margin(t = 0, unit = "cm"),
         legend.position = "bottom",
@@ -263,7 +231,7 @@ fig_quant <- (p1 / p2 / guide_area() / p3 / p4) +
 fig_path <- "fig_quant.png"
 
 ggsave(plot = fig_quant, fig_path,
-       width = 10, height = 15, units = "in", dpi = 300)
+       width = 10, height = 10, units = "in", dpi = 300)
 
 
 knitr::include_graphics(fig_path)
