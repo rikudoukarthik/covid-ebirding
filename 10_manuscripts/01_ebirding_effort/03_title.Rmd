@@ -1,5 +1,5 @@
 ---
-title: "Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference"
+title: "Birdwatchers' resilience to perturbation in India buffers citizen science from pandemic-induced biases"
 author: 
   - Karthik Thrikkadeeri:
       email: karthik.t@ncf-india.org
@@ -20,7 +20,7 @@ output:
 
 # Acknowledgements
 
-We are thankful to Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. for funding this study. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Praveen J and Suhel Quader for their comments on the manuscript.
+We thank our funders: Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Praveen J, Priti Bangal and Suhel Quader for their comments that helped improve the manuscript.
 
 # Conflict of interest
 
