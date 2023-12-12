@@ -1,23 +1,5 @@
 # Supplementary Material
 
-## Methods
-
-### Prolific birders {#prolific-def}
-
-An eBirder was considered "prolific" if they had uploaded, from a single location, at least 800 qualifying checklists over the course of the four years being analysed (sufficient effort), as well as a minimum of 15 qualifying checklists per month in at least ten months of a year in all four years of the study (consistent effort)---thus translating to about 200 qualifying checklists per year. Since the observer remains constant, and the observer is sufficiently experienced (as inferred from their prolificacy), we assume that detection rates of birds in the location also remains similar over the years (given the short time period).
-
-### Model specifications {#modelspecs}
-
-GLMMs for species reporting across all locations were fit for each species and for different periods ("lockdown", "non-lockdown", "all") separately. These models, with detection (yes or no) as the response variable, were specified as follows:
-
-$$detection \sim year*month + month:length + (1/cell)$$
-
-Models for species reporting at locations with consistent effort were fit for each locations and for different periods ("lockdown", "non-lockdown", "all") separately. The models were specified as follows:
-
-$$detection \sim year + year:month + month:length + category + (1/species)$$
-
-where $length$ refers to the median number of species reported in the respective month, $category$ is the species category and $species$ is the name of the species.
-
 ## Figures
 
 ### Overall bird reporting
@@ -580,3 +562,27 @@ p4 <- ggplot(d4, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
 ```
 
 ## Tables
+
+```{r reg-spec, tab.cap='Region-wise species sets for which overall reporting patterns were analysed. "+" indicates species that were included in the analysis for the different states.'}
+
+# regionwise species sets used in analyses
+
+species_list %>% 
+  mutate(STATE = factor(STATE, levels = c("Karnataka", "Kerala", "Maharashtra", "Assam")),
+         SP.CATEGORY = factor(SP.CATEGORY, levels = c("U", "R"))) %>% 
+  distinct(SP.CATEGORY, STATE, COMMON.NAME) %>% 
+  arrange(SP.CATEGORY, STATE) %>% 
+  mutate(PRESENT = "+") %>% 
+  pivot_wider(names_from = "STATE", values_from = "PRESENT") %>% 
+  mutate(SP.CATEGORY = ifelse(SP.CATEGORY == "U", "Urban", "Rural")) %>% 
+  rename(Species = COMMON.NAME, `Species category` = SP.CATEGORY) %>% 
+  # flextable
+  flextable() %>% 
+  set_table_properties(layout = "autofit") %>% 
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  align(align = "center", part = "all") %>% 
+  align(align = "left", j = "Species", part = "all")
+
+```
+
+<br>

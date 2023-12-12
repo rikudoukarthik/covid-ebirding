@@ -1,5 +1,5 @@
 book_filename: "manuscript_ebirding_effort.Rmd"
 delete_merged_file: true
-rmd_files: ["index.Rmd", "01_main.Rmd"]
+rmd_files: ["index.Rmd", "01_main.Rmd", "02_supp.Rmd"]
 rmd_subdir: "10_manuscripts/01_ebirding_effort/"
 output_dir: "./"

@@ -27,7 +27,7 @@ require(flextable)
 theme_set(theme_classic(base_size = 16))
 
 covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
-urbrur_palette <- c("#8F85C1", "#A3383C")
+urbrur_palette <- c("#83AFA6", "#B89068")
 
 
 # functions

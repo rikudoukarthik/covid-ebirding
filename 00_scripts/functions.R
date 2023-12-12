@@ -1,3 +1,142 @@
+# map EBD admin units to sf admin units ---------------------------------------------
+
+# main use is to resolve issue of same CELL.ID or COUNTY.CODE getting mapped to multiple
+# sf states/districts
+# we use similarity to limit this mapping to 1:1
+
+
+# function to calc similarity of two strings (https://stackoverflow.com/a/11535768/13000254)
+str_similarity <- function(x, y) {
+  
+  # Levenshtein edit distance
+  str_dist <- adist(x, y) %>% as.vector()
+  str_longer_length <- max(str_length(c(x, y)))
+  
+  str_simil <- 1 - (str_dist/str_longer_length)
+  return(str_simil)
+  
+}
+
+map_admin_ebd_sf <- function(data) {
+
+  mapping <- data %>% 
+    group_by(STATE, COUNTY.CODE, COUNTY, STATE.NAME, DISTRICT.NAME) %>% 
+    filter(!is.na(COUNTY.CODE)) %>% 
+    reframe(NO.LISTS = n_distinct(GROUP.ID)) %>% 
+    rowwise() %>% 
+    mutate(NAME.SIMILARITY = str_similarity(COUNTY, DISTRICT.NAME)) %>% 
+    arrange(desc(NAME.SIMILARITY), desc(NO.LISTS)) %>% 
+    group_by(STATE, COUNTY.CODE, COUNTY) %>% 
+    slice_head(n = 1) %>%
+    ungroup() %>% 
+    dplyr::select(-c(NAME.SIMILARITY, NO.LISTS)) %>% 
+    arrange(STATE, COUNTY.CODE)
+  
+  return(mapping)
+  
+}
+
+
+# calculate cell dim of extremes ----------------------------------------------------
+
+calc_celldim_extremes <- function() {
+  
+  load("../../00_data/maps_sf.RData")
+  load("../../00_data/grids_sf_full.RData")
+  
+  g1_dims <- map(g1_in_sf$GEOM.G1, ~ st_bbox(.x) %>% 
+                   as.matrix() %>% 
+                   t() %>% 
+                   as.data.frame()) %>% 
+    list_rbind() %>% 
+    bind_cols(g1_in_sf %>% dplyr::select(GRID.G1) %>% st_drop_geometry())
+  
+  g1_extremes <- g1_dims %>% 
+    mutate(LIMITS = case_when(
+      xmin == min(xmin) ~ "West",
+      xmax == max(xmax) ~ "East",
+      ymin == min(ymin) ~ "South",
+      ymax == max(ymax) ~ "North",
+      TRUE ~ NA
+    )) %>% 
+    filter(!is.na(LIMITS))
+  
+  # we need the full cells for dimensions (g1_in_sf is clipped at borders)
+  # so use g1_sf
+  g1_sel <- map(g1_sf$GEOM.G1, ~ st_bbox(.x) %>% 
+                  as.matrix() %>% 
+                  t() %>% 
+                  as.data.frame()) %>% 
+    list_rbind() %>% 
+    bind_cols(g1_sf %>% dplyr::select(GRID.G1) %>% st_drop_geometry()) %>% 
+    filter(GRID.G1 %in% g1_extremes$GRID.G1) %>% 
+    mutate(X1 = map2(xmin, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(X1 = geometry)) %>% 
+             list_rbind(),
+           X2 = map2(xmax, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(X2 = geometry)) %>% 
+             list_rbind(),
+           Y1 = map2(xmin, ymin, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(Y1 = geometry)) %>% 
+             list_rbind(),
+           Y2 = map2(xmin, ymax, ~ st_point(c(.x, .y)) %>% 
+                       st_sfc(crs = st_crs(g1_in_sf)) %>% 
+                       st_sf() %>% 
+                       rename(Y2 = geometry)) %>% 
+             list_rbind())
+  
+  
+  temp_fn <- function(a, b, c, ...) {
+    x <- tibble(DIST = c(a, b),
+                GRID.G1 = rep(c, 2))
+    return(x)
+  }
+  
+  x <- pmap(list(a = g1_sel$X1$X1, b = g1_sel$X2$X2, c = g1_sel$GRID.G1), 
+            temp_fn) %>% 
+    list_rbind() %>% 
+    rowwise() %>% 
+    reframe(st_point(DIST) %>% 
+              st_sfc(crs = st_crs(g1_in_sf)) %>% 
+              st_sf(),
+            GRID.G1 = GRID.G1) %>% 
+    st_as_sf(crs = st_crs(g1_in_sf)) %>% 
+    mutate(GRID.G1 = as.numeric(GRID.G1)) %>% 
+    group_by(GRID.G1) %>% 
+    reframe(X = st_distance(.)[2*cur_group_id() - 1, 2*cur_group_id()]) %>% 
+    mutate(GRID.G1 = as.character(GRID.G1)) 
+  
+  y <- pmap(list(a = g1_sel$Y1$Y1, b = g1_sel$Y2$Y2, c = g1_sel$GRID.G1), 
+            temp_fn) %>% 
+    list_rbind() %>% 
+    rowwise() %>% 
+    reframe(st_point(DIST) %>% 
+              st_sfc(crs = st_crs(g1_in_sf)) %>% 
+              st_sf(),
+            GRID.G1 = GRID.G1) %>% 
+    st_as_sf(crs = st_crs(g1_in_sf)) %>% 
+    mutate(GRID.G1 = as.numeric(GRID.G1)) %>% 
+    group_by(GRID.G1) %>% 
+    reframe(Y = st_distance(.)[2*cur_group_id() - 1, 2*cur_group_id()]) %>% 
+    mutate(GRID.G1 = as.character(GRID.G1)) 
+  
+  g1_celldim_extremes <- g1_extremes %>% 
+    dplyr::select(GRID.G1, LIMITS) %>% 
+    left_join(x, by = "GRID.G1") %>% 
+    left_join(y, by = "GRID.G1") %>% 
+    mutate(across(c(X, Y),
+                  ~ round(units::set_units(., "km"), 1)))
+  
+  return(g1_celldim_extremes)
+  
+}
+
 
 # get labelled months ---------------------------------------------------------------
 
@@ -8,10 +147,13 @@ get_labelled_months <- function() {
   month_lab <- data.frame(M.YEAR = 2018:2021) %>% 
     group_by(M.YEAR) %>% 
     summarise(MONTH = 1:12 %>% month()) %>% 
-    mutate(MONTH.LAB = month(MONTH, label = T)) %>% 
+    mutate(MONTH.LAB = month(MONTH, label = T),
+           M.YEAR.LAB = glue("{M.YEAR}\u2013{as.character(M.YEAR+1) %>% str_sub(3)}")) %>% 
     mutate(MONTH = factor(MONTH, levels = month(c(6:12, 1:5))),
            M.YEAR = factor(M.YEAR),
-           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T))) %>% 
+           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T)),
+           M.YEAR.LAB = factor(M.YEAR.LAB, levels = c("2018\u201319", "2019\u201320",
+                                                      "2020\u201321", "2021\u201322"))) %>% 
     mutate(COL1 = ifelse(MONTH.LAB %in% c("Apr", "May"), "red", "black"), # for normal plots
            COL2 = ifelse((M.YEAR %in% 2019:2020) & 
                            (MONTH.LAB %in% c("Apr", "May")), "red", "black"), # for timeline 
@@ -135,106 +277,11 @@ join_metric_composite <- function(base, tojoin, metric_colname,
 }
 
 
-### joinmapvars ########################################
+### map functions ########################################
 
-# adapted from Ashwin's "addmapvars" function to allow use within data preparation steps
-# i.e., inputs and outputs are data objects in the environment, no writing of files involved
+# getting mapping functions
+source(url("https://raw.githubusercontent.com/birdcountindia/bci-functions/main/01_functions/mapping.R"))
 
-# data: main data object to which map vars will be added (needs to be sliced already!)
-# admin = T if DISTRICT and ST_NM from shapefile required, else F
-# grids = T if grid cells (four resolutions) from shapefile required, else F
-
-
-#### maps.RData must already be loaded
-#### column names here are all uppercase, unlike in Ashwin's function
-
-
-joinmapvars = function(data, admin = T, grids = T){
-  
-  require(tidyverse)
-  require(sp)
-  require(rgeos)
-  
-  # single object at group ID level (same group ID, same grid/district/state)
-  temp0 <- data 
-  
-  
-  ### add columns with DISTRICT and ST_NM to main data 
-  
-  if (admin == T) {
-    
-    temp = temp0 # separate object to prevent repeated slicing (intensive step)
-    
-    rownames(temp) = temp$GROUP.ID # only to setup adding the group.id column for the future left_join
-    coordinates(temp) = ~LONGITUDE + LATITUDE # convert to SPDF
-    proj4string(temp) = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-    
-    temp = sp::over(temp, districtmap) %>% # returns only ATTRIBUTES of districtmap (DISTRICT and ST_NM)
-      dplyr::select(1, 2) %>% 
-      rename(DISTRICT = dtname,
-             ST_NM = stname) %>% 
-      rownames_to_column("GROUP.ID") 
-    
-    data = left_join(temp, data)
-    
-  }
-  
-  ### add grid cell info (at four resolutions) to main data
-  
-  if (grids == T) {
-    
-    temp = temp0
-    
-    rownames(temp) = temp$GROUP.ID
-    coordinates(temp) = ~LONGITUDE + LATITUDE
-    
-    temp = sp::over(temp, gridmapg1) %>% 
-      rownames_to_column("GROUP.ID") %>% 
-      rename(GRIDG1 = id)
-    
-    data = left_join(temp, data)
-    
-    
-    temp = temp0
-    
-    rownames(temp) = temp$GROUP.ID
-    coordinates(temp) = ~LONGITUDE + LATITUDE
-    
-    temp = sp::over(temp, gridmapg2) %>% 
-      rownames_to_column("GROUP.ID") %>% 
-      rename(GRIDG2 = id)
-    
-    data = left_join(temp, data)
-    
-    
-    temp = temp0
-    
-    rownames(temp) = temp$GROUP.ID
-    coordinates(temp) = ~LONGITUDE + LATITUDE
-    
-    temp = sp::over(temp, gridmapg3) %>% 
-      rownames_to_column("GROUP.ID") %>% 
-      rename(GRIDG3 = id)
-    
-    data = left_join(temp, data)
-    
-    
-    temp = temp0
-    
-    rownames(temp) = temp$GROUP.ID
-    coordinates(temp) = ~LONGITUDE + LATITUDE
-    
-    temp = sp::over(temp, gridmapg4) %>% 
-      rownames_to_column("GROUP.ID") %>% 
-      rename(GRIDG4 = id)
-    
-    data = left_join(temp, data)
-    
-  }
-  
-  return(data)
-  
-}
 
 ### MODIS land-use map to get urban-non-urban information -----------------
 
@@ -373,7 +420,7 @@ print("Reclassified and aggregated MODIS data")
 ### data quality filters and preparation -----------------
 
 # data file path (first time .txt which then creates .RData for future uses; functionised)
-# latest Ashwin's maps.RData file (having areas)
+# maps_sf.RData file (having areas)
 # path to list of group accounts to be filtered out
 # path to classification of year-month as COVID categories
 # path to raster data at 2x2 scale
@@ -485,7 +532,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   require(lubridate)
   require(terra)
   require(sp)
-  
+  sf_use_s2(FALSE) # not spherical geometry
   
   ### adding UNU information ######
   
@@ -596,8 +643,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   temp2 <- data0_MY_b %>% 
     ungroup() %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
-    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
-    terra::intersect(india) %>% 
+    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india_sf)) %>% 
+    terra::intersect(terra::vect(india_sf)) %>% 
     terra::as.data.frame() %>% 
     dplyr::select(GROUP.ID) 
 
@@ -645,15 +692,13 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     slice_sample(n = 1) %>%
     ungroup()
   
-  # adding map variables (CELL.ID) to main data
-  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
-  
-  lists_grids <- data0_MY_b_slice_G %>% 
-    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
-    joinmapvars() %>% 
-    # 25x25 grid cells
-    rename(CELL.ID = GRIDG1)
 
+  lists_grids <- data0_MY_b_slice_G %>% 
+    join_map_sf() %>% 
+    # 25x25 grid cells
+    rename(CELL.ID = GRID.G1) %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE, CELL.ID)
+  
   data0_MY_b <- data0_MY_b %>% left_join(lists_grids)
   data0_MY_b_slice_S <- data0_MY_b_slice_S %>% left_join(lists_grids)
   data0_MY_b_slice_G <- data0_MY_b_slice_G %>% left_join(lists_grids)
@@ -706,8 +751,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   temp2 <- data0_MY_d %>% 
     ungroup() %>% 
     distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
-    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india)) %>% 
-    terra::intersect(india) %>% 
+    terra::vect(geom = c("LONGITUDE","LATITUDE"), crs = crs(india_sf)) %>% 
+    terra::intersect(terra::vect(india_sf)) %>% 
     terra::as.data.frame() %>% 
     dplyr::select(GROUP.ID) 
   
@@ -754,15 +799,12 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     group_by(GROUP.ID) %>% 
     slice_sample(n = 1) %>%
     ungroup()
-  
-  # adding map variables (CELL.ID) to main data
-  load("00_data/maps.RData", envir = .GlobalEnv) # Ashwin's maps data
-  
+
   lists_grids <- data0_MY_d_slice_G %>% 
-    distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
-    joinmapvars() %>% 
+    join_map_sf() %>% 
     # 25x25 grid cells
-    rename(CELL.ID = GRIDG1)
+    rename(CELL.ID = GRID.G1) %>% 
+    distinct(GROUP.ID, LONGITUDE, LATITUDE, CELL.ID)
   
   data0_MY_d <- data0_MY_d %>% left_join(lists_grids)
   data0_MY_d_slice_S <- data0_MY_d_slice_S %>% left_join(lists_grids)
