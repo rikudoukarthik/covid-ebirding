@@ -14,7 +14,7 @@ editor_options:
 
 We standardised the dataset before analysis with the following set of filters. First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" (MY) as a unit time period.
 
-We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 8pm and 4am (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding "effort": checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. Finally, in instances of group birding (column "GROUP.IDENTIFIER") where each participant eBirder owns a copy of the checklist, duplicate checklists were removed by randomly sampling one out of the multiple checklists (column "SAMPLING.EVENT.IDENTIFIER").
+We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 20:00 h and 04:00 h (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding "effort": checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. Finally, in instances of group birding (column "GROUP.IDENTIFIER") where each participant eBirder owns a copy of the checklist, duplicate checklists were removed by randomly sampling one out of the multiple checklists (column "SAMPLING.EVENT.IDENTIFIER").
 
 The checklists that passed these criteria are referred to as "qualifying checklists".
 
@@ -26,7 +26,7 @@ We used remote sensing data to divide the country into urban and non-urban (rura
 
 For analysing spatial spread of the data, we decided to focus on districts as the spatial unit instead of `r glue("{grid_size_deg}\u00b0")` $\times$ `r glue("{grid_size_deg}\u00b0")` grid cells as in other metrics. This is because birding patterns in general are not uniformly and consistently spread across the country, so the fine scale of grid cells would produce too much noise. Here, districts provide a nice compromise: they are large enough to track change with less noise, while still being small enough to inform us about local patterns. We ensured that a single grid cell was linked with only one district, using random sampling from the list of districts it covered. The temporal unit of focus was the categorical COVID time period ("BEF", "DUR" or "AFT") and not individual months. Only those districts that were "covered" at least once in the study period, i.e., had at least one qualifying checklist in migratory years 2018--2021, were considered in the analyses.
 
-Our aim was to understand whether (and if so, how) the way birding patterns were spread across the country changed during the pandemic years. The two patterns of interest were change in birding effort (number of lists) and change in grid coverage (proportion of total grid cells having birding activity) from one year to the next. The former tells us about the intensity of birding while the latter shows us its breadth or completeness. Here, the changes in metrics rather than the metrics themselves inform us about consistency/variability across years, and would better highlight any anomalies brought by the pandemic. In the case of the period "DUR", both metrics were averaged across the two migratory years it comprised, 2019 and 2020.
+Our aim was to understand whether (and if so, how) the way birding patterns were spread across the country changed during the pandemic years. The two patterns of interest were change in birding effort (number of lists) and change in grid coverage (proportion of total grid cells having birding activity) from one year to the next. The former tells us about the intensity of birding while the latter shows us its breadth or completeness. Here, the changes in metrics rather than the metrics themselves inform us about consistency/variability across years, and would better highlight any anomalies brought by the pandemic. In the case of the period "DUR", both metrics were averaged across the two migratory years it comprised, 2019--20 and 2020--21.
 
 The grid coverage metric considered only those districts comprising at least five grid cells after the randomised assignment of grid cells to districts. Although this meant that certain districts which actually cover five or more grid cells might have been disqualified due to the random assignment, the converse is also true so some districts which in reality do not cover five or more grid cells might have qualified. We assume the two cases average out over the entire country, so it is not a statistical concern. However, grid coverage was further analysed in two conditions: one with no threshold for grid cell coverage, and one where a cell was considered "covered" only if it had five or more qualifying checklists per migratory year. The latter condition, by removing outlier cases, would produce clearer patterns with less noise.
 
@@ -60,7 +60,7 @@ $$log(metric) \sim year + year:month + (1/observer)$$
 
 ## Figures
 
-```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and inverse site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 d1 <- d01_group_po %>% pluck(1)
 d2 <- d02_fidelity_po %>% pluck(1)
@@ -78,7 +78,8 @@ p1 <-
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d1$M.YEAR.LAB))
 
 p2 <-
   ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -90,7 +91,8 @@ p2 <-
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d2$M.YEAR.LAB))
 
 p3 <-
   ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -102,7 +104,8 @@ p3 <-
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d3$M.YEAR.LAB))
 
 p4 <-
   ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -114,7 +117,8 @@ p4 <-
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d4$M.YEAR.LAB))
 
 (p1 / p2 / guide_area() / p3 / p4) +
   plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
@@ -125,7 +129,7 @@ p4 <-
 
 ```
 
-```{r long-changes-state, fig.cap="Graphs of observer-level group birding (A) and site fidelity (B), hotspot birding (C) and travelling protocol birding (D) for the state of Karnataka. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state, fig.cap="Graphs of observer-level group birding for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 d1 <- d01_group_po %>% 
   pluck(2) %>% 
@@ -146,7 +150,32 @@ p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d1$M.YEAR.LAB))
+
+p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d2$M.YEAR.LAB))
+
+p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d3$M.YEAR.LAB))
+
+p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
+  labs(x = "Month", y = "Proportion of\ngroup birding") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.5, position = position_dodge(0.5)) +
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d4$M.YEAR.LAB))
 
 (p1 / p2 / guide_area() / p3 / p4) +
   plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
@@ -171,7 +200,8 @@ p1 <- ggplot(d1,
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d1$M.YEAR.LAB))
 
 p2 <- ggplot(d2,
              aes(MONTH.LAB, PRED, colour = M.YEAR)) +
@@ -183,7 +213,8 @@ p2 <- ggplot(d2,
     width = 0.5,
     position = position_dodge(0.5)
   ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d2$M.YEAR.LAB))
 
 
 (p1 / guide_area() / p2) +
@@ -205,21 +236,24 @@ p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d1$M.YEAR.LAB))
 
 p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   labs(x = "Month", y = "List duration\n(mins)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d2$M.YEAR.LAB))
 
 p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
   labs(x = "Month", y = "List length\n(no. of species)") +
   geom_point(size = 2, position = position_dodge(0.5)) +
   geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
                 size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year")
+  scale_colour_manual(values = covid_palette, name = "Migratory year",
+                      labels = unique(d3$M.YEAR.LAB))
 
 (p1 / p2 / p3) +
   plot_layout(guides = "collect") +

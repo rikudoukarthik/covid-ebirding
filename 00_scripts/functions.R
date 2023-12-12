@@ -147,10 +147,13 @@ get_labelled_months <- function() {
   month_lab <- data.frame(M.YEAR = 2018:2021) %>% 
     group_by(M.YEAR) %>% 
     summarise(MONTH = 1:12 %>% month()) %>% 
-    mutate(MONTH.LAB = month(MONTH, label = T)) %>% 
+    mutate(MONTH.LAB = month(MONTH, label = T),
+           M.YEAR.LAB = glue("{M.YEAR}\u2013{as.character(M.YEAR+1) %>% str_sub(3)}")) %>% 
     mutate(MONTH = factor(MONTH, levels = month(c(6:12, 1:5))),
            M.YEAR = factor(M.YEAR),
-           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T))) %>% 
+           MONTH.LAB = factor(MONTH.LAB, levels = month(c(6:12, 1:5), label = T)),
+           M.YEAR.LAB = factor(M.YEAR.LAB, levels = c("2018\u201319", "2019\u201320",
+                                                      "2020\u201321", "2021\u201322"))) %>% 
     mutate(COL1 = ifelse(MONTH.LAB %in% c("Apr", "May"), "red", "black"), # for normal plots
            COL2 = ifelse((M.YEAR %in% 2019:2020) & 
                            (MONTH.LAB %in% c("Apr", "May")), "red", "black"), # for timeline 

@@ -7,8 +7,6 @@ author:
       correspondence: true
   - name: 'Ashwin Viswanathan'
     institute: ncf
-  - name: 'Praveen J'
-    institute: ncf
 institute:
   - ncf: 'Nature Conservation Foundation, 1311, "Amritha", 12th Main, Vijayanagar 1st Stage, Mysuru 570017, Karnataka, India'
 output: 
@@ -22,9 +20,7 @@ output:
 
 # Acknowledgements
 
-We are thankful to Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. for funding this study. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Suhel Quader for his comments on the manuscript.
-
-## Funding statement
+We thank our funders: Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Praveen J, Priti Bangal and Suhel Quader for their comments that helped improve the study and the manuscript.
 
 ## Ethics statement
 
@@ -36,6 +32,16 @@ The authors declare that they have no conflicting financial or personal interest
 
 ## Author contributions
 
-## Data avialability
+-   Conceived the idea, design, experiment (supervised research, formulated question or hypothesis): Karthik Thrikkadeeri, Ashwin Viswanathan
+-   Performed the experiments (collected data, conducted the research): Karthik Thrikkadeeri
+-   Wrote the paper (or substantially edited the paper): Karthik Thrikkadeeri, Ashwin Viswanathan
+-   Developed or designed methods: Karthik Thrikkadeeri, Ashwin Viswanathan
+-   Analyzed the data: Karthik Thrikkadeeri
 
-More details about the methodology, analyses and results are available online in supplementary materials.
+## Data availability
+
+Analyses reported in this article utilised, and can be reproduced using, publicly available datasets whose details are listed in the Methods section of the article.
+
+## Supplementary material
+
+More details about the methodology, analyses and results are available online in supplementary material. Auxiliary figures and other outputs not included in either the main text or the supplementary material (due to space constraints) can be found in [the GitHub repository](https://github.com/rikudoukarthik/covid-ebirding).
