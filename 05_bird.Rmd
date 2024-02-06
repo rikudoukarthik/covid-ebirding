@@ -237,12 +237,6 @@ fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eate
 
 ```{r b01_overall_s1, cache=TRUE, message=FALSE}
 
-anal_name <- "b01_overall_s1a_m"
-
-b01_overall_monthly("Karnataka")
-
-save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
-
 anal_name <- "b01_overall_s1b_y"
 
 b01_overall_annual("Karnataka")
@@ -289,12 +283,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```{r b01_overall_s2, cache=TRUE, message=FALSE}
 
-anal_name <- "b01_overall_s2a_m"
-
-b01_overall_monthly("Kerala")
-
-save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
-
 
 anal_name <- "b01_overall_s2b_y"
 
@@ -340,12 +328,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 
 ```{r b01_overall_s3, cache=TRUE, message=FALSE}
 
-anal_name <- "b01_overall_s3a_m"
-
-b01_overall_monthly("Maharashtra")
-
-save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
-
 
 anal_name <- "b01_overall_s3b_y"
 
@@ -390,13 +372,6 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}.png"), plot = birds_plot,
 -   In the other ten months, both kinds of species increased in MY2019, but urban species are being reported more and more even after the pandemic has passed. This might have something to do with the kind of birding that has been increasing in Maharashtra.
 
 ```{r b01_overall_s4, cache=TRUE, message=FALSE}
-
-anal_name <- "b01_overall_s4a_m"
-
-b01_overall_monthly("Assam")
-
-save(data_a, data_b, file = glue("00_outputs/{anal_name}.RData"))
-
 
 anal_name <- "b01_overall_s4b_y"
 
