@@ -1,86 +1,27 @@
-# this script will be sourced instead of functionising some of these steps and directly 
-# calling them from the main script, because parallelisation is somehow much less
-# efficient when within a function or loop.
-
-
+# Modelling directly with presence-absence data instead of relative abundance.
+#
+# parallelisation is somehow much less efficient when within a function or loop.
 
 tictoc::tic("Total time elapsed for b01_overall_model():")
 
-require(lme4)
-
 cur_species_list <- species_list %>% filter(STATE == state_name)
 
-### modelling directly with presence-absence data instead of relative abundance
 
-# to join for presence-absence of various species
-temp1 <- data0_MY_b %>% 
-  filter(STATE == state_name) %>% 
-  group_by(GROUP.ID, COMMON.NAME) %>% 
-  dplyr::summarise(OBSERVATION.COUNT = max(OBSERVATION.COUNT)) %>% 
-  ungroup()
+###
 
-# to later join checklist metadata
-temp2 <- data0_MY_b_slice_G %>% 
-  filter(STATE == state_name) %>% 
-  arrange(SAMPLING.EVENT.IDENTIFIER) %>% 
-  dplyr::select(GROUP.ID, STATE, COUNTY, LOCALITY, LATITUDE, LONGITUDE, OBSERVATION.DATE, 
-                M.YEAR, MONTH, DAY.M, M.YEAR, URBAN, CELL.ID, SUBCELL.ID, NO.SP)
+source("00_scripts/ss01_groupids.R")
+source("00_scripts/ss02_datafiles.R")
 
-data_occ <- data0_MY_b_slice_G %>% 
-  filter(STATE == state_name) %>% 
-  # getting species of interest
-  group_by(GROUP.ID) %>% 
-  dplyr::summarise(COMMON.NAME = cur_species_list$COMMON.NAME) %>% 
-  left_join(temp1) %>% 
-  # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
-  mutate(REPORT = replace_na(OBSERVATION.COUNT, "0")) %>% 
-  dplyr::select(-OBSERVATION.COUNT) %>% 
-  mutate(REPORT = as.numeric(case_when(REPORT != "0" ~ "1", TRUE ~ REPORT))) %>% 
-  # checklist metadata
-  left_join(temp2, by = "GROUP.ID") %>% 
-  arrange(GROUP.ID) %>% 
-  # species categories
-  left_join(cur_species_list) %>% 
-  ungroup()
 
-# for the three different models
-data_occ0 <- bind_rows("LD" = data_occ %>% filter(MONTH %in% 4:5), 
-                       "NL" = data_occ %>% filter(!(MONTH %in% 4:5)), 
-                       .id = "MONTHS.TYPE") 
-
-# getting median list length for prediction later
-median_length <- data_occ0 %>% 
-  distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
-  # interested in seasonality so not concerned with M.YEAR
-  group_by(MONTHS.TYPE, MONTH) %>% 
-  dplyr::summarise(NO.SP.MED = floor(median(NO.SP)))
-
-# dataframe with empty column to populate with looped values
-# total rows: product of distinct values of predictors
-birds_pred <- data_occ0 %>% 
-  group_by(MONTHS.TYPE) %>% 
-  # nest month within species cos all species not present all-year
-  tidyr::expand(COMMON.NAME, nesting(MONTH), M.YEAR) %>% 
-  left_join(cur_species_list) %>% 
-  # joining median list length
-  left_join(median_length) %>% 
-  rename(NO.SP = NO.SP.MED) %>% 
-  mutate(PRED.LINK = NA,
-         SE.LINK = NA)
-
-print("Completed preparations for modelling. Now starting modelling.")
 
 
 
 # month type 1 ------------------------------------------------------------
 
-cur_m <- 1
+cur_m <- "LD"
 
-data_mtype <- data_occ0 %>%
-  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
+source("00_scripts/ss03_runspeciesmodels.R")
 
-birds_pred0 <- birds_pred %>%
-  filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
 
 
 for (cur_sp in 1:n_distinct(birds_pred0$COMMON.NAME)) {
@@ -167,7 +108,7 @@ birds_pred <- birds_pred %>%
 
 # month type 2 ------------------------------------------------------------
 
-cur_m <- 2
+cur_m <- "NL"
 
 data_mtype <- data_occ0 %>% 
   filter(MONTHS.TYPE == unique(birds_pred$MONTHS.TYPE)[cur_m])
@@ -270,10 +211,10 @@ birds_pred <- birds_pred %>%
   # summarising for species categories
   group_by(STATE, MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
   dplyr::summarise(PRED = mean(PRED),
-            # propagating SE across species of a category
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PRED - 1.96*SE,
-            CI.U = PRED + 1.96*SE)
+                   # propagating SE across species of a category
+                   SE = sqrt(sum((SE)^2))/n(),
+                   CI.L = PRED - 1.96*SE,
+                   CI.U = PRED + 1.96*SE)
 
 tictoc::toc()
 
