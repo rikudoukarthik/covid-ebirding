@@ -1,5 +1,5 @@
 ---
-title: "Birdwatchers' resilience to perturbation in India buffers citizen science from pandemic-induced biases"
+title: "Minimal large-scale impact of COVID-19 pandemic on citizen science participation in India"
 bibliography: ../covid-ebirding.json
 csl: ../the-condor.csl
 link-citations: yes
@@ -57,7 +57,7 @@ data0 <- join_metric_composite(base = NULL,
   summarise_mean_and_se(PRED, SE) %>% 
   get_CI_lims()
 
-lab_y <- if (ylab == FALSE) NA else "Data quality metrics<br>(prop. change from t~0~ = 2018\u201319)"
+lab_y <- if (ylab == FALSE) NA else "Prop. change in eBird data characteristics<br>(from t~0~ = 2018\u201319)"
 
 plot0 <- data0 %>% 
   ggplot(aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
@@ -135,7 +135,6 @@ walk(data_list, ~ {
   assign(x = .x, value = data_int, envir = .GlobalEnv)
 })
 
-load("../../00_outputs/d09c_s_spread.RData")
 load("../../00_data/maps_sf.RData")
 
 

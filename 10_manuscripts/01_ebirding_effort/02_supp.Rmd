@@ -8,128 +8,43 @@ editor_options:
 
 ## Methods
 
-### Data preparation
-
-#### Data filters {#dataprep}
+### Data filters {#dataprep}
 
 We standardised the dataset before analysis with the following set of filters. First, we filtered the dataset for "complete checklists", in which observers report all the birds they see or hear. Next, we filtered the data for our timeline of interest. The migratory cycle in India starts in June of one calendar year and ends in May of the next, and this time frame is thus deemed more appropriate than a calendar year. Therefore, all analyses presented in this study use "migratory year" (MY) as a unit time period.
 
-We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 20:00 h and 04:00 h (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding "effort": checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. Finally, in instances of group birding (column "GROUP.IDENTIFIER") where each participant eBirder owns a copy of the checklist, duplicate checklists were removed by randomly sampling one out of the multiple checklists (column "SAMPLING.EVENT.IDENTIFIER").
+We then removed data from group accounts, which are eBird accounts with which multiple existing eBirders share their lists to track aggregate summaries. Such accounts are commonly used during specific events or surveys, and need to be removed from analyses of observer-related metrics. Next, we applied a nocturnal filter to remove observations made between 20:00 h and 04:00 h (nocturnal birding is very different from diurnal birding), a pelagic filter to remove observations made from beyond the shoreline of the country, and finally a set of filters to remove observations made with extreme values of birding effort: checklists that are too short (less than three minutes long, or reporting three or fewer species without information on duration, or reporting three or fewer species at a rate lower than two species per hour), and travelling checklists that are too fast (following "Traveling" protocol and travelling faster than 20 kmph or covering a distance greater than 50 km). These lists with extreme effort are not considered to be "truly complete" checklists. Finally, in instances of group birding (column "GROUP.IDENTIFIER") where each participant eBirder owns a copy of the checklist, duplicate checklists were removed by randomly sampling one out of the multiple checklists (column "SAMPLING.EVENT.IDENTIFIER").
 
 The checklists that passed these criteria are referred to as "qualifying checklists".
 
-#### Urban or rural {#UNUprep}
+### Urban/non-urban classification {#UNUprep}
 
-We used remote sensing data to divide the country into urban and non-urban (rural) areas. For this, we downloaded the MODIS Land Cover Type Product (MCD12Q1) that includes several science datasets (SDSs) mapping global land cover at a 500 m resolution. Although this comes at an annual time step, we used data from the single time point, 31 December 2021. The tiled MODIS data was downloaded using the "getModis()" function in the *luna* package and saved as individual .tif files, which were then merged into a single raster. After cropping and masking to the country's administrative boundary shapefile, the MODIS land cover categories in the raster were reclassified: category 13, "urban and built-up lands" was considered "urban", and all other categories were considered "rural" (technically "non-urban"). We didn't use the MODIS data at 500 m × 500 m resolution because the location information in eBird data, despite being precise, is not very accurate at small grain sizes (due to the very nature of eBird data where sampling often occurs over a distance). So, finally we aggregated the raster to a resolution of 2 km $\times$ 2 km which was deemed more appropriate, using a 25% threshold for classification as urban, i.e., a 2 km $\times$ 2 km cell was classified as urban if four or more of the 16 500 m $\times$ 500 m cells being aggregated were urban. We then linked each qualifying checklist in the dataset to this modified MODIS raster, using its associated latitude-longitude information, and thus classified each checklist as urban or rural.
-
-### Spatial spread {#sspreadmeth}
-
-For analysing spatial spread of the data, we decided to focus on districts as the spatial unit instead of `r glue("{grid_size_deg}\u00b0")` $\times$ `r glue("{grid_size_deg}\u00b0")` grid cells as in other metrics. This is because birding patterns in general are not uniformly and consistently spread across the country, so the fine scale of grid cells would produce too much noise. Here, districts provide a nice compromise: they are large enough to track change with less noise, while still being small enough to inform us about local patterns. We ensured that a single grid cell was linked with only one district, using random sampling from the list of districts it covered. The temporal unit of focus was the categorical COVID time period ("BEF", "DUR" or "AFT") and not individual months. Only those districts that were "covered" at least once in the study period, i.e., had at least one qualifying checklist in migratory years 2018--2021, were considered in the analyses.
-
-Our aim was to understand whether (and if so, how) the way birding patterns were spread across the country changed during the pandemic years. The two patterns of interest were change in birding effort (number of lists) and change in grid coverage (proportion of total grid cells having birding activity) from one year to the next. The former tells us about the intensity of birding while the latter shows us its breadth or completeness. Here, the changes in metrics rather than the metrics themselves inform us about consistency/variability across years, and would better highlight any anomalies brought by the pandemic. In the case of the period "DUR", both metrics were averaged across the two migratory years it comprised, 2019--20 and 2020--21.
-
-The grid coverage metric considered only those districts comprising at least five grid cells after the randomised assignment of grid cells to districts. Although this meant that certain districts which actually cover five or more grid cells might have been disqualified due to the random assignment, the converse is also true so some districts which in reality do not cover five or more grid cells might have qualified. We assume the two cases average out over the entire country, so it is not a statistical concern. However, grid coverage was further analysed in two conditions: one with no threshold for grid cell coverage, and one where a cell was considered "covered" only if it had five or more qualifying checklists per migratory year. The latter condition, by removing outlier cases, would produce clearer patterns with less noise.
-
-Due to the difficulty in quantitatively ascertaining change in spatial spread across such a large area with huge variability, we devised a suite of three analyses which, put together, would provide a clear qualitative picture of change in spatial spread/clustering of the metric.
-
-#### Spatial visualisation of raw change
-
-Raw change in a metric $a$ from period $x$ to period $y$ was calculated as the simple difference of their values $(a_{y}-a_{x})$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. We plotted the raw change per district from one COVID period to another on a map of India, colouring the districts based on magnitude of change. Here we were concerned with two things: firstly, whether the majority of districts showed a positive or a negative change; second, how many districts showed high magnitude of change, and whether or not these were clustered in space. If most districts showed a negative change in birding effort or grid coverage from BEF to DUR, this would translate to an effect of the pandemic on the quantity and quality of data collected during the pandemic. The higher the magnitude of change, the more worrisome the change would be, and if these high magnitude changes were spatially clustered, this would result in a high spatial bias during the pandemic years, as opposed to if they were spread out across different regions of the country.
-
-#### Net raw change across the country
-
-This is a more quantitative method of analysing whether the majority of districts showed a positive or a negative change. We estimated mean raw change and its 95% CI, by bootstrapping across all the districts. If the net change from DUR to AFT was significantly (no overlap of CIs) higher than from BEF to DUR, this would suggest that birding effort or grid coverage was subdued during the pandemic.
-
-#### Spatial visualisation of proportional change in two temporal directions
-
-Proportional change in a metric $a$ from period $x$ to period $y$ was calculated as $(a_{y}-a_{x})/a_{x}$. It was not calculated for cases where both $a_{x}$ and $a_{y}$ were zero. If only $a_{x}$ was zero, a constant $k=1$ was added to both $a_{x}$ and $a_{y}$ in order to avoid zero in the denominator. Moreover, for the birding effort metric, proportional change was not calculated if the first period in the transition had less than 10 qualifying checklists ($a_{x} < 10$). Otherwise, since the metric has a fixed lower limit but not an upper limit, this would result in very high values of proportional change simply due to the low overall birding.
-
-We visualised only the negative values of proportional change, since a general increase in birding effort or grid coverage is not worrisome and is in fact even expected. Here, the values were coloured based on magnitude and once again the high magnitude changes are of interest, but we are also interested in transitions in both directions. For example, if the same districts with high magnitudes of negative proportional change from BEF to DUR have similar values also from AFT to DUR, this would suggest a clear and direct impact of the pandemic in lower birding effort or grid coverage.
-
-### Model specifications {#modelspecs}
-
-GLMMs were fitted with the following specification, with the random effect changing as appropriate (see Section \@ref(model-boot)):
-
-$$metric \sim year + year:month + (1/observer)$$
-
-$$metric \sim year + year:month + (1/cell)$$
-
-where $year$ represents the migratory years. Where GLMMs were not appropriate, LMMs were fitted with the following specification:
-
-$$log(metric) \sim year + year:month + (1/observer)$$
+We used remote sensing data to divide the country into urban and non-urban areas. For this, we downloaded the MODIS Land Cover Type Product (MCD12Q1) that includes several science datasets (SDSs) mapping global land cover at a 500 m resolution. Although this comes at an annual time step, we used data from the single time point, 31 December 2021. The tiled MODIS data was downloaded using the "getModis()" function in the *luna* package and saved as individual .tif files, which were then merged into a single raster. After cropping and masking to the country's administrative boundary shapefile, the MODIS land cover categories in the raster were reclassified: category 13, "urban and built-up lands" was considered "urban", and all other categories were considered "non-urban". We didn't use the MODIS data at 500 m × 500 m resolution because the location information in eBird data, despite being precise, is not very accurate at small grain sizes (due to the very nature of eBird data where sampling often occurs over a distance). So, we finally aggregated the raster to a resolution of 2 km $\times$ 2 km which was deemed more appropriate, using a 25% threshold for classification as urban, i.e., a 2 km $\times$ 2 km cell was classified as urban if four or more of the 16 500 m $\times$ 500 m cells being aggregated were urban. We then linked each qualifying checklist in the dataset to this modified MODIS raster, using its associated latitude-longitude information, and thus classified each checklist as urban or non-urban.
 
 ## Figures
 
-```{r long-changes, fig.cap="Graphs of observer-level group birding (A) and inverse site fidelity (B), hotspot birding (C) and travelling protocol birding (D) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r fig-main-states, fig.cap="Proportional change per year and month category in the nine metrics of state-level composites of eBird data characteristics, relative to values in MY 2018--19 (represented by the y = 1 line). This is visualised for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). The four years of interest are on the X-axis, with the pandemic years labelled in red text. Each coloured ribbon represents the 95% confidence interval, which is the combined uncertainty estimated across individual uncertainties from model predictions for each of the nine metrics (means have not been depicted). Note that state-level changes largely mirror national-level patterns such as transience of pandemic impacts, but exhibit higher internal variability (as suggested by the higher uncertainty) across all years.", out.width="100%", dpi=300, dev="jpeg"}
 
-d1 <- d01_group_po %>% pluck(1)
-d2 <- d02_fidelity_po %>% pluck(1)
-d3 <- d04_hotspot %>% pluck(1)
-d4 <- d05_protocol %>% pluck(1)
+fig_path <- "fig_main_states.png"
 
+fig1 <- create_composite_graph("state", "Karnataka")
+fig2 <- create_composite_graph("state", "Kerala", ylab = FALSE)
+fig3 <- create_composite_graph("state", "Maharashtra", ylab = FALSE)
+fig4 <- create_composite_graph("state", "Assam", ylab = FALSE)
 
-p1 <-
-  ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ngroup birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d1$M.YEAR.LAB))
-
-p2 <-
-  ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "No. of sites\nvisited") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d2$M.YEAR.LAB))
-
-p3 <-
-  ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nhotspot birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d3$M.YEAR.LAB))
-
-p4 <-
-  ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ntravelling birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d4$M.YEAR.LAB))
-
-(p1 / p2 / guide_area() / p3 / p4) +
-  plot_layout(guides = "collect", heights = c(3, 3, 0.5, 3, 3)) +
+fig_main_states <- (fig1 | fig2 | fig3 | fig4) +
+  plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
+        plot.tag.position = c(0, 0.995))
 
+ggsave(plot = fig_main_states, fig_path,
+       width = 27, height = 11, units = "in", dpi = 300)
+
+knitr::include_graphics(fig_path)
 
 ```
 
-```{r long-changes-state, fig.cap="Graphs of observer-level group birding for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
+```{r long-changes-state, fig.cap="Graphs of group birding for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note that state-level changes largely mirror national-level patterns such as transience of pandemic impacts during the first wave of pandemic lockdowns.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 
 d1 <- d01_group_po %>% 
   pluck(2) %>% 
@@ -185,84 +100,6 @@ p4 <- ggplot(d4, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
 
 ```
 
-```{r urban-cov, fig.cap="Graphs of urban bias (A) and spatial coverage (B) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", fig.width=8, out.width="100%", fig.height=9, out.height="100%", dpi=300, dev="jpeg"}
-
-d1 <- d09a_s_UNU %>% pluck(1)
-d2 <- d09b_s_cover %>% pluck(1)
-
-p1 <- ggplot(d1,
-             aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\nurban birding") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d1$M.YEAR.LAB))
-
-p2 <- ggplot(d2,
-             aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Proportion of\ncells covered") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(
-    aes(ymin = CI.L, ymax = CI.U),
-    size = 1,
-    width = 0.5,
-    position = position_dodge(0.5)
-  ) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d2$M.YEAR.LAB))
-
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(5, 1, 5)) +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
-```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
-
-d1 <- d06_distance %>% pluck(1)
-d2 <- d07_duration %>% pluck(1)
-d3 <- d08_length %>% pluck(1)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "Birding distance\n(km)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d1$M.YEAR.LAB))
-
-p2 <- ggplot(d2, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List duration\n(mins)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d2$M.YEAR.LAB))
-
-p3 <- ggplot(d3, aes(MONTH.LAB, PRED, colour = M.YEAR)) +
-  labs(x = "Month", y = "List length\n(no. of species)") +
-  geom_point(size = 2, position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
-                size = 1, width = 0.5, position = position_dodge(0.5)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year",
-                      labels = unique(d3$M.YEAR.LAB))
-
-(p1 / p2 / p3) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(colour = month_lab$COL1))
-
-```
-
 \newpage
 
 ## Tables
@@ -294,7 +131,7 @@ re_var09b <- get_re_vars(d09b_s_cover)
 
 ```
 
-```{r model-summ1, eval.after = "tab.cap", tab.cap=glue('Model summary for group birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var01}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ1, eval.after = "tab.cap", tab.cap=glue('Model summary for group birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var01}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d01_group_po %>% pluck(3)
 
@@ -338,7 +175,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ2, eval.after = "tab.cap", tab.cap=glue('Model summary for site fidelity at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var02}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ2, eval.after = "tab.cap", tab.cap=glue('Model summary for site fidelity at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var02}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d02_fidelity_po %>% pluck(3)
 
@@ -382,7 +219,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ3, eval.after = "tab.cap", tab.cap=glue('Model summary for hotspot birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var04}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ3, eval.after = "tab.cap", tab.cap=glue('Model summary for hotspot birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var04}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d04_hotspot %>% pluck(3)
 
@@ -426,7 +263,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ4, eval.after = "tab.cap", tab.cap=glue('Model summary for travelling protocol birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var05}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ4, eval.after = "tab.cap", tab.cap=glue('Model summary for travelling protocol birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var05}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d05_protocol %>% pluck(3)
 
@@ -470,7 +307,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ5, eval.after = "tab.cap", tab.cap=glue('Model summary for list distance at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var06}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ5, eval.after = "tab.cap", tab.cap=glue('Model summary for list distance at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var06}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d06_distance %>% pluck(3)
 
@@ -514,7 +351,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ6, eval.after = "tab.cap", tab.cap=glue('Model summary for list duration at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var07}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ6, eval.after = "tab.cap", tab.cap=glue('Model summary for list duration at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var07}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d07_duration %>% pluck(3)
 
@@ -558,7 +395,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ7, eval.after = "tab.cap", tab.cap=glue('Model summary for list length at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var08}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ7, eval.after = "tab.cap", tab.cap=glue('Model summary for list length at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var08}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d08_length %>% pluck(3)
 
@@ -602,7 +439,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ8, eval.after = "tab.cap", tab.cap=glue('Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var09a}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ8, eval.after = "tab.cap", tab.cap=glue('Model summary for urban birding at the national level. Numerical years refer to "migratory years". Random effect variance of Observer ID is {re_var09a}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d09a_s_UNU %>% pluck(3)
 
@@ -646,7 +483,7 @@ summary(model_a) %>%
 
 \newpage
 
-```{r model-summ10, eval.after = "tab.cap", tab.cap=glue('Model summary for spatial coverage at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is {re_var09b}. See model specifications described earlier.'), out.width="100%"}
+```{r model-summ10, eval.after = "tab.cap", tab.cap=glue('Model summary for spatial coverage at the national level. Numerical years refer to "migratory years". Random effect variance of Cell ID is {re_var09b}. See model specifications described in Section 2.2.4 of the main text.'), out.width="100%"}
 
 model_a <- d09b_s_cover %>% pluck(3)
 
