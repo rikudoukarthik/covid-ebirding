@@ -6,7 +6,7 @@
 
 ```{r overall-non1, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s1a_m.RData")
+load("00_outputs/b_overall_s1a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -77,7 +77,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non3, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s1b_y.RData")
+load("00_outputs/b_overall_s1b_y.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -148,7 +148,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```{r overall-non5, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s2a_m.RData")
+load("00_outputs/b_overall_s2a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -219,7 +219,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non7, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s2b_y.RData")
+load("00_outputs/b_overall_s2b_y.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -290,7 +290,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```{r overall-non9, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s3a_m.RData")
+load("00_outputs/b_overall_s3a_m.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -361,7 +361,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non11, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s3b_y.RData")
+load("00_outputs/b_overall_s3b_y.RData")
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -432,7 +432,7 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```{r overall-non13, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s4a_m.RData")
+load("00_outputs/b_overall_s4a_m.RData")
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
 d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -468,7 +468,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non14, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s4b_y.RData")
+load("00_outputs/b_overall_s4b_y.RData")
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -504,13 +504,13 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```{r overall-10m, fig.cap="Modelled species reporting frequencies for all ten months excluding April and May, for the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=6, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s1c_model.RData")
+load("00_outputs/b_overall_s1c_model.RData")
 d1 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s2c_model.RData")
+load("00_outputs/b_overall_s2c_model.RData")
 d2 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s3c_model.RData")
+load("00_outputs/b_overall_s3c_model.RData")
 d3 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
-load("00_outputs/b01_overall_s4c_model.RData")
+load("00_outputs/b_overall_s4c_model.RData")
 d4 <- birds_pred %>% filter(MONTHS.TYPE == "NL") 
 
 p1 <- ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +

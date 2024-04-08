@@ -1612,7 +1612,7 @@ gg_b_model <- function(data, type, data_points) {
 
 ### iterative code for overall bird reporting patterns -----------------
 
-b01_overall_monthly <- function(state_name) {
+b_overall_monthly <- function(state_name) {
   
   # anal_name, city_list and species_list need to be in environment
   # sliced and non-sliced data as well
@@ -1691,7 +1691,7 @@ b01_overall_monthly <- function(state_name) {
 }
 
 
-b01_overall_annual <- function(state_name) {
+b_overall_annual <- function(state_name) {
   
   # previous needs to be run before this for data objects!
   

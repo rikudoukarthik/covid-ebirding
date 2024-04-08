@@ -62,22 +62,22 @@ With consistent effort, species reporting patterns show a different picture at t
 
 ```{r overall-212m, fig.cap="Modelled species reporting frequencies for the months of April and May (top row) and separately for all twelve months of a year (bottom row), for the states of Karnataka (A1, B1), Kerala (A2, B2), Maharashtra (A3, B3) and Assam (A4, B4). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b01_overall_s1c_model.RData")
+load("00_outputs/b_overall_s1c_model.RData")
 d1 <-
   birds_pred %>% filter(MONTHS.TYPE == "LD")
 d5 <-
   birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b01_overall_s2c_model.RData")
+load("00_outputs/b_overall_s2c_model.RData")
 d2 <-
   birds_pred %>% filter(MONTHS.TYPE == "LD")
 d6 <-
   birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b01_overall_s3c_model.RData")
+load("00_outputs/b_overall_s3c_model.RData")
 d3 <-
   birds_pred %>% filter(MONTHS.TYPE == "LD")
 d7 <-
   birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b01_overall_s4c_model.RData")
+load("00_outputs/b_overall_s4c_model.RData")
 d4 <-
   birds_pred %>% filter(MONTHS.TYPE == "LD")
 d8 <-
@@ -245,7 +245,7 @@ pB <-
 
 ```{r prolific, fig.cap="Species reporting frequencies with consistent effort data, separately modelled for the months of April and May (A), the other ten months (B), and all twelve months of a year (C). Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text. Each translucent line connecting points represents reporting frequencies from a single location/patch across the four years. Points with error bars represent means with 95% confidence intervals.", out.width="100%", fig.width=8, fig.height=6, dpi=300, dev="jpeg"}
 
-load("00_outputs/b02_prolific_model.RData")
+load("00_outputs/b_prolific_model.RData")
 
 d1a <-
   prolific_pred %>% filter(MONTHS.TYPE == "LD")
