@@ -39,123 +39,79 @@ singlespeciesmodel = function(data, species, specieslist) {
   require(merTools)
 
 
- 
-  
-  
   # getting median list length for prediction later
-  median_length <- data_occ0 %>% 
-    distinct(MONTHS.TYPE, M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
-    # interested in seasonality so not concerned with M.YEAR
-    group_by(MONTHS.TYPE, MONTH) %>% 
-    dplyr::summarise(NO.SP.MED = floor(median(NO.SP)))
-  
-  # dataframe with empty column to populate with looped values
-  # total rows: product of distinct values of predictors
-  birds_pred <- data_occ0 %>% 
-    group_by(MONTHS.TYPE) %>% 
-    # nest month within species cos all species not present all-year
-    tidyr::expand(COMMON.NAME, nesting(MONTH), M.YEAR) %>% 
-    left_join(cur_species_list) %>% 
-    # joining median list length
-    left_join(median_length) %>% 
-    rename(NO.SP = NO.SP.MED) %>% 
-    mutate(PRED.LINK = NA,
-           SE.LINK = NA)
+  median_length <- data %>% 
+    distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
+    group_by(MONTH) %>% 
+    reframe(NO.SP.MED = floor(median(NO.SP)))
   
   message("Completed preparations for modelling. Now starting modelling.")
-    
 
-
-  data1 = data1 %>%
+  
+  data_filt = data %>%
     filter(COMMON.NAME == species) %>%
-    distinct(gridg3, month) %>% 
-    left_join(data1)
-  
-  tm = data1 %>% distinct(timegroups)
-  #rm(data, pos = ".GlobalEnv")
-  
-  datay = data1 %>%
-    group_by(gridg3, gridg1, group.id) %>% 
-    slice(1) %>% 
-    group_by(gridg3, gridg1) %>% 
-    reframe(medianlla = median(no.sp)) %>%
-    group_by(gridg3) %>% 
-    reframe(medianlla = mean(medianlla)) %>%
-    reframe(medianlla = round(mean(medianlla)))
-  # getting median list length for prediction later
-  median_length <- data_occ0 %>% 
-    distinct(M.YEAR, MONTH, GROUP.ID, NO.SP) %>% 
-    # interested in seasonality so not concerned with M.YEAR
-    group_by(MONTH) %>% 
-    dplyr::summarise(NO.SP.MED = floor(median(NO.SP)))
-  
-  medianlla = datay$medianlla
-  
-  
+    # using only CELL.ID-MONTH (space-time) combos in which species occurs
+    distinct(CELL.ID, MONTH) %>% 
+    # joining median list length
+    left_join(median_length, by = "MONTH") %>% 
+    # join rest of dataset back
+    left_join(data)
+
   # expand dataframe to include absences as well
-  ed = expandbyspecies(data1, species) %>% 
+  data_exp = expandbyspecies(data_filt, species) %>% 
     # join species categories
     left_join(specieslist)
   
   
   # the model ---------------------------------------------------------------
   
-    m1 = glmer(OBSERVATION.COUNT ~ month + month:log(no.sp) + timegroups + (1|gridg1), 
-               data = ed, family = binomial(link = 'cloglog'), 
-               nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-
+  tictoc::tic(glue("GLMM for {mt}, {species}"))
+  
+  # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings
+  # failed to reduce deviance in pwrssUpdate"
+  
+  if ((state_name == "Kerala" & species %in% fail_spec_KL) |
+      (state_name == "Maharashtra" & species %in% fail_spec_MH)){
+    
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
+                          (1|CELL.ID),
+                        data = data_exp, family = binomial,
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+    
+  } else {
+    
+    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
+                          (1|CELL.ID),
+                        data = data_exp, family = binomial(link = "cloglog"),
+                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+    
+  }
+  
+  tictoc::toc()
   
   # predicting from model ---------------------------------------------------
   
   # prepare a new data file to predict
-  ltemp <- ed %>% 
-    group_by(month) %>% 
-    reframe(timegroups = unique(tm$timegroups)) %>% 
-    mutate(no.sp = medianlla,
-           # <annotation_pending_AV> why taking 1st value?
-           gridg1 = data1$gridg1[1], 
-           gridg3 = data1$gridg3[1])
-  
-  f2 <- ltemp %>% 
-    dplyr::select(timegroups) %>% 
-    # this is not actually needed
-    mutate(freq = 0, se = 0)
+  birds_pred <- data_exp %>% 
+    distinct(MONTH, M.YEAR) %>% 
+    # joining median list length
+    left_join(median_length, by = "MONTH") %>% 
+    rename(NO.SP = NO.SP.MED) 
   
   
-  if (flag != 2)
-  {
-    #pred = predict(m1, newdata = ltemp, type = "response", re.form = NA, allow.new.levels=TRUE)
-    pred = predictInterval(m1, newdata = ltemp, which = "fixed",
-                           level = 0.48, type = "linear.prediction")
-    f2$freqt = pred$fit
-    f2$set = pred$fit-pred$lwr
-  }
-  
-  if (flag == 2)
-  {
-    pred = predict(m1, newdata = ltemp, type = "link", se.fit = T)
-    f2$freqt = pred$fit
-    f2$set = pred$se.fit
-  }
-  
-  f1 = f2 %>%
-    filter(!is.na(freqt) & !is.na(se)) %>%
-    group_by(timegroups) %>% 
-    reframe(freq = mean(freqt), se = mean(set)) %>% 
-    right_join(tm) %>% 
-    left_join(databins %>% distinct(timegroups, year)) %>% 
-    rename(timegroupsf = timegroups,
-           timegroups = year) %>% 
-    mutate(timegroupsf = factor(timegroupsf, 
-                                levels = c("before 2000","2000-2006","2007-2010",
-                                           "2011-2012","2013","2014","2015","2016",
-                                           "2017","2018","2019","2020","2021","2022"))) %>% 
-    complete(timegroupsf) %>% 
-    arrange(timegroupsf)
+  pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",
+                         level = 0.48, type = "linear.prediction")
+  birds_pred$PRED.LINK = pred$fit
+  birds_pred$SE.LINK = pred$fit - pred$lwr
   
   
-  tocomb = c(species, f1$freq, f1$se)
-  return(tocomb)
-  # each species's tocomb becomes one column in final trends0 output object
+  birds_pred = birds_pred %>%
+    filter(!is.na(PRED.LINK) & !is.na(SE.LINK)) %>%
+    group_by(M.YEAR) %>% 
+    reframe(PRED.LINK = mean(PRED.LINK), 
+            SE.LINK = mean(SE.LINK)) 
+  
+  return(birds_pred)
   
 }
+
