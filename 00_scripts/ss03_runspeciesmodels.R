@@ -8,7 +8,6 @@ require(parallel)
 require(foreach)
 require(doParallel)
 
-load(speclist_path)
 
 cur_assignment <- 1:1000
 

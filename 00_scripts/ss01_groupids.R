@@ -10,6 +10,7 @@ require(foreach)
 require(doParallel)
 
 
+# doesn't return locations but rather their group IDs
 createrandomlocs <- function(locs) {
   
   require(tidyverse)
@@ -39,11 +40,6 @@ my.cluster = parallel::makeCluster(
 )
 # register it to be used by %dopar%
 doParallel::registerDoParallel(cl = my.cluster)
-
-# # check if it is registered (optional)
-# foreach::getDoParRegistered()
-# # how many workers are available? (optional)
-# foreach::getDoParWorkers()
 
 
 randomgroupids = foreach(i = 1:1000, .combine = 'cbind') %dopar%

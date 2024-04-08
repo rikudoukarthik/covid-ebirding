@@ -1,13 +1,13 @@
 # Step 2 of subsampling: generate 1000 versions of individual data files 
 # subsampled using the subsampled GROUPIDs per location per month per year
 
-randomgroupids<- load(glue("00_data/bird_models/{state_name}/ss01_groupids.RData"))
+randomgroupids <- load(glue("00_data/bird_models/{state_name}/ss01_groupids.RData"))
 
 path_folder <- "00_data/bird_models/{state_name}/ss02_datafiles/"
 
 # creating new directory if it doesn't already exist
 if (!dir.exists(path_folder)) {
-  dir.create(path_folder, recursive = T)
+  dir.create(path_folder, recursive = TRUE)
 }
 
 cur_assignment <- 1:1000
