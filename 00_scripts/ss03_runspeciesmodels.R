@@ -14,8 +14,8 @@ for (mt in c("LD", "NL")) {
   cur_assignment <- 1:1000
   
   
-  path_folder <- "00_outputs/bird_models/{state_name}/ss03_models_{mt}/"
-  datapath_folder <- "00_data/bird_models/{state_name}/ss02_datafiles_{mt}/"
+  path_folder <- glue("00_outputs/bird_models/{state_name}/ss03_models_{mt}/")
+  datapath_folder <- glue("00_data/bird_models/{state_name}/ss02_datafiles_{mt}/")
   
   
   # creating new directory if it doesn't already exist

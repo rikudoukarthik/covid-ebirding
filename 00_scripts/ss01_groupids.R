@@ -30,10 +30,20 @@ data0_MY_b <- data0_MY_b %>%
                                  TRUE ~ "NL"))
 
 
+# creating new directory if it doesn't already exist
+if (!dir.exists(glue("00_data/bird_models/{state_name}/"))) {
+  dir.create(glue("00_data/bird_models/{state_name}/"), recursive = TRUE)
+}
+
+
 # filtering separately for lockdown and non-lockdown months
 for (mt in c("LD", "NL")) {
   
-  data_locs <- data0_MY_b %>% 
+  require(parallel)
+  require(foreach)
+  require(doParallel)
+
+    data_locs <- data0_MY_b %>% 
     filter(ALL.SPECIES.REPORTED == 1,
            STATE == state_name,
            MONTHS.TYPE == mt) %>%

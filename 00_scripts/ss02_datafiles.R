@@ -3,7 +3,7 @@
 
 for (mt in c("LD", "NL")) {
   
-  path_folder <- "00_data/bird_models/{state_name}/ss02_datafiles_{mt}/"
+  path_folder <- glue("00_data/bird_models/{state_name}/ss02_datafiles_{mt}/")
   
   # creating new directory if it doesn't already exist
   if (!dir.exists(path_folder)) {
@@ -11,7 +11,7 @@ for (mt in c("LD", "NL")) {
   }
 
   
-  randomgroupids <- load(glue("00_data/bird_models/{state_name}/ss01_groupids_{mt}.RData"))
+  load(glue("00_data/bird_models/{state_name}/ss01_groupids_{mt}.RData"))
   cur_assignment <- 1:1000
   
   
