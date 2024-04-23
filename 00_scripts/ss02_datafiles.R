@@ -18,7 +18,7 @@ for (mt in c("LD", "NL")) {
   for (i in cur_assignment) {
     
     # file names for individual files
-    write_path <- glue("{path_folder}data{i}.csv")
+    write_path <- glue("{path_folder}data{i}.RData")
     
     
     tictoc::tic(glue("{mt} ({i}/{max(cur_assignment)}) Filtering data"))
@@ -27,7 +27,7 @@ for (mt in c("LD", "NL")) {
     tictoc::toc()
     
     tictoc::tic(glue("{mt} ({i}/{max(cur_assignment)}) Writing data"))
-    write.csv(data_filt, file = write_path, row.names = F)
+    save(data_filt, file = write_path)
     tictoc::toc()
     
     

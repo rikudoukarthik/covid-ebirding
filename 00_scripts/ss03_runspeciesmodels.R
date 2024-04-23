@@ -28,13 +28,13 @@ for (mt in c("LD", "NL")) {
     
     # file names for individual files
     write_path <- glue("{path_folder}pred{k}.csv")
-    data_path <- glue("{datapath_folder}data{k}.csv")
+    data_path <- glue("{datapath_folder}data{k}.RData")
     
     
     tictoc::tic(glue("Species trends for {state_name}: {mt} {k}/{max(cur_assignment)}"))
     
     # read data files
-    data_ss = read.csv(data_path)
+    load(data_path)
     
     
     # start parallel
@@ -49,7 +49,7 @@ for (mt in c("LD", "NL")) {
     
     birds_mod = foreach(i = cur_species_list$COMMON.NAME, 
                           .combine = 'cbind', .errorhandling = 'remove') %dopar%
-      singlespeciesmodel(data = data_ss, 
+      singlespeciesmodel(data = data_filt, 
                          species = i, 
                          specieslist = cur_species_list$COMMON.NAME)
     
