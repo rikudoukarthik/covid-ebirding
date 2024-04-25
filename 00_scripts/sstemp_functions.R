@@ -6,7 +6,7 @@ expandbyspecies = function(data, species) {
   
   occinfo <- data %>% 
     group_by(GROUP.ID, COMMON.NAME) %>% 
-    reframe(REPORT = as.numeric(max(OBSERVATION.COUNT))) %>% 
+    reframe(REPORT = 1) %>% 
     ungroup()
   
   checklistinfo = data %>% 
@@ -22,9 +22,9 @@ expandbyspecies = function(data, species) {
     group_by(GROUP.ID) %>% 
     reframe(COMMON.NAME = species) %>% 
     left_join(occinfo, by = c("GROUP.ID", "COMMON.NAME")) %>%
-    # deal with NAs (column is character)
+    left_join(checklistinfo, by = "GROUP.ID") %>% 
     # for species not reported in lists, filling in NAs in COMMON.NAME and REPORT
-    mutate(REPORT = replace_na(REPORT, "0"))
+    mutate(REPORT = replace_na(REPORT, 0))
 
   return(expanded)
   
@@ -60,7 +60,8 @@ singlespeciesmodel = function(data, species, specieslist) {
   # expand dataframe to include absences as well
   data_exp = expandbyspecies(data_filt, species) %>% 
     # join species categories
-    left_join(specieslist)
+    left_join(specieslist %>% distinct(COMMON.NAME, SP.CATEGORY),
+              by = "COMMON.NAME")
   
   
   # the model ---------------------------------------------------------------
@@ -93,10 +94,12 @@ singlespeciesmodel = function(data, species, specieslist) {
   
   # prepare a new data file to predict
   birds_pred <- data_exp %>% 
-    distinct(MONTH, M.YEAR) %>% 
+    # selecting random CELL.ID because predictInterval needs input even if which == "fixed"
+    mutate(CELL.ID = sample(unique(CELL.ID), 1)) %>% 
+    distinct(MONTH, M.YEAR, CELL.ID) %>% 
     # joining median list length
     left_join(median_length, by = "MONTH") %>% 
-    rename(NO.SP = NO.SP.MED) 
+    rename(NO.SP = NO.SP.MED)
   
   
   pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",

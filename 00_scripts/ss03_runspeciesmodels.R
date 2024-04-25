@@ -51,7 +51,7 @@ for (mt in c("LD", "NL")) {
                           .combine = 'cbind', .errorhandling = 'remove') %dopar%
       singlespeciesmodel(data = data_filt, 
                          species = i, 
-                         specieslist = cur_species_list$COMMON.NAME)
+                         specieslist = cur_species_list)
     
     parallel::stopCluster(cl = my.cluster)
     
