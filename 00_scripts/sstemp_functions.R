@@ -32,11 +32,12 @@ expandbyspecies = function(data, species) {
 
 
 
-singlespeciesmodel = function(data, species, specieslist) {
+singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   
   require(tidyverse)
   require(lme4)
   require(merTools)
+  require(glue)
 
 
   # getting median list length for prediction later
@@ -65,9 +66,7 @@ singlespeciesmodel = function(data, species, specieslist) {
   
   
   # the model ---------------------------------------------------------------
-  
-  tictoc::tic(glue("GLMM for {mt}, {species}"))
-  
+
   # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings
   # failed to reduce deviance in pwrssUpdate"
   
@@ -87,16 +86,14 @@ singlespeciesmodel = function(data, species, specieslist) {
                         nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
     
   }
-  
-  tictoc::toc()
-  
+
   # predicting from model ---------------------------------------------------
   
   # prepare a new data file to predict
   birds_pred <- data_exp %>% 
     # selecting random CELL.ID because predictInterval needs input even if which == "fixed"
     mutate(CELL.ID = sample(unique(CELL.ID), 1)) %>% 
-    distinct(MONTH, M.YEAR, CELL.ID) %>% 
+    distinct(MONTH, M.YEAR, CELL.ID, COMMON.NAME, SP.CATEGORY) %>% 
     # joining median list length
     left_join(median_length, by = "MONTH") %>% 
     rename(NO.SP = NO.SP.MED)
@@ -110,9 +107,14 @@ singlespeciesmodel = function(data, species, specieslist) {
   
   birds_pred = birds_pred %>%
     filter(!is.na(PRED.LINK) & !is.na(SE.LINK)) %>%
-    group_by(M.YEAR) %>% 
+    group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
     reframe(PRED.LINK = mean(PRED.LINK), 
             SE.LINK = mean(SE.LINK)) 
+  
+  # add iteration number as column so we can save all in one object
+  if (!is.null(iter)) {
+    birds_pred <- birds_pred %>% mutate(ITERATION = iter)
+  }
   
   return(birds_pred)
   

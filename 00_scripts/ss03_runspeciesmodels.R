@@ -8,13 +8,15 @@ require(parallel)
 require(foreach)
 require(doParallel)
 
+source("00_scripts/sstemp_functions.R")
+
 
 for (mt in c("LD", "NL")) {
   
   cur_assignment <- 1:1000
   
   
-  path_folder <- glue("00_outputs/bird_models/{state_name}/ss03_models_{mt}/")
+  path_folder <- glue("00_outputs/bird_models/{state_name}/")
   datapath_folder <- glue("00_data/bird_models/{state_name}/ss02_datafiles_{mt}/")
   
   
@@ -23,11 +25,12 @@ for (mt in c("LD", "NL")) {
     dir.create(path_folder, recursive = T)
   }
   
+  write_path <- glue("{path_folder}ss03_models_{mt}.csv")
+  
   
   for (k in cur_assignment) {
     
     # file names for individual files
-    write_path <- glue("{path_folder}pred{k}.csv")
     data_path <- glue("{datapath_folder}data{k}.RData")
     
     
@@ -47,21 +50,31 @@ for (mt in c("LD", "NL")) {
     # register it to be used by %dopar%
     doParallel::registerDoParallel(cl = my.cluster)
     
-    birds_mod = foreach(i = cur_species_list$COMMON.NAME, 
-                          .combine = 'cbind', .errorhandling = 'remove') %dopar%
+    birds_mod0 = foreach(i = cur_species_list$COMMON.NAME, 
+                          .combine = "bind_rows", .errorhandling = "remove") %dopar%
       singlespeciesmodel(data = data_filt, 
                          species = i, 
-                         specieslist = cur_species_list)
+                         specieslist = cur_species_list,
+                         iter = k)
     
     parallel::stopCluster(cl = my.cluster)
-    
 
-    write.csv(birds_mod, file = write_path, row.names = F)
+    
+    # storing as single object
+    if (!exists("birds_mod", envir = .GlobalEnv)) {
+      birds_mod <- birds_mod0
+    } else {
+      birds_mod <- birds_mod %>% 
+        bind_rows(birds_mod0)
+    }
+    assign("birds_mod", birds_mod, envir = .GlobalEnv)
     
     tictoc::toc() 
     
     gc()
     
   }
+  
+  write.csv(birds_mod, file = write_path, row.names = F)
   
 }
