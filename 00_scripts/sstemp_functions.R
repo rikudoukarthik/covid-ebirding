@@ -120,3 +120,30 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   
 }
 
+
+# choose inverse link function based on which model
+inverse_link <- function(data, state, species) {
+  
+  if ((state == "Kerala" & species %in% fail_spec_KL) |
+      (state == "Maharashtra" & species %in% fail_spec_MH)) {
+    exp(data)/(1 + exp(data)) # inverse logit
+  } else {
+    clogloglink(data, inverse = TRUE) # inverse cloglog
+  }
+  
+}
+
+
+# bootstrapped error calculation for division operation (% change)
+simerrordiv = function(x1, x2, se1, se2, state, species)
+{
+  # takes untransformed (link) mean and SE values, and generates normal dist. from 1000 sims,
+  # then transformed 
+  # after the function, lower and upper quantiles are selected as limits of 95% CI
+  tp = data.frame(num = inverse_link(rnorm(1000, x1, se1), state, species), 
+                  den = inverse_link(rnorm(1000, x2, se2), state, species)) %>%
+    reframe(rat = num/den, 
+            val = num)
+  
+  return(tp)
+}

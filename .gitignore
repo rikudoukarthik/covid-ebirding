@@ -22,6 +22,7 @@
 # folders in repo
 00_data/in_LULC/
 00_data/in_LULC_USGS/
+00_data/bird_models/
 
 # Zoom recording
 Recording_IOC/
