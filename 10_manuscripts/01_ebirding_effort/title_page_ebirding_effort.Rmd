@@ -1,5 +1,5 @@
 ---
-title: "Minimal large-scale impact of COVID-19 pandemic on citizen science participation in India"
+title: "Despite short-lived changes, COVID-19 pandemic had minimal large-scale impact on citizen science participation in India"
 author: 
   - 'Karthik Thrikkadeeri':
       email: karthik.t@ncf-india.org
@@ -20,7 +20,7 @@ output:
 
 # Acknowledgements
 
-We thank our funders: Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Praveen J, Priti Bangal, Suhel Quader, Catherine A Lindell, and three anonymous reviewers for their comments that helped improve the manuscript.
+We thank our funders: Rohini Nilekani Philanthropies, Duleep Matthai Nature Conservation Trust, and Cholamandalam Investments and Finance Co. Ltd. We also express sincere gratitude to all eBirders who help generate and sustain this valuable scientific resource by contributing observations, and to all eBird reviewers who volunteer their time for the crucial process of maintaining data quality. We thank Praveen J, Priti Bangal, Suhel Quader, Catherine A Lindell, and four anonymous reviewers for their comments that helped improve the manuscript.
 
 ## Ethics statement
 

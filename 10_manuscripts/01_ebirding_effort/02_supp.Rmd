@@ -18,31 +18,9 @@ The checklists that passed these criteria are referred to as "qualifying checkli
 
 ### Urban/non-urban classification {#UNUprep}
 
-We used remote sensing data to divide the country into urban and non-urban areas. For this, we downloaded the MODIS Land Cover Type Product (MCD12Q1) that includes several science datasets (SDSs) mapping global land cover at a 500 m resolution. Although this comes at an annual time step, we used data from the single time point, 31 December 2021. The tiled MODIS data was downloaded using the "getModis()" function in the *luna* package and saved as individual .tif files, which were then merged into a single raster. After cropping and masking to the country's administrative boundary shapefile, the MODIS land cover categories in the raster were reclassified: category 13, "urban and built-up lands" was considered "urban", and all other categories were considered "non-urban". We didn't use the MODIS data at 500 m × 500 m resolution because the location information in eBird data, despite being precise, is not very accurate at small grain sizes (due to the very nature of eBird data where sampling often occurs over a distance). So, we finally aggregated the raster to a resolution of 2 km $\times$ 2 km which was deemed more appropriate, using a 25% threshold for classification as urban, i.e., a 2 km $\times$ 2 km cell was classified as urban if four or more of the 16 500 m $\times$ 500 m cells being aggregated were urban. We then linked each qualifying checklist in the dataset to this modified MODIS raster, using its associated latitude-longitude information, and thus classified each checklist as urban or non-urban.
+We used remote sensing data to divide the country into urban and non-urban areas. For this, we downloaded the MODIS Land Cover Type Product (MCD12Q1) that includes several science datasets (SDSs) mapping global land cover at a 500 m resolution. Although this comes at an annual time step, we used data from the single time point, 31 December 2021. The tiled MODIS data were downloaded using the "getModis()" function in the *luna* package and saved as individual .tif files, which were then merged into a single raster. After cropping and masking to the country's administrative boundary shapefile, the MODIS land cover categories in the raster were reclassified: category 13, "urban and built-up lands" was considered "urban", and all other categories were considered "non-urban". We didn't use the MODIS data at 500 m × 500 m resolution because the location information in eBird data, despite being precise, is not very accurate at small grain sizes (due to the very nature of eBird data where sampling often occurs over a distance). So, we finally aggregated the raster to a resolution of 2 km $\times$ 2 km which was deemed more appropriate, using a 25% threshold for classification as urban, i.e., a 2 km $\times$ 2 km cell was classified as urban if four or more of the 16 500 m $\times$ 500 m cells being aggregated were urban. We then linked each qualifying checklist in the dataset to this modified MODIS raster, using its associated latitude-longitude information, and thus classified each checklist as urban or non-urban.
 
 ## Figures
-
-```{r fig-main-states, fig.cap="Proportional change per year and month category in the nine metrics of state-level composites of eBird data characteristics, relative to values in MY 2018--19 (represented by the y = 1 line). This is visualised for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). The four years of interest are on the X-axis, with the pandemic years labelled in red text. Each coloured ribbon represents the 95% confidence interval, which is the combined uncertainty estimated across individual uncertainties from model predictions for each of the nine metrics (means have not been depicted). Note that state-level changes largely mirror national-level patterns such as transience of pandemic impacts, but exhibit higher internal variability (as suggested by the higher uncertainty) across all years.", out.width="100%", dpi=300, dev="jpeg"}
-
-fig_path <- "fig_main_states.png"
-
-fig1 <- create_composite_graph("state", "Karnataka")
-fig2 <- create_composite_graph("state", "Kerala", ylab = FALSE)
-fig3 <- create_composite_graph("state", "Maharashtra", ylab = FALSE)
-fig4 <- create_composite_graph("state", "Assam", ylab = FALSE)
-
-fig_main_states <- (fig1 | fig2 | fig3 | fig4) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag.position = c(0, 0.995))
-
-ggsave(plot = fig_main_states, fig_path,
-       width = 27, height = 11, units = "in", dpi = 300)
-
-knitr::include_graphics(fig_path)
-
-```
 
 ```{r long-changes-state, fig.cap="Graphs of group birding for the four states of Karnataka (A), Kerala (B), Maharashtra (C), and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note that state-level changes largely mirror national-level patterns such as transience of pandemic impacts during the first wave of pandemic lockdowns.", fig.width=8, fig.height=12.5, out.width="100%", out.height="100%", dpi=300, dev="jpeg"}
 

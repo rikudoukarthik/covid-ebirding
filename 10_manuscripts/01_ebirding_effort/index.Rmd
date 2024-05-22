@@ -1,5 +1,5 @@
 ---
-title: "Minimal large-scale impact of COVID-19 pandemic on citizen science participation in India"
+title: "Despite short-lived changes, COVID-19 pandemic had minimal large-scale impact on citizen science participation in India"
 bibliography: ../covid-ebirding.json
 csl: ../the-condor.csl
 link-citations: yes
@@ -59,9 +59,14 @@ data0 <- join_metric_composite(base = NULL,
 
 lab_y <- if (ylab == FALSE) NA else "Prop. change in eBird data characteristics<br>(from t~0~ = 2018\u201319)"
 
+lab_ribbons <- factor(c("Jun\u2013Mar\n(Rest of year)", "Apr\u2013May\n(Peak impact)"), 
+                      levels = c("Jun\u2013Mar\n(Rest of year)", "Apr\u2013May\n(Peak impact)"))
+
 plot0 <- data0 %>% 
-  ggplot(aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
-  geom_ribbon(mapping = aes(ymin = CI.L, ymax = CI.U, fill = COVID.MONTH, colour = COVID.MONTH),
+  mutate(COVID.MONTH = factor(COVID.MONTH, levels = c(FALSE, TRUE))) %>% 
+  ggplot(mapping = aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
+  geom_ribbon(mapping = aes(ymin = CI.L, ymax = CI.U, 
+                            fill = fct_inorder(COVID.MONTH), colour = fct_inorder(COVID.MONTH)),
               alpha = 0.5, linewidth = 1) +
   geom_hline(yintercept = 1, linewidth = 1) +
   geom_vline(xintercept = c(2019, 2020, 2021), linetype = "dashed", linewidth = 0.5) +
@@ -71,18 +76,18 @@ plot0 <- data0 %>%
            colour = c("red", "red", "black")) +
   scale_colour_manual(values = covid_bin_palette,
                       name = "Months of year", 
-                      labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
+                      labels = levels(lab_ribbons)) +
   scale_fill_manual(values = covid_bin_palette,
                     name = "Months of year", 
-                    labels = c("Rest of year\n(Jun\u2013Mar)", "Peak impact\n(Apr\u2013May)")) +
+                    labels = levels(lab_ribbons)) +
   scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322"),
                      limits = c(2018, 2021.003)) +
   labs(x = "Migratory Year", 
        y = lab_y,
        title = if (scale == "state") (state) else NULL) +
   coord_cartesian(expand = FALSE, ylim = c(-0.002, 2.1)) +
-  guides(fill = guide_legend(byrow = TRUE, reverse = TRUE), 
-         colour = guide_legend(byrow = TRUE, reverse = TRUE)) +
+  # guides(fill = guide_legend(byrow = TRUE, reverse = TRUE), 
+  #        colour = guide_legend(byrow = TRUE, reverse = TRUE)) +
   theme(legend.position = c(0.84, 0.9),
         axis.line.y = element_line(linewidth = 1, arrow = grid::arrow()),
         axis.title.y = element_markdown(lineheight = 1.2, margin = margin(0, 10, 0, 0),

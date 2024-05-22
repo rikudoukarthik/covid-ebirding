@@ -1740,3 +1740,133 @@ b_overall_annual <- function(state_name) {
   
 }
 
+
+# map of India and selected states --------------------------------------------------
+
+map_sites <- function() {
+  
+  require(tidyverse)
+  require(sf)
+  require(mapview)
+  # require(ggmap)
+  
+  require(rnaturalearth)
+  require(rnaturalearthdata)
+  require(rmapshaper) # to simplify sf
+  require(ggspatial) # for north arrow and legend
+  
+  
+  world_sf <- ne_countries(type = "countries", 
+                           scale = "large", returnclass = "sf") %>% 
+    # selecting columns of interest
+    reframe(NAME = sovereignt, 
+            geometry = geometry) %>% 
+    st_as_sf()
+  
+  # replacing default India with Indian India boundaries
+  world_sf <- world_sf %>% 
+    filter(NAME != "India") %>% 
+    # since the row is at the end, will lay over other disputed territories
+    bind_rows(india_sf %>% 
+                dplyr::select(geometry) %>% 
+                mutate(NAME = "India"))
+  
+  world_sf <- world_sf %>% 
+    # # converting to Robinson projection
+    # st_transform(crs = "ESRI:54030") %>% 
+    # # simplifying polygons
+    # ms_simplify(keep = 0.1, keep_shapes = TRUE) %>% 
+    # fill colours and line widths
+    mutate(FILL = case_when(NAME == "India" ~ "#ffffff",
+                                 TRUE ~ "#e5d8ca"),
+           LINEWIDTH = case_when(NAME == "India" ~ 0.5,
+                                 TRUE ~ 0.35)) %>% 
+    # select country labels of interest
+    mutate(NAME = case_when(NAME %in% c("India", "Pakistan", "Afghanistan", "Tajikistan",
+                                        "China", "Nepal", "Bhutan", "Bangladesh", "Myanmar",
+                                        "Sri Lanka") ~ NAME,
+                            TRUE ~ NA_character_))
+  
+  ourstates_sf <- states_sf %>%
+    filter(STATE.NAME %in%
+             c("Karnataka", "Kerala", "Maharashtra", "Assam")) %>% 
+    dplyr::select(-AREA) %>% 
+    # # converting to Robinson projection
+    # st_transform(crs = "ESRI:54030") %>% 
+    # # simplifying polygons
+    # ms_simplify(keep = 0.1, keep_shapes = TRUE) %>% 
+    # capitalising labels
+    mutate(STATE.NAME = str_to_upper(STATE.NAME)) %>% 
+    arrange(STATE.NAME)
+  
+  
+  # plot limits 
+  plot_lims <- tibble(X = c(60, 60, 100, 100), 
+                      Y = c(5, 40, 5, 40)) %>% 
+    st_as_sf(coords = c("X", "Y")) %>% 
+    dplyr::summarise() %>% 
+    st_cast("POLYGON") %>% 
+    # important that limits are also projected to Robinson
+    st_set_crs(st_crs(india_sf)) %>% 
+    # st_transform(crs = "ESRI:54030") %>% 
+    st_bbox()
+  
+  map <- ggplot(world_sf) +
+    geom_sf(aes(fill = FILL, linewidth = LINEWIDTH)) +
+    geom_sf_text(aes(label = NAME), size = 3) +
+    scale_fill_identity() +
+    scale_linewidth_identity() + 
+    geom_sf(data = ourstates_sf, fill = "grey90", linewidth = 0.55) +
+    geom_sf_text(data = ourstates_sf, 
+                 aes(label = STATE.NAME), 
+                 size = 2,
+                 nudge_x = c(2, 0, 0, 0.5),
+                 nudge_y = c(0.5, 0, 0, 1)) +
+    # need to set coord limits (plot zoom limits)
+    coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
+             ylim = c(plot_lims$ymin, plot_lims$ymax)) +
+    theme_void() +
+    theme(panel.background = element_rect(colour = NA, fill = "#a9d5e0"),
+          axis.ticks = element_line(colour = "black"),
+          axis.ticks.length = unit(0.1, "cm"),
+          axis.text.x = element_text(margin = margin(4, 0, 0, 0)),
+          axis.text.y = element_text(margin = margin(0, 4, 0, 0)),
+          panel.border = element_rect(fill = NA),
+          plot.margin = margin(0, 30, 0, 10), 
+          plot.background = element_rect(fill = "white", colour = NA))
+  
+  
+  map_scale <- annotation_scale(location = "bl", 
+                                bar_cols = c("black", "white")) 
+  
+  map_arrow <- annotation_north_arrow(location = "bl", 
+                                      which_north = "true",
+                                      pad_x = unit(0.4, "in"), 
+                                      pad_y = unit(0.4, "in"),
+                                      style = north_arrow_fancy_orienteering(fill = c("grey20", "white"),
+                                                                   line_col = "black"))
+  
+  map <- map + map_scale + map_arrow
+  
+  
+  return(map)
+  
+  
+  # map_data("world") %>% 
+  #   st_as_sf(coords = c("long", "lat")) %>% 
+  #   group_by(group, region, order) %>% 
+  #   summarise()
+  #   filter(region != "India") %>% 
+  #   dplyr::select(region) %>% 
+  #   
+  #   ggplot() +
+  #   geom_sf()
+  # 
+  # 
+  # mapview::mapView(india_sf,
+  #                  map.types = "Esri.WorldImagery",
+  #                  legend = FALSE,
+  #                  viewer.suppress = TRUE) %>% 
+  #   mapview::mapshot(file = "test.png")
+  
+}
