@@ -5,12 +5,12 @@ require(tidyverse)
 require(glue)
 require(VGAM) #clogloglink()
 
-source("00_scripts/sstemp_functions.R")
+source("00_scripts/b_model_functions.R")
 
 
 for (mt in c("LD", "NL")) {
 
-  mod_path <- glue("00_outputs/bird_models/{state_name}/ss03_models_{mt}.csv")
+  mod_path <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}.csv")
   
   # read data of model predictions
   data_mod <- read_csv(mod_path) %>% 
@@ -46,7 +46,7 @@ for (mt in c("LD", "NL")) {
   data_res <- data_res %>% 
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>%
     # 1000 simulations of transformed ratio of present:original values
-    # quantiles*100 from these gives us our CI limits for mean_std
+    # quantiles*100 from these gives us our CI limits for PRED.PERC
     reframe(SIM.RATIOS = simerrordiv(PRED.LINK, PRED.LINK.Y1, SE.LINK, SE.LINK.Y1,
                                      state_name, COMMON.NAME) %>% 
               pull(rat)) %>% 
@@ -77,8 +77,9 @@ for (mt in c("LD", "NL")) {
             CI.L.PERC = PRED.PERC - 1.96*SE.PERC,
             CI.U.PERC = PRED.PERC + 1.96*SE.PERC)
   
-  return(data_res_avg)
-
+  
+  # writing
+  save(data_res_avg, data_res, 
+       file = glue("00_outputs/bird_models/{state_name}/b04_results_{mt}.RData"))
+  
 }
-
-

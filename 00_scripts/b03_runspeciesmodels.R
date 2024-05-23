@@ -8,7 +8,7 @@ require(parallel)
 require(foreach)
 require(doParallel)
 
-source("00_scripts/sstemp_functions.R")
+source("00_scripts/b_model_functions.R")
 
 
 for (mt in c("LD", "NL")) {
@@ -17,7 +17,7 @@ for (mt in c("LD", "NL")) {
   
   
   path_folder <- glue("00_outputs/bird_models/{state_name}/")
-  datapath_folder <- glue("00_data/bird_models/{state_name}/ss02_datafiles_{mt}/")
+  datapath_folder <- glue("00_data/bird_models/{state_name}/b02_ss_datafiles_{mt}/")
   
   
   # creating new directory if it doesn't already exist
@@ -25,7 +25,7 @@ for (mt in c("LD", "NL")) {
     dir.create(path_folder, recursive = T)
   }
   
-  write_path <- glue("{path_folder}ss03_models_{mt}.csv")
+  write_path <- glue("{path_folder}b03_models_{mt}.csv")
   
   
   for (k in cur_assignment) {

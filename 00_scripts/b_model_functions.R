@@ -1,3 +1,5 @@
+# expand by species -----------------------------------------------------------------
+
 expandbyspecies = function(data, species) {
   
   require(tidyverse)
@@ -31,6 +33,7 @@ expandbyspecies = function(data, species) {
 }
 
 
+# single species model --------------------------------------------------------------
 
 singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   
@@ -121,6 +124,8 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
 }
 
 
+# inverse link functions ------------------------------------------------------------
+
 # choose inverse link function based on which model
 inverse_link <- function(data, state, species) {
   
@@ -133,6 +138,8 @@ inverse_link <- function(data, state, species) {
   
 }
 
+
+# bootstrapped error prop. for division ---------------------------------------------
 
 # bootstrapped error calculation for division operation (% change)
 simerrordiv = function(x1, x2, se1, se2, state, species)

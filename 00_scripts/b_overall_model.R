@@ -14,8 +14,10 @@ if (!dir.exists(glue("00_data/bird_models/{state_name}/"))) {
 
 ###
 
-source("00_scripts/ss01_groupids.R")
-source("00_scripts/ss02_datafiles.R")
+# subsampling data to model
+source("00_scripts/b01_ss_groupids.R")
+source("00_scripts/b02_ss_datafiles.R")
 
-source("00_scripts/ss03_runspeciesmodels.R")
-
+# modelling and bootstrapping for results
+source("00_scripts/b03_runspeciesmodels.R")
+source("00_scripts/b04_resolvebootstrap.R")

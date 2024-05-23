@@ -67,7 +67,7 @@ for (mt in c("LD", "NL")) {
   parallel::stopCluster(cl = my.cluster)
   
   save(randomgroupids, 
-       file = glue("00_data/bird_models/{state_name}/ss01_groupids_{mt}.RData"))
+       file = glue("00_data/bird_models/{state_name}/b01_ss_groupids_{mt}.RData"))
   
   
   # cleaning up memory
