@@ -62,6 +62,14 @@ lab_y <- if (ylab == FALSE) NA else "Prop. change in eBird data characteristics<
 lab_ribbons <- factor(c("Jun\u2013Mar\n(Rest of year)", "Apr\u2013May\n(Peak impact)"), 
                       levels = c("Jun\u2013Mar\n(Rest of year)", "Apr\u2013May\n(Peak impact)"))
 
+ann_x <- if (scale == "country") {
+  c(2018.92, 2019.92, 2020.92)
+} else if (scale == "state") {
+  c(2018.89, 2019.89, 2020.89)
+}
+
+ann_size <- if (scale == "country") 5 else if (scale == "state") 6
+
 plot0 <- data0 %>% 
   mutate(COVID.MONTH = factor(COVID.MONTH, levels = c(FALSE, TRUE))) %>% 
   ggplot(mapping = aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
@@ -71,7 +79,7 @@ plot0 <- data0 %>%
   geom_hline(yintercept = 1, linewidth = 1) +
   geom_vline(xintercept = c(2019, 2020, 2021), linetype = "dashed", linewidth = 0.5) +
   annotate("text",
-           y = 0.2, x = c(2018.92, 2019.92, 2020.92), angle = 90, size = 5,
+           y = 0.2, x = ann_x, angle = 90, size = ann_size,
            label = c("2019\u201320", "2020\u201321", "2021\u201322"),
            colour = c("red", "red", "black")) +
   scale_colour_manual(values = covid_bin_palette,

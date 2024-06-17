@@ -261,12 +261,13 @@ fig_quant <- (p1 / guide_area() / p2) +
   theme(legend.margin = margin(t = 0, unit = "cm"),
         legend.position = "bottom",
         axis.text.y = element_text(angle = 90, vjust = 0, hjust = 0.5),
-        axis.text.x = element_text(colour = d1$COL2, angle = 90, size = 8, vjust = 0.5))
+        axis.text.x = element_text(colour = d1$COL2, angle = 90, 
+                                   size = 12, vjust = 0.5))
 
 fig_path <- "fig_quant.png"
 
 ggsave(plot = fig_quant, fig_path,
-       width = 10, height = 10, units = "in", dpi = 300)
+       width = 12, height = 10, units = "in", dpi = 300)
 
 
 knitr::include_graphics(fig_path)
@@ -302,10 +303,11 @@ fig_main_states <- (fig1 | fig2 | fig3 | fig4) +
   plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom",
-        plot.tag.position = c(0, 0.995))
+        plot.tag.position = c(0, 0.995),
+        axis.text.y = element_text(size = 16))
 
 ggsave(plot = fig_main_states, fig_path,
-       width = 27, height = 11, units = "in", dpi = 300)
+       width = 23, height = 11, units = "in", dpi = 300)
 
 knitr::include_graphics(fig_path)
 
@@ -422,7 +424,7 @@ p2 <- ggplot(d2,
 
 ```
 
-```{r dist-dur-length, fig.cap="Graphs of birding distance, list duration and list length at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note that all three metrics have been consistently declining over the long term, which is independent of the prominent decline during the peak pandemic months (April and May of MY 2019--20 and 2020--21).", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
+```{r dist-dur-length, fig.cap="Graphs of birding distance (A), list duration (B) and list length (C) at the national level. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text. Note that all three metrics have been consistently declining over the long term, which is independent of the prominent decline during the peak pandemic months (April and May of MY 2019--20 and 2020--21).", out.width="100%", fig.width=8, fig.height=12, dpi=300, dev="jpeg"}
 
 d1 <- d06_distance %>% pluck(1)
 d2 <- d07_duration %>% pluck(1)
