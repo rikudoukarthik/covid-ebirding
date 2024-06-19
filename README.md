@@ -1,6 +1,6 @@
 # Effects of COVID-19 pandemic on eBirding and birds in India
 
-This repository contains the source code associated with a study on the effects of the COVID-19 pandemic on eBirding ([Thrikkadeeri & Viswanathan 2024](https://doi.org/10.1093/ornithapp/duae024)) and bird species reporting (Thrikkadeeri & Viswanathan, in prep.) in India. All analyses were performed in the R environment in RStudio, and with the addition of a couple of large (publicly available) data files that need to be procured externally (see below), the source code and files in this repo will allow the analyses to be fully reproduced.
+This repository contains the source code and data associated with a study on the effects of the COVID-19 pandemic on eBirding ([Thrikkadeeri & Viswanathan 2024](https://doi.org/10.1093/ornithapp/duae024)) and bird species reporting (Thrikkadeeri & Viswanathan, in prep.) in India. All analyses were performed in the R environment in RStudio, and with the addition of a couple of large (publicly available) data files that need to be procured externally (see below), the source code and files in this repo will allow the analyses to be fully reproduced.
 
 The structure and workflow for the main analysis is outlined below.
 
