@@ -1,6 +1,6 @@
-# Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference
+# Effects of COVID-19 pandemic on eBirding and birds in India
 
-This repository contains the source code associated with a study on the effects of the COVID-19 pandemic on birding and bird species reporting (publication under review, Thrikkadeeri & Viswanathan). All analyses were performed in the R environment in RStudio, and with the addition of a couple of large (publicly available) data files that need to be procured externally (see below), the source code and files in this repo will allow the analyses to be fully reproduced.
+This repository contains the source code associated with a study on the effects of the COVID-19 pandemic on eBirding ([Thrikkadeeri & Viswanathan 2024](https://doi.org/10.1093/ornithapp/duae024)) and bird species reporting (Thrikkadeeri & Viswanathan, in prep.) in India. All analyses were performed in the R environment in RStudio, and with the addition of a couple of large (publicly available) data files that need to be procured externally (see below), the source code and files in this repo will allow the analyses to be fully reproduced.
 
 The structure and workflow for the main analysis is outlined below.
 
@@ -11,13 +11,22 @@ The structure and workflow for the main analysis is outlined below.
 The analysis is centred around eBird data from India, which is publicly available but is a very large file.
 
 -   [*eBird Basic Dataset (EBD)*](https://ebird.org/data/download/ebd)*, relMay-2022*: The current version of this dataset is much more recent and contains data after May 2022, but filtering it should produce a fairly similar dataset to the ones used in this study, with only minor changes.
--   *eBird sensitive species data, relMay-2022*: Data on [sensitive species data](https://ebird.org/india/news/ebird-sensitive-species/) is not included in the public download, and was obtained after requesting separately from eBird.
+-   *eBird sensitive species data, relMay-2022*: Data on [sensitive species data](https://ebird.org/india/news/ebird-sensitive-species/) is not included in the public download, and was obtained after requesting separately from eBird. (Only required for bird reporting analyses, i.e., manuscript #2.)
+-   Spatial polygon data of admin. unit boundaries
 
 **Reproducible**
 
 -   [*MODIS Land Cover Type Product MCD12Q1*](https://lpdaac.usgs.gov/products/mcd12q1v006/): The data used in the study is available in `00_data/in_LULC_MODIS/` & `00_data/rast_UNU.RData`, but it is recommended to delete those files before starting the analysis. This will then force `getmodisdata()` from `00_scripts/functions.R` to run and produce fresh LULC data files from MODIS.
--   *List of group accounts*: Available `00_data/ebd_users_GA_relMay-2022.csv`. See [here](https://github.com/birdcountindia/ebird-datasets#group-accounts) for rationale on why group account data need to be filtered out in these analyses.
 -   *Timeline of COVID classification*: Available `00_data/covid_classification.csv`. Classification of the timeline of interest into various COVID categories.
+
+### Reproduce results of Thrikkadeeri & Viswanathan 2024
+
+Only the following data files, which are filtered, processed and prepared to be input into the analyses, are required to reproduce our results. These are mostly `.Rdata` files that can be readily imported into R (all analyses were performed in the R environment using RStudio).
+
+-   The processed version of EBD ready for analyses is `00_data/data0_MY_d_slice.RData`
+-   Shapefiles: `00_data/maps_sf.RData` contains admin unit polygons, and `00_data/grids_st_sf.RData` contains country-wide grids of multiple resolutions
+-   The processed MODIS land cover data is available as `00_data/rast_UNU.RData`, but deleting this before starting the analysis will force fresh LULC data files from MODIS to be produced from the script
+-   Classification of the timeline of interest into various COVID categories, available as `00_data/covid_classification.csv`
 
 ## Workflow
 
