@@ -704,7 +704,7 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     join_map_sf() %>% 
     # 25x25 grid cells
     rename(CELL.ID = GRID.G1) %>% 
-    distinct(GROUP.ID, LONGITUDE, LATITUDE, CELL.ID)
+    distinct(GROUP.ID, LONGITUDE, LATITUDE, CELL.ID, GRID.G3)
   
   data0_MY_b <- data0_MY_b %>% left_join(lists_grids)
   data0_MY_b_slice_S <- data0_MY_b_slice_S %>% left_join(lists_grids)

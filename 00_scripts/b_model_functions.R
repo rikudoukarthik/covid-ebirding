@@ -52,10 +52,12 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   message("Completed preparations for modelling. Now starting modelling.")
 
   
+  # "constraining data to expected range" (SoIB 2023)
   data_filt = data %>%
     filter(COMMON.NAME == species) %>%
     # using only CELL.ID-MONTH (space-time) combos in which species occurs
-    distinct(CELL.ID, MONTH) %>% 
+    # using 100 km to maximise denominator sample size in low-birded grids
+    distinct(GRID.G3, MONTH) %>% 
     # joining median list length
     left_join(median_length, by = "MONTH") %>% 
     # join rest of dataset back
