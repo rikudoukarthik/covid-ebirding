@@ -260,6 +260,7 @@ source("00_scripts/b_overall_model.R")
 
 
 
+
 ```
 
 ## Bird reporting with standard effort

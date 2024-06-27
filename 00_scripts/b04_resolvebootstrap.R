@@ -20,6 +20,7 @@ for (mt in c("LD", "NL")) {
   # resolve bootstrapped estimates
   
   data_res = data_mod %>%
+    # across iterations
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
     reframe(SE.LINK = sd(PRED.LINK) + sqrt(sum(SE.LINK^2))/n(),
             PRED.LINK = mean(PRED.LINK)) %>%
@@ -73,6 +74,7 @@ for (mt in c("LD", "NL")) {
     group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
     reframe(PRED.PERC = mean(PRED.PERC),
             # propagating SE across species of a category
+            # ADD sd of PRED.PERC to sqrt()
             SE.PERC = sqrt(sum((SE.PERC)^2))/n(),
             CI.L.PERC = PRED.PERC - 1.96*SE.PERC,
             CI.U.PERC = PRED.PERC + 1.96*SE.PERC)

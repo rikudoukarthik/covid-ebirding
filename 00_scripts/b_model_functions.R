@@ -112,6 +112,7 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
     filter(!is.na(PRED.LINK) & !is.na(SE.LINK)) %>%
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
     reframe(PRED.LINK = mean(PRED.LINK), 
+            # just averaging across months, so no need for propagation
             SE.LINK = mean(SE.LINK)) 
   
   # add iteration number as column so we can save all in one object
@@ -153,4 +154,217 @@ simerrordiv = function(x1, x2, se1, se2, state, species)
             val = num)
   
   return(tp)
+}
+# plotting function for bird model results -----------------
+
+gg_b_model <- function(data, type, data_points) {
+
+  require(tidyverse)
+  require(patchwork)
+  require(ggtext)
+  
+  if (type == "overall_ribbon") {
+
+    lab_y <- "Change in abundance index<br>(from t~0~ = 2018\u201319)"
+    lab_ribbons <- urbrur_palette %>% 
+      mutate(HEX.LABEL = case_when(MONTHS.TYPE == "LD" ~ "Apr\u2013May\n(Peak impact)",
+                                   MONTHS.TYPE == "NL" ~ "Jun\u2013Mar\n(Rest of year)")) %>% 
+      mutate(HEX.LABEL = factor(HEX.LABEL, 
+                                levels = c("Jun\u2013Mar\n(Rest of year)", 
+                                           "Apr\u2013May\n(Peak impact)")))
+    
+    model_data <- data %>% 
+      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("NL", "LD"))) %>%
+      rename(PRED = PRED.PERC, SE = SE.PERC, CI.L = CI.L.PERC, CI.U = CI.U.PERC) %>% 
+      # convert to + and - values
+      mutate(PRED.LABEL = PRED - 100) %>% 
+      mutate(PRED.LABEL = case_when(PRED.LABEL > 0 ~ glue("+{PRED.LABEL}%"),
+                                    PRED == 100 ~ glue("0%"), 
+                                    TRUE ~ glue("{PRED.LABEL}%"))) %>% 
+      # joining colours
+      left_join(lab_ribbons, by = c("SP.CATEGORY", "MONTHS.TYPE")) 
+    
+    model_plot <- model_data %>% 
+      ggplot(mapping = aes(x = as.numeric(levels(M.YEAR))[M.YEAR])) +
+      geom_line(mapping = aes(y = PRED, colour = HEX),
+                linewidth = 1, lineend = "round") +
+      geom_ribbon(mapping = aes(ymin = CI.L, ymax = CI.U, fill = HEX, colour = HEX),
+                  alpha = 0.5, linewidth = 1) +
+      geom_hline(yintercept = 100, linewidth = 1) +
+      geom_vline(xintercept = c(2019, 2020, 2021), 
+                 linetype = "dashed", linewidth = 0.5) +
+      # annotate("text",
+      #          y = 102, angle = 90, size = 5, 
+      #          x = c(2018.92, 2019.92, 2020.92),
+      #          label = rep(c("2019\u201320", "2020\u201321", "2021\u201322"), 2),
+      #          colour = rep(c("red", "red", "black"), 2)) +
+      scale_color_identity(guide = "legend", name = "Months of year", labels = lab_ribbons$HEX.LABEL) +
+      scale_fill_identity(guide = "legend", name = "Months of year", labels = lab_ribbons$HEX.LABEL) +
+      scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322"),
+                         limits = c(2018, 2021.003)) +
+      labs(x = "Migratory Year", 
+           y = lab_y,
+           title = unique(data$STATE.NAME)) +
+      coord_cartesian(expand = FALSE, ylim = c(74.2, 135)) +
+      # guides(fill = guide_legend(byrow = TRUE, reverse = FALSE),
+      #        colour = guide_legend(byrow = TRUE, reverse = FALSE)) +
+      theme(legend.position = "right",
+            axis.line.y = element_line(linewidth = 1, arrow = grid::arrow()),
+            axis.title.y = element_markdown(lineheight = 1.2, margin = margin(0, 10, 0, 0),
+                                            colour = "black"),
+            axis.text.y = element_text(colour = "black"),
+            axis.ticks.length.y.left = unit(0.3, "cm"),
+            axis.line.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            # legend.key.size = unit(0.5, "cm"),
+            # legend.spacing.y = unit(0.3, "cm"),
+            plot.margin = margin(10, 20, 10, 20),
+            plot.title = element_text(colour = "black", hjust = 0.5, vjust = 1, 
+                                      margin = margin(0, 0, 10, 0))) +
+      facet_wrap(~ MONTHS.TYPE, nrow = 2)
+    
+    return(model_plot)
+    
+  } else if (type == "overall") {
+    
+    plot_title <- glue("{state_name} state")
+    plot_subtitle <- paste0(
+      "Predicted reporting frequencies of ",
+      n_distinct(data_occ$COMMON.NAME), " species (",
+      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
+      " in three separate monthwise models")
+    
+    # different y lims for different states
+    if (state_name == "Karnataka") {
+      plot_ylims <- c(0.13, 0.35)
+    } else if (state_name == "Kerala") {
+      plot_ylims <- c(0.05, 0.22)
+    } else if (state_name == "Maharashtra") {
+      plot_ylims <- c(0.175, 0.35)
+    } else if (state_name == "Assam") {
+      plot_ylims <- c(0.1, 0.5)
+    }
+    
+    
+    model_plot <- (ggplot(filter(data, MONTHS.TYPE == "LD"), 
+                          aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = plot_ylims) +
+                     labs(title = "For the months of April and May",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
+                     ggplot(filter(data, MONTHS.TYPE == "NL"), 
+                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = plot_ylims) +
+                     labs(title = "For other ten months",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
+                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
+                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = plot_ylims) +
+                     labs(title = "For all twelve months",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     geom_point(size = 1.75, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1, width = 0.15, position = position_dodge(0.5))) +
+      plot_layout(guides = "collect") +
+      plot_annotation(title = plot_title,
+                      subtitle = plot_subtitle) 
+    
+    return(model_plot)
+    
+  } else if (type == "prolific") {
+    
+    plot_title <- "Change in bird species reporting from locations with consistent effort"
+    plot_subtitle <- paste0(
+      "Predicted reporting frequencies of ",
+      n_distinct(data_prolific$COMMON.NAME), " species (",
+      n_distinct(filter(data_prolific, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
+      n_distinct(filter(data_prolific, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
+      " in three separate monthwise models")
+    
+    
+    model_plot <- (ggplot(filter(data, MONTHS.TYPE == "LD"), 
+                          aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     labs(title = "For the months of April and May",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     # data points
+                     geom_point(data = filter(data_points, MONTHS.TYPE == "LD"), 
+                                aes(group = PATH.GROUP),
+                                size = 3, alpha = 0.25,
+                                position = position_dodge(0.25)) + 
+                     geom_path(data = filter(data_points, MONTHS.TYPE == "LD"), 
+                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
+                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+                     # main points
+                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+                     ggplot(filter(data, MONTHS.TYPE == "NL"), 
+                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     labs(title = "For other ten months",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     # data points
+                     geom_point(data = filter(data_points, MONTHS.TYPE == "NL"), 
+                                aes(group = PATH.GROUP),
+                                size = 3, alpha = 0.25,
+                                position = position_dodge(0.25)) + 
+                     geom_path(data = filter(data_points, MONTHS.TYPE == "NL"), 
+                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
+                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+                     # main points
+                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
+                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
+                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
+                                        name = "Species\ncategory",
+                                        labels = c("Rural", "Urban")) +
+                     scale_y_continuous(limits = c(0.1, 1.0)) +
+                     labs(title = "For all twelve months",
+                          x = "Migratory year", y = "Predicted reporting frequency") +
+                     # data points
+                     geom_point(data = filter(data_points, MONTHS.TYPE == "ALL"), 
+                                aes(group = PATH.GROUP),
+                                size = 3, alpha = 0.25,
+                                position = position_dodge(0.25)) + 
+                     geom_path(data = filter(data_points, MONTHS.TYPE == "ALL"), 
+                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
+                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
+                     # main points
+                     geom_point(size = 3, position = position_dodge(0.5)) +
+                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
+                                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
+      plot_layout(guides = "collect") +
+      plot_annotation(title = plot_title,
+                      subtitle = plot_subtitle) 
+    
+    return(model_plot)
+    
+  } else {print("Please select valid analysis type!")}
+  
 }
