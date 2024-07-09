@@ -296,18 +296,20 @@ fig_path <- "fig_main_states.png"
 
 fig1 <- create_composite_graph("state", "Karnataka")
 fig2 <- create_composite_graph("state", "Kerala", ylab = FALSE)
-fig3 <- create_composite_graph("state", "Maharashtra", ylab = FALSE)
+fig3 <- create_composite_graph("state", "Maharashtra")
 fig4 <- create_composite_graph("state", "Assam", ylab = FALSE)
 
-fig_main_states <- (fig1 | fig2 | fig3 | fig4) +
+fig_main_states <- ((fig1 | fig2) / (fig3 | fig4)) +
   plot_layout(guides = "collect") +
   plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom",
         plot.tag.position = c(0, 0.995),
-        axis.text.y = element_text(size = 16))
+        axis.text.y = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 20))
 
 ggsave(plot = fig_main_states, fig_path,
-       width = 23, height = 11, units = "in", dpi = 300)
+       width = 11, height = 20, units = "in", dpi = 300)
 
 knitr::include_graphics(fig_path)
 
