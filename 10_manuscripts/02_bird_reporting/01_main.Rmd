@@ -16,7 +16,8 @@ COVID-19 was the deadliest pandemic of the 21st century, and resulted in major w
 
 The government in India, like elsewhere, had taken several steps to minimise the spread of the COVID-19 pandemic. The most severe restrictions and regulations such as curfews, quarantines, and shutting down of non-essential public services and activities, happened to fall in the months of April--May in both 2020 and 2021. A nationwide total lockdown was implemented just before April 2020 [@bbcnews2020] and continued until late May [@banerjea2020] when the first wave started to subside. The second wave in India started to peak in May 2021, with a higher fatality rate than the first wave, provoking numerous statewide lockdowns and regulations in the absence of a nationwide lockdown [@theindianexpress2021]. The other months of the pandemic years saw lower and varying degrees of regulations and preventive measures across space and time.
 
-In the big picture, this could have led to lower overall impact of, and adherence to, regulations due to India's unique socioeconomic, cultural and political position. For instance, social distancing measures are thought to have much lower epidemiological and welfare value in lower-income countries, such as India, than in higher-income countries, because they usually necessitate economic sacrifices [@barnett-howell2021]. Indeed, there was a decline in adherence to social distancing measures that cut across socioeconomic strata in India [@schaner2022]. For all these reasons, the magnitude of the anthropause itself could have been more muted in India than in other countries, particularly those in the West.
+<!-- edit below para -->
+In the big picture, this could have led to lower overall impact of, and adherence to, regulations due to India's unique socioeconomic, cultural and political position. For instance, social distancing measures are thought to have much lower epidemiological and welfare value in lower-income countries, such as India, than in higher-income countries, because they usually necessitate economic sacrifices [@barnett-howell2021]. Indeed, there was a decline in adherence to social distancing measures that cut across socioeconomic strata in India [@schaner2022]. This was indeed the case for birdwatcher behaviour in India, which underwent expected changes in accordance with government restrictions during the peak pandemic months, but quickly recovered to "normal" in the other months [@thrikkadeeri2024]. For all these reasons, the magnitude of the anthropause itself could have been more muted in India than in other countries, particularly those in the West.
 
 Nevertheless, these periods of restricted human activity were accompanied by the strong media narrative of wildlife making a comeback, "[reclaiming] their territory" [@karmakar2020] both in India as well as across the globe [@downtoearth2020; see @grandoni2023]. While this surge of anecdotal accounts was followed by empirical tests in certain countries, such formal analyses have been very limited in India, and more broadly, the Global South. Moreover, when the few existing studies in India did find pandemic-induced changes, particularly with respect to novel ranging dynamics, they were focused on mammals which are a group of large-ranging animals, and the patterns were inconsistent across species [@behera2022; see also @tucker2023]. As such, there is currently no clear and consistent evidence in India of direct pandemic impacts on bird life, i.e., of birds "making a comeback" to urban areas in India.
 
@@ -68,9 +69,9 @@ From the set of species analysed in the previous section, we first filtered out 
 
 ## Statistics {#statistics}
 
-We followed the same hierarchy of analyses described in Section \@ref(model-boot). Due to strikingly obvious differences in birding conditions between the lockdown and non-lockdown periods (and due to large differences in results from both approaches), we ran three separate models: one for the months of April and May ("lockdown"), one for the other ten months ("non-lockdown"), and one for all twelve months together ("all"). This was to avoid any disproportionate influence of all other months on the parameter estimates for the "lockdown" period.
+We followed the same hierarchy of analyses described in Section \@ref(model-boot). Due to notable differences in birding conditions and birder behaviour between the lockdown and non-lockdown periods [@thrikkadeeri2024], we ran two separate models: one for the months of April and May ("lockdown"), and one for the other ten months ("non-lockdown"). This was to avoid any disproportionate influence of all other months on the parameter estimates for the "lockdown" period.
 
-For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided below. All GLMMs were fit with binomial error distribution and cloglog link function, using the BOBYQA optimiser, except in `r (length(fail_spec_KL) + length(fail_spec_MH))` (`r length(fail_spec_KL)` of Kerala, `r length(fail_spec_MH)` of Maharashtra) of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
+For each of these three time periods, overall bird reporting models were run for each species with grid cell ID as the random effect, while models for reporting patterns with consistent effort were run for each highly birded location with species identity as the random effect. The full model specifications are provided below. All `how many?` GLMMs were fit with binomial error distribution and cloglog link function, using the BOBYQA optimiser, except in `r (length(fail_spec_KL) + length(fail_spec_MH))` (`r length(fail_spec_KL)` of Kerala, `r length(fail_spec_MH)` of Maharashtra) of the overall bird reporting models in which the state-species combination could not be modelled successfully due to either step-halving or convergence issues. In such cases, the canonical link function (logit) was used instead.
 
 Diagnostics were not inspected separately for the bird reporting models due to the large number of models fitted. Mean and CI estimates were obtained in the same way as outlined in Section \@ref(model-boot), but with 500 simulations instead of 1000, due to computational limitations.
 
@@ -89,6 +90,418 @@ where $length$ refers to the median number of species reported in the respective
 ## Software
 
 All analyses were performed in the R environment [@rcoreteam2021] in RStudio [@positteam2022]. Figures were made using the packages *ggplot2* [@wickham2016] and *patchwork* [@pedersen2020]. In addition, packages *sf* [@pebesma2018], *spdep* [@bivand2022], *raster* [@hijmans2022], *terra* [@hijmans2022a] and *geodata* [@hijmans2022b] for spatial analyses, as well as *lubridate* [@grolemund2011], *glue* [@hester2022] and *tictoc* [@izrailev2021] were used. The source code for the entire analysis, from data preparation to statistical validation of metrics and to producing the final manuscript, is available on the [GitHub repository](https://github.com/rikudoukarthik/covid-ebirding) for the study.
+
+# Results
+
+We explored patterns of overall bird species reporting (across all locations) for the states of Karnataka, Kerala, Maharashtra and Assam, for 23 species (11 urban, 12 rural), 21 species (11, 10), 22 species (11, 11) and 19 species (10, 9) respectively. The analysis of reporting patterns with consistent effort considered 20 species (11, 9) common to all `r tot_qual_prolific$LOCATIONS` qualifying locations across the country. In general, urban species are reported more frequently than rural species.
+
+## Species reporting across all locations
+
+During the peak periods of the pandemic, urban species were reported more frequently than usual in all states (Fig. \@ref(fig:overall-212m)A1--A4), but the states varied in how rural species reporting changed. In Karnataka, Kerala and Assam, the increase in urban species reporting was accompanied by an increase in rural species reporting, though to a slightly lesser extent in Karnataka and Assam. In Karnataka, unlike in Kerala and Assam, rural species reporting was higher in MY 2020 than in MY 2019. Maharashtra was the only state where rural species were reported less frequently than usual during the peak pandemic months.
+
+Year-round frequencies in Karnataka and Kerala of both urban and rural species were also marginally higher during the pandemic year MY 2019 (Fig. \@ref(fig:overall-212m)B1,B2). However, from MY 2020 in Karnataka, rural species have been reported more frequently than previously. There was an increase in year-round frequencies of both urban and rural species in Maharashtra in the years since MY 2018, though the increase in rural species is slightly lower than in urban species (Fig. \@ref(fig:overall-212m)B3). The pandemic years saw an increase in urban species reporting in Assam, while rural species were reported as frequently as they previously were (Fig. \@ref(fig:overall-212m)B4).
+
+Different species within the same category sometimes showed contradictory patterns (e.g., Fig. \@ref(fig:overall-non8)). Often, species exhibited patterns contradictory to the expectations of pandemic effects: urban species reporting decreased (e.g., Fig. \@ref(fig:overall-non4)A) or rural species reporting increased (e.g., Fig. \@ref(fig:overall-non8)B). Not only did these patterns of species reporting vary considerably from months to years, between states, and across species, they also became weaker (effect sizes decreased).
+
+```{r metric-summ}
+
+# table of metrics and their overall patterns: + or - (as in BMS2022 poster)
+
+data.frame(
+  Metrics = c(
+    "Group birding",
+    "Site fidelity",
+    "Birding time",
+    "Hotspot birding",
+    "Birding protocol",
+    "Birding distance",
+    "List duration",
+    "List length",
+    "Urban bias",
+    "Spatial coverage",
+    "Overall bird reporting",
+    "Bird reporting with consistent effort"
+  ),
+  Peak = c("+", "+", "+",
+           "+", "+",
+           "+", "+", "+",
+           "+", "",
+           "+", ""),
+  Pandemic = c("+", "+", "+",
+               "+", "+",
+               "+", "+", "+",
+               "", "",
+               "", ""),
+  Post = c("", "", "+",
+           "", "",
+           "+", "+", "+",
+           "", "",
+           "", "")
+) %>%
+  arrange(desc(Peak), desc(Pandemic), desc(Post)) %>%
+  knitr::kable(
+    caption = 'Summary of changes to metrics of data quality and bird species reporting at the national level, at various temporal scales: column "Peak" refers to the peak pandemic months; "Pandemic" refers to the pandemic years; "Post-pandemic" denotes changes that lasted even after the pandemic years. "+" denotes the presence of a prominent change (positive or negative) relative to pre-pandemic levels.',
+    align = "lccc",
+    col.names = c("Metrics", "Peak", "Pandemic", "Post-pandemic")
+  )
+
+```
+
+## Species reporting at locations with consistent effort
+
+With consistent effort, species reporting patterns show a different picture at the small scale: neither urban nor rural species were reported more or less frequently during the peak periods than before, as the highly variable local patterns averaged out across space (Fig. \@ref(fig:prolific), Table \@ref(tab:metric-summ)). This remains true for year-round frequencies as well.
+
+```{r overall-212m, fig.cap="Modelled species reporting frequencies for the months of April and May (top row) and separately for all twelve months of a year (bottom row), for the states of Karnataka (A1, B1), Kerala (A2, B2), Maharashtra (A3, B3) and Assam (A4, B4). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=13, dpi=300, dev="jpeg"}
+
+load("00_outputs/b_overall_s1c_model.RData")
+d1 <-
+  birds_pred %>% filter(MONTHS.TYPE == "LD")
+d5 <-
+  birds_pred %>% filter(MONTHS.TYPE == "ALL")
+load("00_outputs/b_overall_s2c_model.RData")
+d2 <-
+  birds_pred %>% filter(MONTHS.TYPE == "LD")
+d6 <-
+  birds_pred %>% filter(MONTHS.TYPE == "ALL")
+load("00_outputs/b_overall_s3c_model.RData")
+d3 <-
+  birds_pred %>% filter(MONTHS.TYPE == "LD")
+d7 <-
+  birds_pred %>% filter(MONTHS.TYPE == "ALL")
+load("00_outputs/b_overall_s4c_model.RData")
+d4 <-
+  birds_pred %>% filter(MONTHS.TYPE == "LD")
+d8 <-
+  birds_pred %>% filter(MONTHS.TYPE == "ALL")
+
+p1 <-
+  ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.13, 0.35)) +
+  labs(x = "", y = "Reporting frequency") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+
+p2 <-
+  ggplot(d2, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.05, 0.22)) +
+  labs(x = "Migratory year", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+p3 <-
+  ggplot(d3, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.175, 0.33)) +
+  labs(x = "", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+p4 <-
+  ggplot(d4, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.19, 0.5)) +
+  labs(x = "Migratory year", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+
+p5 <-
+  ggplot(d5, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.13, 0.35)) +
+  labs(x = "", y = "Reporting frequency") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+
+p6 <-
+  ggplot(d6, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.05, 0.22)) +
+  labs(x = "Migratory year", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+p7 <-
+  ggplot(d7, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.175, 0.33)) +
+  labs(x = "", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+p8 <-
+  ggplot(d8, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.19, 0.5)) +
+  labs(x = "Migratory year", y = "") +
+  geom_point(size = 2, position = position_dodge(0.5)) +
+  geom_errorbar(
+    aes(ymin = CI.L, ymax = CI.U),
+    size = 1,
+    width = 0.5,
+    position = position_dodge(0.5)
+  )
+
+pA <-
+  (p1 | p2 | p3 | p4) + plot_layout(tag_level = "new")
+pB <-
+  (p5 | p6 | p7 | p8) + plot_layout(tag_level = "new")
+
+(pA / guide_area() / pB) +
+  plot_layout(guides = "collect", heights = c(6, 1, 6)) +
+  plot_annotation(tag_levels = c("A", "1")) &
+  theme(
+    legend.position = "bottom",
+    plot.tag.position = c(0, 1),
+    axis.text.x = element_text(
+      colour = (month_lab %>% distinct(M.YEAR, COL3))$COL3,
+      angle = 45,
+      vjust = 0.5
+    )
+  )
+
+
+```
+
+```{r prolific, fig.cap="Species reporting frequencies with consistent effort data, separately modelled for the months of April and May (A), the other ten months (B), and all twelve months of a year (C). Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text. Each translucent line connecting points represents reporting frequencies from a single location/patch across the four years. Points with error bars represent means with 95% confidence intervals.", out.width="100%", fig.width=8, fig.height=6, dpi=300, dev="jpeg"}
+
+load("00_outputs/b_prolific_model.RData")
+
+d1a <-
+  prolific_pred %>% filter(MONTHS.TYPE == "LD")
+d1b <-
+  prolific_points %>% filter(MONTHS.TYPE == "LD")
+
+d2a <-
+  prolific_pred %>% filter(MONTHS.TYPE == "NL")
+d2b <-
+  prolific_points %>% filter(MONTHS.TYPE == "NL")
+
+d3a <-
+  prolific_pred %>% filter(MONTHS.TYPE == "ALL")
+d3b <-
+  prolific_points %>% filter(MONTHS.TYPE == "ALL")
+
+
+p1 <-
+  ggplot(d1a, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.1, 1.0)) +
+  labs(x = "", y = "Reporting frequency") +
+  # data points
+  geom_point(
+    data = d1b,
+    aes(group = PATH.GROUP),
+    size = 2,
+    alpha = 0.25,
+    position = position_dodge(0.25)
+  ) +
+  geom_path(
+    data = d1b,
+    aes(
+      x = as.numeric(M.YEAR),
+      y = PRED,
+      group = PATH.GROUP
+    ),
+    size = 1,
+    alpha = 0.15,
+    position = position_dodge(0.25)
+  ) +
+  # main points
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3)
+
+p2 <-
+  ggplot(d2a, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.1, 1.0)) +
+  labs(x = "Migratory year", y = "") +
+  # data points
+  geom_point(
+    data = d2b,
+    aes(group = PATH.GROUP),
+    size = 2,
+    alpha = 0.25,
+    position = position_dodge(0.25)
+  ) +
+  geom_path(
+    data = d2b,
+    aes(
+      x = as.numeric(M.YEAR),
+      y = PRED,
+      group = PATH.GROUP
+    ),
+    size = 1,
+    alpha = 0.15,
+    position = position_dodge(0.25)
+  ) +
+  # main points
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3)
+
+p3 <-
+  ggplot(d3a, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
+  scale_color_manual(
+    values = c("#8F85C1", "#A3383C"),
+    name = "Species category",
+    labels = c("Rural", "Urban")
+  ) +
+  scale_y_continuous(limits = c(0.1, 1.0)) +
+  labs(x = "", y = "") +
+  # data points
+  geom_point(
+    data = d1b,
+    aes(group = PATH.GROUP),
+    size = 2,
+    alpha = 0.25,
+    position = position_dodge(0.25)
+  ) +
+  geom_path(
+    data = d1b,
+    aes(
+      x = as.numeric(M.YEAR),
+      y = PRED,
+      group = PATH.GROUP
+    ),
+    size = 1,
+    alpha = 0.15,
+    position = position_dodge(0.25)
+  ) +
+  # main points
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = CI.L, ymax = CI.U),
+                size = 1, width = 0.3)
+
+(p1 |
+    p2 | p3) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    legend.position = "bottom",
+    plot.tag.position = c(0, 1),
+    axis.text.x = element_text(
+      colour = (month_lab %>% distinct(M.YEAR, COL3))$COL3,
+      angle = 45,
+      vjust = 0.5
+    )
+  )
+
+
+```
+
+# Discussion
+
+## Did the pandemic change reporting patterns of urban and rural species?
+
+### Did birders report more urban and fewer rural species?
+
+Nevertheless, if this fine-scale urban bias also resulted in complementary changes in species reporting patterns, this would impact the utility of data from these years. Indeed, in some states, birders reported urban species slightly more frequently during the pandemic years than before, but this change remained even after the pandemic, suggesting some other cause for the change (Fig. \@ref(fig:overall-212m)B3). In other states, there was no evidence of higher urban species reporting during the pandemic. Thus, the evidence of directional change was not consistent and cannot be clearly linked to the pandemic.
+
+Importantly, we found no clear, consistent and directional evidence for birders reporting rural species less frequently (Fig. \@ref(fig:overall-212m)). Moreover, the changes in urban and rural species reporting across all locations are absent when birding effort is accounted for (Fig. \@ref(fig:prolific)), suggesting that these changes are driven simply by the differential birding in urban and rural areas, and not by inherent changes in bird abundance or behaviour. The highly variable species-level changes in reporting, caused by differential sampling and spatial bias, can be minimised using spatial subsampling methods.
+
+## Did bird abundance change?
+
+Many studies now suggest that survival and even behavioural traits (e.g., song amplitude and frequency, time of vocal activity, etc.) of birds are affected by human activity, potentially leading to an increase in bird abundance or detectability when human activity is reduced. Indeed, during the period of most stringent COVID-19 restrictions in USA, although a few species showed a decline, most increased in abundance in areas that saw a decrease in human activity [@schrimpf2021]. In contrast, species tightly linked to human presence and activity like the Feral Pigeon showed lower abundances [@soh2021]. Behavioural traits of birds can also change rapidly in response to environmental changes [@derryberry2020; @sanderfoot2022; @hentati-sundberg2021; @gordo2021; but see @seress2021].
+
+However, we found no clear evidence for bird abundance changing during the pandemic (Fig. \@ref(fig:prolific)). This might be because a few months of reduced human activity is insufficient to cause changes in large-scale patterns of bird behaviour or occurrence [see @seress2021]. A few individual locations did separately show signs of increased or decreased reporting of urban or rural species during the peak pandemic months, but any pattern disappeared when averaged across space (Table \@ref(tab:metric-summ)). Moreover, any location-specific pattern became muted when considering entire years, or when excluding the peak pandemic months. In conclusion, there is no consistent evidence of birds being affected by the pandemic, positively or negatively, artefactually or otherwise.
+
+## What happened during the peak pandemic months?
+
+... Additionally, the changes that the pandemic brought to human life did not lead to a prominent change at the large scale in how different bird species were reported.
+
+<!--  -->
+
+If so, this would signal some behavioural (changes in detectability or boldness) or population-level (true abundance, occupancy, etc.) changes associated with the pandemic. Not only would this illuminate the impact that human activity has on birds in India, but it would also show that birds are plastic and can respond to environmental changes at the short time scale.
+
+We know that there was a long-lasting (relative to other pandemic-induced changes) urban bias in eBirding in India during the pandemic years [@thrikkadeeriCOVIDp1]. This difference in effort between urban and rural areas could theoretically, depending on the scale, result in higher apparent reporting frequencies for species largely restricted to urban areas. In this case, any adverse effects of the reduced human activity during the peak pandemic months would be cancelled out by this overinflated reporting of urban species, whereas any increases in urban bird detectability or abundance would become even more prominent. On the other hand, if comparisons between urban and rural species were made while keeping effort constant, any difference in reporting frequencies related to real changes in bird behaviour or abundance should become unambiguously evident.
+
+"Disentangling true patterns from potential confounds"
+
+# Conclusion
+
+Importantly, there was no clear evidence of bird reporting having changed due to the pandemic, as a consequence of changes in either birder behaviour or bird abundance. Therefore, the eBird dataset remains valuable, with only certain statistical and scale considerations to be kept in mind.
+
 
 # References
 
