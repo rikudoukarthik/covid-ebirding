@@ -639,12 +639,10 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     # only complete
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE != "Incidental") %>%
     # false complete
-    group_by(GROUP.ID) %>% 
-    slice(1) %>%
+    distinct(GROUP.ID, .keep_all = TRUE) %>% 
     filter((NO.SP <= 3 & is.na(DURATION.MINUTES)) | 
              (DURATION.MINUTES < 3) | 
-             (SUT < minsut & NO.SP <= 3)) %>%
-    distinct(GROUP.ID)
+             (SUT < minsut & NO.SP <= 3))
   
   # getting list of GROUP.IDs inside IN boundary for pelagic filter
   temp2 <- data0_MY_b %>% 
@@ -658,9 +656,8 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   # speed and distance filter for travelling lists
   temp3 <- data0_MY_b %>%
     filter(ALL.SPECIES.REPORTED == 1 & PROTOCOL.TYPE == "Traveling") %>%
-    group_by(GROUP.ID) %>% slice(1) %>%
-    filter((SPEED > maxvel) | (EFFORT.DISTANCE.KM > 10)) %>%
-    distinct(GROUP.ID)
+    distinct(GROUP.ID, .keep_all = TRUE) %>%
+    filter((SPEED > maxvel) | (EFFORT.DISTANCE.KM > 10)) 
   
   # true completeness + other filters
   data0_MY_b <- data0_MY_b %>%
@@ -689,15 +686,10 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
   # sliced data which is what is required for analyses
   
   data0_MY_b_slice_S <- data0_MY_b %>% 
-    group_by(SAMPLING.EVENT.IDENTIFIER) %>% 
-    slice(1) %>% 
-    ungroup()
+    distinct(SAMPLING.EVENT.IDENTIFIER, .keep_all = TRUE)
   
-  set.seed(10)
   data0_MY_b_slice_G <- data0_MY_b %>% 
-    group_by(GROUP.ID) %>% 
-    slice_sample(n = 1) %>%
-    ungroup()
+    distinct(GROUP.ID, .keep_all = TRUE)
   
 
   lists_grids <- data0_MY_b_slice_G %>% 

@@ -21,3 +21,8 @@ source("00_scripts/b02_ss_datafiles.R")
 # modelling and bootstrapping for results
 source("00_scripts/b03_runspeciesmodels.R")
 source("00_scripts/b04_resolvebootstrap.R")
+
+
+###
+
+tictoc::toc()
