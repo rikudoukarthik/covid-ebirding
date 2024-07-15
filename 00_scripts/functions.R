@@ -190,6 +190,9 @@ summarise_mean_and_se <- function(data_grouped, est, se) {
   data_grouped %>% 
     reframe({{ se }} := (sd({{ est }})/sqrt(n())) + propagate_se_formean({{ se }}),
             {{ est }} := mean({{ est }}))
+            # reframe(SE.LINK = sd(PRED.LINK) + sqrt(sum(SE.LINK^2))/n(),
+            # PRED.LINK = mean(PRED.LINK)) %>%
+
   
 }
 
