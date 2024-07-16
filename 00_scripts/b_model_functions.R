@@ -113,9 +113,8 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   birds_pred = birds_pred %>%
     filter(!is.na(PRED.LINK) & !is.na(SE.LINK)) %>%
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
-    reframe(PRED.LINK = mean(PRED.LINK), 
-            # just averaging across months, so no need for propagation
-            SE.LINK = mean(SE.LINK)) 
+    # averaging across months
+    summarise_mean_and_se(PRED.LINK, SE.LINK, n_is_sim = TRUE)
   
   # add iteration number as column so we can save all in one object
   if (!is.null(iter)) {
