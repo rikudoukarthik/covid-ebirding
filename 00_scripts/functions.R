@@ -185,14 +185,25 @@ propagate_se_formean <- function(x, N = n()) {
 
 
 # averaging an estimate with its uncertainty
-summarise_mean_and_se <- function(data_grouped, est, se) {
+summarise_mean_and_se <- function(data_grouped, est, se, n_is_sim = FALSE) {
   
+  # if N is a result of simulations (sampling from generated random distribution), 
+  # in which case the value of N can be manipulated by us,
+  # then it is not appropriate to divide by sqrt(N).
+  # the higher the value of N, the lower the overall Standard Error of the Mean term 
+  # will be.
+  # in bootMer method of semiparametric bootstrapping, we get SE directly, but
+  # with the updated method (acc. SoIB 2023) we need to calculate it in this manner.
+
+if (n_is_sim == FALSE) {
   data_grouped %>% 
     reframe({{ se }} := (sd({{ est }})/sqrt(n())) + propagate_se_formean({{ se }}),
             {{ est }} := mean({{ est }}))
-            # reframe(SE.LINK = sd(PRED.LINK) + sqrt(sum(SE.LINK^2))/n(),
-            # PRED.LINK = mean(PRED.LINK)) %>%
-
+} else {
+  data_grouped %>% 
+      reframe({{ se }} := sd({{ est }}) + propagate_se_formean({{ se }}),
+              {{ est }} := mean({{ est }}))
+}
   
 }
 

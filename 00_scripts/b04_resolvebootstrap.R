@@ -22,7 +22,7 @@ for (mt in c("LD", "NL")) {
   data_res = data_mod %>%
     # across iterations
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
-    summarise_mean_and_se(PRED.LINK, SE.LINK) |> 
+    summarise_mean_and_se(PRED.LINK, SE.LINK, n_is_sim = TRUE) |> 
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
     mutate(CI.L = inverse_link(PRED.LINK - 1.96*SE.LINK, state_name, COMMON.NAME),
            PRED = inverse_link(PRED.LINK, state_name, COMMON.NAME),
