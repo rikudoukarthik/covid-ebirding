@@ -143,12 +143,12 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
 # choose inverse link function based on which model
 inverse_link <- function(data, state, species) {
   
-  if ((state == "Kerala" & species %in% fail_spec_KL) |
-      (state == "Maharashtra" & species %in% fail_spec_MH)) {
-    exp(data)/(1 + exp(data)) # inverse logit
-  } else {
+  # if ((state == "Kerala" & species %in% fail_spec_KL) |
+  #     (state == "Maharashtra" & species %in% fail_spec_MH)) {
+  #   exp(data)/(1 + exp(data)) # inverse logit
+  # } else {
     clogloglink(data, inverse = TRUE) # inverse cloglog
-  }
+  # }
   
 }
 

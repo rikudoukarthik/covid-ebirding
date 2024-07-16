@@ -67,19 +67,19 @@ if (!file.exists("00_data/in_LULC_MODIS/in_LULC_MODIS.tif") &
   print("MODIS data is ready to use!")
 }
 
-# #  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
-# tictoc::tic("Preparing data for analyses")
-# rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
-# senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
-# datapath <- "00_data/ebd_IN_relMay-2022.RData"
-# groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
-# covidclasspath <- "00_data/covid_classification.csv"
-# rast_UNU_path <- "00_data/rast_UNU.RData"
-# 
-# data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
-#                    rast_UNU_path,
-#                    maxvel = 20, minsut = 2)
-# tictoc::toc()
+#  Getting EBD data + filtering and preparing for current use (61 mins on server) ###
+tictoc::tic("Preparing data for analyses")
+rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
+senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
+datapath <- "00_data/ebd_IN_relMay-2022.RData"
+groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
+covidclasspath <- "00_data/covid_classification.csv"
+rast_UNU_path <- "00_data/rast_UNU.RData"
+
+data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
+                   rast_UNU_path,
+                   maxvel = 20, minsut = 2)
+tictoc::toc()
 
 
 load("00_data/data0_MY_d_slice.RData")

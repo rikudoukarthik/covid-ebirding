@@ -101,10 +101,6 @@ eBird_users <- read.delim("00_data/ebd_users_relMay-2022.txt",
   transmute(OBSERVER.ID = observer_id,
             FULL.NAME = paste(first_name, last_name, sep = " "))
 
-# # list of prolific birders judging from eBird India leaderboard
-# prolific_a <- data.frame(FULL.NAME = c("Renju TR", "Jayadev  Menon", "Steffin Babu",
-#                          "Panchapakesan Jeganathan", "Premchand Reghuvaran", "Sahana M")) %>% 
-#   left_join(eBird_users)
 
 # getting overall checklist leaders from data
 prolific_a <- data0_MY_b_slice_S %>% 
@@ -227,16 +223,16 @@ data_prolific <- data_prolific %>%
   mutate(N.SPC = NULL)
   
 
-### species for which cloglog failing ####
+# ### species for which cloglog failing ####
 
-# overall bird models (b_overall_model.R) generally binomial with cloglog but
-# for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
-# failed to reduce deviance in pwrssUpdate" or other convergence issues.
-# so for these, we use logit instead
+# # overall bird models (b_overall_model.R) generally binomial with cloglog but
+# # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings 
+# # failed to reduce deviance in pwrssUpdate" or other convergence issues.
+# # so for these, we use logit instead
 
-fail_spec_KL <- c("Black Drongo", "Jungle Myna", "Common Myna", "Green Bee-eater", 
-                  "Spotted Dove", "White-throated Kingfisher")
-fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eater")
+# fail_spec_KL <- c("Black Drongo", "Jungle Myna", "Common Myna", "Green Bee-eater", 
+#                   "Spotted Dove", "White-throated Kingfisher")
+# fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eater")
 
 ```
 
