@@ -105,9 +105,10 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   
   
   pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",
-                         level = 0.48, type = "linear.prediction")
+                         level = 0.95, type = "linear.prediction")
   birds_pred$PRED.LINK = pred$fit
-  birds_pred$SE.LINK = pred$fit - pred$lwr
+  birds_pred$CI.L.LINK = pred$fit - pred$lwr
+  birds_pred$SE.LINK = (birds_pred$PRED.LINK - birds_pred$CI.L.LINK)/1.96 # assume alpha = 1.96
   
   
   birds_pred = birds_pred %>%
