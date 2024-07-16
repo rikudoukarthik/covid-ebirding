@@ -30,7 +30,7 @@ covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
 urbrur_palette <- tibble(SP.CATEGORY = c("R", "R", "U", "U"),
                          MONTHS.TYPE = c("LD", "ALL", "LD", "ALL"),
                          HEX = c("#C28C56", "#7D5D3B", "#129CAC", "#507C74")) %>% 
-  mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("ALL", "LD")))
+  mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("LD", "ALL")))
 
 
 # functions

@@ -183,13 +183,13 @@ gg_b_model <- function(data, type, data_points) {
     lab_y <- "Change in abundance index<br>(from t~0~ = 2018\u201319)"
     lab_ribbons <- urbrur_palette %>% 
       mutate(HEX.LABEL = case_when(MONTHS.TYPE == "LD" ~ "Apr\u2013May\n(Peak impact)",
-                                   MONTHS.TYPE == "ALL" ~ "Jun\u2013Mar\n(Rest of year)")) %>% 
+                                   MONTHS.TYPE == "ALL" ~ "Jun\u2013May\n(Full year)")) %>% 
       mutate(HEX.LABEL = factor(HEX.LABEL, 
-                                levels = c("Jun\u2013Mar\n(Rest of year)", 
+                                levels = c("Jun\u2013May\n(Full year)", 
                                            "Apr\u2013May\n(Peak impact)")))
     
     model_data <- data %>% 
-      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("ALL", "LD"))) %>%
+      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("LD", "ALL"))) %>%
       rename(PRED = PRED.PERC, SE = SE.PERC, CI.L = CI.L.PERC, CI.U = CI.U.PERC) %>% 
       # convert to + and - values
       mutate(PRED.LABEL = PRED - 100) %>% 
