@@ -286,7 +286,7 @@ anal_name <- "b_prolific_model"
 
 ### Model run separately for each location, and species variables included in model 
 
-# Lockdown and non-lockdown months modelled separately, since the month variable in
+# Lockdown and all months modelled separately, since the month variable in
 # model otherwise pulled to a very different average 
 
 
@@ -329,7 +329,9 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
       filter(LOCALITY.ID == unique(prolific_pred0$LOCALITY.ID)[l])
     
     tictoc::tic(glue("GLMM for months type {cur_m}, location {l}"))
-    model_loc <- glmer(REPORT ~ M.YEAR + MONTH:NO.SP + MONTH:M.YEAR + SP.CATEGORY +
+    # majority of MONTH variation expected with list length and with year (pandemic effect)
+    # hence, for parsimony, choosing to not include main effect of MONTH in model
+    model_loc <- glmer(REPORT ~ M.YEAR + MONTH:log(NO.SP) + MONTH:M.YEAR + SP.CATEGORY +
                           (1|COMMON.NAME),
                         data = data_loc, family = binomial(link = "cloglog"),
                         nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
@@ -350,7 +352,7 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
           
           count <- count + 1
 
-          prolific_pred0$PRED.LINK2[count] = median(na.omit(prediction[,count]))
+          prolific_pred0$PRED.LINK2[count] = mean(na.omit(prediction[,count]))
           prolific_pred0$SE.LINK2[count] = sd(na.omit(prediction[,count]))
           
         }
@@ -370,37 +372,73 @@ for (cur_m in 1:n_distinct(prolific_pred$MONTHS.TYPE)) {
 
 
 # for data points
+
 prolific_points <- prolific_pred %>% 
-  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
-         # to transform lower bound of SE (not CI.L! think "mean +- SE")
-         SE.L = clogloglink((PRED.LINK - SE.LINK), inverse = T)) %>% 
-  mutate(SE = PRED - SE.L) %>% 
   left_join(timeline) %>% 
   # averaging across months of year
   group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY, LOCALITY.ID) %>% 
-  dplyr::summarise(PRED = mean(PRED),
-            # propagating SE across species of a category
-            SE = sqrt(sum((SE)^2))/n()) %>% 
-  # to make lines connect per location                      
-  group_by(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY) %>% 
+  summarise_mean_and_se(PRED.LINK, SE.LINK, n_is_sim = FALSE) %>% 
+  mutate(PRED = clogloglink(PRED.LINK, inverse = T),
+         CI.L = clogloglink((PRED.LINK - 1.96*SE.LINK), inverse = T),
+         CI.U = clogloglink((PRED.LINK + 1.96*SE.LINK), inverse = T)) %>% 
+  mutate(SE = (PRED - CI.L)/1.96)
+  
+prolific_points <- prolific_points %>% 
+  arrange(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID, M.YEAR) %>%
+  # getting trends values of first year (2018--19)
+  group_by(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID) %>% 
+  mutate(PRED.LINK.Y1 = first(PRED.LINK),
+         PRED.Y1 = first(PRED),
+         SE.LINK.Y1 = first(SE.LINK)) %>% 
+  ungroup() %>% 
+  # for calculating as % change
+  #   back-transformed so value is % of year1 value
+  mutate(PRED.PERC = 100*PRED/PRED.Y1) 
+   
+# calculting simulated CIs for the % change
+set.seed(10) 
+prolific_points <- prolific_points %>% 
+  group_by(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID, M.YEAR) %>% 
+  # 1000 simulations of transformed ratio of present:original values
+  # quantiles*100 from these gives us our CI limits for PRED.PERC
+  reframe(SIM.RATIOS = simerrordiv(PRED.LINK, PRED.LINK.Y1, SE.LINK, SE.LINK.Y1,
+                                     state = NULL, species = NULL) %>% 
+            pull(rat)) %>% 
+  group_by(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID, M.YEAR) %>% 
+  reframe(CI.L.PERC = 100*as.numeric(quantile(SIM.RATIOS, 0.025)),
+          CI.U.PERC = 100*as.numeric(quantile(SIM.RATIOS, 0.975))) %>% 
+  right_join(prolific_points, by = c("MONTHS.TYPE", "SP.CATEGORY", "LOCALITY.ID", "M.YEAR")) %>%
+  group_by(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID) %>% 
+  # making CI band zero for first year
+  mutate(CI.L.PERC = case_when(M.YEAR == first(M.YEAR) ~ PRED.PERC,
+                               TRUE ~ CI.L.PERC),
+         CI.U.PERC = case_when(M.YEAR == first(M.YEAR) ~ PRED.PERC,
+                               TRUE ~ CI.U.PERC)) %>%
+  ungroup() %>%
+  dplyr::select(MONTHS.TYPE, SP.CATEGORY, LOCALITY.ID, M.YEAR, CI.L, PRED, CI.U,
+                CI.L.PERC, PRED.PERC, CI.U.PERC) %>% 
+    # calculating SE to propagate
+    mutate(SE.PERC = (CI.U.PERC - PRED.PERC)/1.96)
+  
+# to make lines connect per location                      
+prolific_points <- prolific_points %>% 
   arrange(MONTHS.TYPE, LOCALITY.ID, SP.CATEGORY, M.YEAR) %>% 
   mutate(PATH.GROUP = glue("{LOCALITY.ID}{SP.CATEGORY}"))
 
+
+# summarising and propagating SE for species categories (across locations)
 prolific_pred <- prolific_points %>% 
-  # summarising for species categories
   group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
-  dplyr::summarise(PRED = mean(PRED),
-            # propagating SE across species of a category
-            SE = sqrt(sum((SE)^2))/n(),
-            CI.L = PRED - 1.96*SE,
-            CI.U = PRED + 1.96*SE)
+  summarise_mean_and_se(PRED.PERC, SE.PERC, n_is_sim = FALSE) |> 
+  mutate(CI.L.PERC = PRED.PERC - 1.96*SE.PERC,
+         CI.U.PERC = PRED.PERC + 1.96*SE.PERC)
 
 
 
 # graphs ------------------------------------------------------------
 
 save(prolific_pred, prolific_points, 
-     file = glue("00_outputs/{anal_name}.RData"))
+     file = glue("00_outputs/bird_models/{anal_name}.RData"))
 
 prolific_plot <- gg_b_model(prolific_pred, type = "prolific", prolific_points)
 
