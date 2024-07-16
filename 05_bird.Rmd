@@ -295,11 +295,8 @@ anal_name <- "b_prolific_model"
 
 
 data_prolific0 <- bind_rows("LD" = data_prolific %>% filter(MONTH %in% 4:5), 
-                            "NL" = data_prolific %>% filter(!(MONTH %in% 4:5)), 
                             "ALL" = data_prolific, 
-                            .id = "MONTHS.TYPE") %>% 
-  # removing Janardhan Uppada's patch in non-lockdown since it is not converging
-  filter(!(MONTHS.TYPE == "NL" & LOCALITY.ID == "L6949429"))
+                            .id = "MONTHS.TYPE")
 
 # getting median list length (patch-wise) for prediction later
 median_length <- data_prolific0 %>% 

@@ -1,7 +1,7 @@
 # Step 2 of subsampling: generate 1000 versions of individual data files 
 # subsampled using the subsampled GROUPIDs per location per month per year
 
-for (mt in c("LD", "NL")) {
+for (mt in c("LD", "ALL")) {
   
   path_folder <- glue("00_data/bird_models/{state_name}/b02_ss_datafiles_{mt}/")
   

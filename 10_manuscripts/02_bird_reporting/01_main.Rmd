@@ -344,9 +344,9 @@ d1b <-
   prolific_points %>% filter(MONTHS.TYPE == "LD")
 
 d2a <-
-  prolific_pred %>% filter(MONTHS.TYPE == "NL")
+  prolific_pred %>% filter(MONTHS.TYPE == "ALL")
 d2b <-
-  prolific_points %>% filter(MONTHS.TYPE == "NL")
+  prolific_points %>% filter(MONTHS.TYPE == "ALL")
 
 d3a <-
   prolific_pred %>% filter(MONTHS.TYPE == "ALL")

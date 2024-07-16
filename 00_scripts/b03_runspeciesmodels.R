@@ -11,7 +11,7 @@ require(doParallel)
 source("00_scripts/b_model_functions.R")
 
 
-for (mt in c("LD", "NL")) {
+for (mt in c("LD", "ALL")) {
   
   cur_assignment <- 1:1000
   

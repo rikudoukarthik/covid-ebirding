@@ -505,13 +505,13 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 ```{r overall-10m, fig.cap="Modelled species reporting frequencies for all ten months excluding April and May, for the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=6, dpi=300, dev="jpeg"}
 
 load("00_outputs/b_overall_s1c_model.RData")
-d1 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
+d1 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
 load("00_outputs/b_overall_s2c_model.RData")
-d2 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
+d2 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
 load("00_outputs/b_overall_s3c_model.RData")
-d3 <- birds_pred %>% filter(MONTHS.TYPE == "NL")
+d3 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
 load("00_outputs/b_overall_s4c_model.RData")
-d4 <- birds_pred %>% filter(MONTHS.TYPE == "NL") 
+d4 <- birds_pred %>% filter(MONTHS.TYPE == "ALL") 
 
 p1 <- ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
   scale_color_manual(values = c("#8F85C1", "#A3383C"),

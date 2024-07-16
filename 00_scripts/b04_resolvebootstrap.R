@@ -8,7 +8,7 @@ require(VGAM) #clogloglink()
 source("00_scripts/b_model_functions.R")
 
 
-for (mt in c("LD", "NL")) {
+for (mt in c("LD", "ALL")) {
 
   mod_path <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}.csv")
   

@@ -183,13 +183,13 @@ gg_b_model <- function(data, type, data_points) {
     lab_y <- "Change in abundance index<br>(from t~0~ = 2018\u201319)"
     lab_ribbons <- urbrur_palette %>% 
       mutate(HEX.LABEL = case_when(MONTHS.TYPE == "LD" ~ "Apr\u2013May\n(Peak impact)",
-                                   MONTHS.TYPE == "NL" ~ "Jun\u2013Mar\n(Rest of year)")) %>% 
+                                   MONTHS.TYPE == "ALL" ~ "Jun\u2013Mar\n(Rest of year)")) %>% 
       mutate(HEX.LABEL = factor(HEX.LABEL, 
                                 levels = c("Jun\u2013Mar\n(Rest of year)", 
                                            "Apr\u2013May\n(Peak impact)")))
     
     model_data <- data %>% 
-      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("NL", "LD"))) %>%
+      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("ALL", "LD"))) %>%
       rename(PRED = PRED.PERC, SE = SE.PERC, CI.L = CI.L.PERC, CI.U = CI.U.PERC) %>% 
       # convert to + and - values
       mutate(PRED.LABEL = PRED - 100) %>% 
@@ -275,7 +275,7 @@ gg_b_model <- function(data, type, data_points) {
                      geom_point(size = 1.75, position = position_dodge(0.5)) +
                      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                                    size = 1, width = 0.15, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "NL"), 
+                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
                             aes(M.YEAR, PRED, col = SP.CATEGORY)) +
                      scale_color_manual(values = c("#8F85C1", "#A3383C"),
                                         name = "Species\ncategory",
@@ -334,7 +334,7 @@ gg_b_model <- function(data, type, data_points) {
                      geom_point(size = 3, position = position_dodge(0.5)) +
                      geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
                                    size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "NL"), 
+                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
                             aes(M.YEAR, PRED, col = SP.CATEGORY)) +
                      scale_color_manual(values = c("#8F85C1", "#A3383C"),
                                         name = "Species\ncategory",
@@ -343,11 +343,11 @@ gg_b_model <- function(data, type, data_points) {
                      labs(title = "For other ten months",
                           x = "Migratory year", y = "Predicted reporting frequency") +
                      # data points
-                     geom_point(data = filter(data_points, MONTHS.TYPE == "NL"), 
+                     geom_point(data = filter(data_points, MONTHS.TYPE == "ALL"), 
                                 aes(group = PATH.GROUP),
                                 size = 3, alpha = 0.25,
                                 position = position_dodge(0.25)) + 
-                     geom_path(data = filter(data_points, MONTHS.TYPE == "NL"), 
+                     geom_path(data = filter(data_points, MONTHS.TYPE == "ALL"), 
                                aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
                                size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
                      # main points
