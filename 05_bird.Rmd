@@ -55,6 +55,13 @@ species_list <- bind_rows("Karnataka" = species_bang,
 
 rm(species_bang, species_pune, species_koch, species_guwa)
 
+# adding species list for full country analysis
+species_list <- bind_rows(species_list,
+                          species_list |> 
+                            distinct(COMMON.NAME, SP.CATEGORY) |> 
+                            mutate(STATE = "India") |> 
+                            relocate(STATE, COMMON.NAME, SP.CATEGORY))
+
 
 ### choosing grid cells of 4 cities ####
 
@@ -236,6 +243,10 @@ fail_spec_MH <- c("Common Myna", "Rock Pigeon", "Small Minivet", "Green Bee-eate
 ## Overall species reporting
 
 ```{r b_overall_models, cache=TRUE, message=FALSE}
+
+state_name <- "India"
+source("00_scripts/b_overall_model.R")
+#  mins
 
 state_name <- "Karnataka"
 source("00_scripts/b_overall_model.R")

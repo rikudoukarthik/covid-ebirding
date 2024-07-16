@@ -71,12 +71,10 @@ for (mt in c("LD", "NL")) {
     mutate(SE.PERC = (CI.U.PERC - PRED.PERC)/1.96,
            MONTHS.TYPE = mt) %>% 
     group_by(MONTHS.TYPE, M.YEAR, SP.CATEGORY) %>% 
-    reframe(PRED.PERC = mean(PRED.PERC),
-            # propagating SE across species of a category
-            # ADD sd of PRED.PERC to sqrt()
-            SE.PERC = sqrt(sum((SE.PERC)^2))/n(),
-            CI.L.PERC = PRED.PERC - 1.96*SE.PERC,
-            CI.U.PERC = PRED.PERC + 1.96*SE.PERC)
+    # propagating SE across species of a category
+    summarise_mean_and_se(PRED.PERC, SE.PERC, n_is_sim = FALSE) |> 
+    mutate(CI.L.PERC = PRED.PERC - 1.96*SE.PERC,
+           CI.U.PERC = PRED.PERC + 1.96*SE.PERC)
   
   
   # writing

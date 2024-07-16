@@ -13,7 +13,7 @@ expandbyspecies = function(data, species) {
   
   checklistinfo = data %>% 
     filter(ALL.SPECIES.REPORTED == 1) %>%
-    distinct(GROUP.ID, M.YEAR, MONTH, DAY.M, URBAN, CELL.ID, SUBCELL.ID, NO.SP) %>%
+    distinct(GROUP.ID, M.YEAR, MONTH, DAY.M, URBAN, CELL.ID, SUBCELL.ID, GRID.G3, NO.SP) %>%
     group_by(GROUP.ID) %>% 
     slice(1) %>% 
     ungroup()
@@ -75,22 +75,33 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings
   # failed to reduce deviance in pwrssUpdate"
   
-  if ((state_name == "Kerala" & species %in% fail_spec_KL) |
-      (state_name == "Maharashtra" & species %in% fail_spec_MH)){
+  # if ((state_name == "Kerala" & species %in% fail_spec_KL) |
+  #     (state_name == "Maharashtra" & species %in% fail_spec_MH)){
     
-    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
-                          (1|CELL.ID),
-                        data = data_exp, family = binomial,
-                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+  #   model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
+  #                         (1|CELL.ID),
+  #                       data = data_exp, family = binomial,
+  #                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
     
-  } else {
+  # } else {
     
-    model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
-                          (1|CELL.ID),
-                        data = data_exp, family = binomial(link = "cloglog"),
-                        nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-    
-  }
+    # if full country models, then full random effects specification as in SoIB 2023
+    if (state_name == "India") {
+
+      model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
+                            (1|GRID.G3/CELL.ID),
+                          data = data_exp, family = binomial(link = "cloglog"),
+                          nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+
+    } else {
+
+      model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
+                            (1|CELL.ID),
+                          data = data_exp, family = binomial(link = "cloglog"),
+                          nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+      
+    }
+  # }
 
   # predicting from model ---------------------------------------------------
   
@@ -115,7 +126,7 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
     filter(!is.na(PRED.LINK) & !is.na(SE.LINK)) %>%
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>% 
     # averaging across months
-    summarise_mean_and_se(PRED.LINK, SE.LINK, n_is_sim = TRUE)
+    summarise_mean_and_se(PRED.LINK, SE.LINK, n_is_sim = FALSE)
   
   # add iteration number as column so we can save all in one object
   if (!is.null(iter)) {
@@ -157,6 +168,8 @@ simerrordiv = function(x1, x2, se1, se2, state, species)
   
   return(tp)
 }
+
+
 # plotting function for bird model results -----------------
 
 gg_b_model <- function(data, type, data_points) {

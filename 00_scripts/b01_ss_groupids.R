@@ -43,10 +43,14 @@ for (mt in c("LD", "NL")) {
   require(foreach)
   require(doParallel)
 
-    data_locs <- data0_MY_b %>% 
+  data_locs <- data0_MY_b %>% 
     filter(ALL.SPECIES.REPORTED == 1,
-           STATE == state_name,
            MONTHS.TYPE == mt) %>%
+    {if (state_name == "India") {
+      .
+    } else {
+      filter(., STATE == state_name)
+    }} |> 
     distinct(LOCALITY.ID, GROUP.ID, MONTH, M.YEAR)
   
   
