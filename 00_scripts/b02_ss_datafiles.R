@@ -1,3 +1,7 @@
+require(tidyverse)
+require(furrr)
+require(parallel)
+
 # Step 2 of subsampling: generate 1000 versions of individual data files 
 # subsampled using the subsampled GROUPIDs per location per month per year
 
@@ -42,3 +46,29 @@ for (mt in c("LD", "ALL")) {
   gc()
   
 }
+
+to_walk <- function(.x, folder, assignment, monthtype) {
+  
+  # file names for individual files
+  write_path <- glue("{folder}data{.x}.RData")
+
+  tictoc::tic(glue("{monthtype} ({.x}/{max(assignment)}) Filtering data"))
+  data_filt = data0_MY_b %>% 
+    filter(GROUP.ID %in% randomgroupids[, .x])
+  tictoc::toc()
+  
+  tictoc::tic(glue("{monthtype} ({.x}/{max(assignment)}) Writing data"))
+  save(data_filt, file = write_path)
+  tictoc::toc()
+  
+}
+
+message("Activated future-walking using advanced Kenbunshoku Haki!")
+tic(glue("Future-walked over {max(1:100)} random data file generation"))
+plan(multisession, workers = parallel::detectCores()/2)
+options(future.globals.maxSize = 10000 * 1024^2) # 10GB
+future_walk(1:100, .progress = TRUE, 
+            ~ to_walk(.x, path_folder, 1:100, mt))
+plan(sequential)
+toc()
+gc()
