@@ -10,6 +10,8 @@ Two sets of bird species will be selected, one of birds common in human-dominate
 
 ```{r b_setup, cache=TRUE, message=FALSE}
 
+rm(data0_MY_d_slice_G, data0_MY_d_slice_S)
+
 load("00_data/data0_MY_b.RData")
 load("00_data/data0_MY_b_slice.RData")
 
@@ -164,7 +166,8 @@ temp3 <- data0_MY_b %>%
 data_prolific <- temp2 %>% 
   group_by(OBSERVER.ID, LOCALITY.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
   # for every list from a person's patch, adding all possible species for the patch
-  left_join(temp3) %>% 
+  # many-to-many because we are expanding by species AND checklists
+  left_join(temp3, relationship = "many-to-many") %>% 
   # joining observation count to species, and will replace NAs with 0
   left_join(temp1) %>% 
   mutate(REPORT = replace_na(OBSERVATION.COUNT, "0"),
