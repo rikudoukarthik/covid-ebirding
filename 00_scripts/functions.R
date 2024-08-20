@@ -623,7 +623,9 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     # creating COVID factor
     left_join(covidclass) %>% 
     # adding UNU information for every GROUP.ID
-    left_join(lists_UNU) %>% 
+    # many-to-many because some group lists have discrepancy
+    # not slicing unique here, because main data will be sliced later anyway
+    left_join(lists_UNU, relationship = "many-to-many") %>% 
     mutate(COVID = factor(COVID,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
     # NO.SP column
@@ -639,11 +641,6 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
            HOUR.END = floor((HOUR*60 + MIN + DURATION.MINUTES)/60)) %>%
     # data quality
     filter(REVIEWED == 0 | APPROVED == 1)
-  
-  
-  ### remove probable mistakes
-  source(url("https://github.com/stateofindiasbirds/soib_2023/raw/master/00_scripts/rm_prob_mistakes.R"))
-  data0_MY_b <- rm_prob_mistakes(data0_MY_b)
 
   
   ### exclude records based on various criteria 
@@ -730,7 +727,9 @@ data_qualfilt_prep <- function(rawdatapath, senspath,
     # creating COVID factor
     left_join(covidclass) %>% 
     # adding UNU information for every GROUP.ID
-    left_join(lists_UNU) %>% 
+    # many-to-many because some group lists have discrepancy
+    # not slicing unique here, because main data will be sliced later anyway
+    left_join(lists_UNU, relationship = "many-to-many") %>% 
     mutate(COVID = factor(COVID,
                           levels = c("BEF","DUR_20","DUR_21","AFT"))) %>% 
     # NO.SP column

@@ -50,6 +50,7 @@ for (mt in c("LD", "ALL")) {
     reframe(SIM.RATIOS = simerrordiv(PRED.LINK, PRED.LINK.Y1, SE.LINK, SE.LINK.Y1,
                                      state_name, COMMON.NAME) %>% 
               pull(rat)) %>% 
+    filter(!is.infinite(SIM.RATIOS) & !is.na(SIM.RATIOS)) %>% 
     group_by(COMMON.NAME, SP.CATEGORY, M.YEAR) %>%
     reframe(CI.L.PERC = 100*as.numeric(quantile(SIM.RATIOS, 0.025)),
             CI.U.PERC = 100*as.numeric(quantile(SIM.RATIOS, 0.975))) %>% 
