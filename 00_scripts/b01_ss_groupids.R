@@ -81,6 +81,4 @@ for (mt in c("LD", "ALL")) {
   detach("package:foreach", unload = TRUE)
   detach("package:parallel", unload = TRUE)
   
-  gc()
-  
 }

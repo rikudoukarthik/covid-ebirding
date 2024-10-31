@@ -23,6 +23,7 @@
 00_data/in_LULC/
 00_data/in_LULC_USGS/
 00_data/bird_models/
+00_outputs/bird_models/*/*/*.csv
 
 # Zoom recording
 Recording_IOC/

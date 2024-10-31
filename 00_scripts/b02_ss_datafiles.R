@@ -1,6 +1,4 @@
 require(tidyverse)
-require(furrr)
-require(parallel)
 require(data.table)
 require(purrr)
 
@@ -41,9 +39,8 @@ for (mt in c("LD", "ALL")) {
   })
 
   # cleaning up memory
-  rm(cur_assignment, write_path, data_filt, randomgroupids)
-  gc()
-  
+  rm(cur_assignment, randomgroupids)
+
 }
 
 
