@@ -13,7 +13,7 @@ source("00_scripts/b_model_functions.R")
 
 for (mt in c("LD", "ALL")) {
   
-  cur_assignment <- 85:500
+  cur_assignment <- 2:500
   
   
   path_folder <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}/")
@@ -40,7 +40,11 @@ for (mt in c("LD", "ALL")) {
     
     
     # start parallel
-    n.cores = parallel::detectCores()/2
+    n.cores = if (state_name == "India" & mt == "ALL") {
+      parallel::detectCores()/3
+    } else {
+      parallel::detectCores()/2
+    }
     # create the cluster
     my.cluster = parallel::makeCluster(
       n.cores, 
@@ -74,10 +78,7 @@ for (mt in c("LD", "ALL")) {
   if (dir.exists(path_folder)) {
     
     list_files <- list.files(path_folder)
-    list_iter <- str_extract(list_files, "(\\d)+") %>% as.numeric() %>% sort()
-    
-    birds_mod <- map2(list_files, list_iter, 
-         ~ read_csv(glue("{path_folder}{.x}")) %>% bind_cols(tibble(ITERATION = .y))) %>% 
+    birds_mod <- map(list_files, ~ read.csv(glue("{path_folder}{.x}"))) %>% 
       list_rbind()
     
     write.csv(birds_mod, file = write_path2, row.names = FALSE)

@@ -105,12 +105,16 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   # prepare a new data file to predict
   birds_pred <- data_exp %>% 
     # selecting random CELL.ID because predictInterval needs input even if which == "fixed"
-    mutate(CELL.ID = sample(unique(CELL.ID), 1)) %>% 
-    distinct(MONTH, M.YEAR, CELL.ID, COMMON.NAME, SP.CATEGORY) %>% 
+    mutate(CELL.ID = sample(unique(CELL.ID), 1),
+           GRID.G3 = sample(unique(GRID.G3), 1)) %>% 
+    distinct(MONTH, M.YEAR, CELL.ID, GRID.G3, COMMON.NAME, SP.CATEGORY) %>% 
     # joining median list length
     left_join(median_length, by = "MONTH") %>% 
     rename(NO.SP = NO.SP.MED)
   
+  if (state_name != "India") {
+    birds_pred <- birds_pred %>% dplyr::select(-GRID.G3)
+  }
   
   pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",
                          level = 0.95, type = "linear.prediction")
