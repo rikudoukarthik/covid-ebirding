@@ -1,5 +1,5 @@
 ---
-title: 'No evidence at large scale for "return" of bird life in the Indian anthropause'
+title: 'No evidence for "return" of bird life in the Indian anthropause'
 bibliography: ../covid-ebirding.json
 csl: ../the-condor.csl
 link-citations: yes
@@ -22,6 +22,7 @@ require(lubridate)
 # require(sf)
 # require(magick)
 require(flextable)
+require(here)
 
 
 theme_set(theme_classic(base_size = 16))
@@ -33,14 +34,16 @@ urbrur_palette <- tibble(SP.CATEGORY = c("R", "R", "U", "U"),
   mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("LD", "ALL")))
 
 
+here::i_am("covid-ebirding.Rproj")
+
 # functions
-source("../../00_scripts/functions.R")
+source(here("00_scripts/functions.R"))
 
 # month labels
 month_lab <- get_labelled_months()
 
 # loading data required for various summaries, tables and figures
-load("../../00_outputs/data_for_ms.RData")
+load(here("00_outputs/data_for_ms.RData"))
 
 
 knitr::opts_chunk$set(

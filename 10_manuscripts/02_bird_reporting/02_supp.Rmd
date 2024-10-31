@@ -1,83 +1,44 @@
 # Supplementary Material
 
+## Abundance modelling {#soib-model}
+
+This section describes the broad steps followed in order to build and run single-species statistical models to estimate frequency of reporting. These steps directly follow the filtering and processing steps that yield qualifying checklists (Section \@ref(meth)). Most of these are common between the SoIB 2023 analysis [@viswanathan2024; @soib2023] and our current analysis, but the few points of divergence are highlighted in Table \@ref(tab:covid-soib).
+
+-   **Reducing spatial non-independence of checklists**: To minimise pseudoreplication and other disproportionate biases caused by differences in representation of birding sites in eBird data, spatial subsampling of the data was done such that only a single qualifying checklist was selected from each site for each month and year. This random subsampling was repeated 1,000 times across our dataset, which thus produced 1,000 simulated datasets for analysis.
+-   **Running single-species models**: Detections were modelled for each species using implicit non-detections in eBird data. The fixed effects of month and year were included as factors and not continous variables, because we did not want to force any fixed trend over years and instead wanted to detect differences at the yearly level. List length was included as another fixed effect, in order to account for the effect of birding effort on detection. Random effects for national models were specified as a nested 25 km--within--100km grid cell structure to smoothen spatial bias and account for spatial autocorrelation. For state-level models, this was simplified to include only the 25 km grid cell structure which is more appropriate at this spatial scale.
+-   **Predicting values**: We used `predictInterval()` from the package *merTools* [@knowles2024] to obtain model predictions for our groups of interest. Means and standard errors (SEs) were averaged across individual months of each year, together with propagation of error. Thus, for each species, we obtained a single mean and SE value for each of the four years, separately for the two temporal versions (i.e., one model with only peak months, and another with all months). This was then repeated 1,000 times for each of the randomly subsampled datasets, effectively bootstrapping our model predictions and yielding 1,000 separate predictions of mean and SE values for each species model.
+-   **Estimating uncertainty**: We averaged predicted values across the 1,000 simulations, still on the transformed (Gaussian) scale where SEs were assumed to be symmetrical about the mean. We thus got a single mean and SE (after propagating errors) value for each species model.
+-   **Converting to proportional change**: Finally, the predicted values were back-transformed to the original scale, and recalculated as percent change from first-year values. In other words, predictions for each of the four years were converted into proportional change from the values in 2018--19. Since this step also involved transformation of values, and since the SEs were no longer on the Gaussian scale, we updated our uncertainty values using 95% quantiles of 1,000 simulated normal distributions ratios of proportional change (on the transformed, i.e., Gaussian scale). Finally, single-species predictions were also averaged within species categories (urban-sensitive and urban-dominant) to test our predictions and visualise patterns.
+
+```{r covid-soib, tab.cap='Methodological points of divergence in overall modelling steps between SoIB 2023 and current study.'}
+
+tribble(
+  ~ "Methodological point", ~ "SoIB 2023", ~ "This study",
+  "Effort standardisation (median list length)", "Per grid cells", "Per month",
+  "Temporal resolution of model", "Seasons", "Months",
+  "Fixed effect specification", 
+      "Interaction of month and year-interval absent", 
+      "Interaction of month and year present",
+  "Random effect specification", 
+      "Nested (100 km/25 km) for widespread spp., simple (25 km) for range-restricted spp.", 
+      "Nested (100 km/25 km) for national model, simple (25 km) for state models",
+
+) |> 
+  # flextable
+  flextable() %>% 
+  set_table_properties(layout = "autofit") %>% 
+  flextable::font(fontname = "Times New Roman", part = "all") %>% 
+  align(align = "left", part = "all")
+
+```
+
 ## Figures
 
 ### Overall bird reporting
 
-```{r overall-non1, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b_overall_s1a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non2, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Karnataka state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
 ```{r overall-non3, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Bengaluru city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b_overall_s1b_y.RData")
+load(here("00_outputs/b01_overall_s1b_y.RData"))
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -146,43 +107,6 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non5, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b_overall_s2a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non6, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Kerala state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
@@ -219,7 +143,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non7, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Kochi city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b_overall_s2b_y.RData")
+load(here("00_outputs/b01_overall_s2b_y.RData"))
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -288,43 +212,6 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non9, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
-
-load("00_outputs/b_overall_s3a_m.RData")
-d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non10, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Maharashtra state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
@@ -361,7 +248,7 @@ p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
 
 ```{r overall-non11, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Pune city. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
 
-load("00_outputs/b_overall_s3b_y.RData")
+load(here("00_outputs/b01_overall_s3b_y.RData"))
 d1 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_a %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -430,45 +317,8 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```
 
-```{r overall-non13, fig.cap="Calculated monthly reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals. Values for the four migratory years are shown in different colours, and the peak pandemic months are shown in red text.", out.width="100%", fig.width=8, fig.height=13, dpi=300, dev="jpeg"}
 
-load("00_outputs/b_overall_s4a_m.RData")
-d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
-  left_join(month_lab) %>% arrange(M.YEAR, MONTH.LAB)
-
-p1 <- ggplot(d1, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency") 
-
-p2 <- ggplot(d2, aes(MONTH.LAB, REP.FREQ, colour = M.YEAR)) +
-  geom_point(size = 1.5, position = position_dodge(0.8)) +
-  geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                size = 0.75, width = 0.75, position = position_dodge(0.8)) +
-  scale_colour_manual(values = covid_palette, name = "Migratory year") +
-  facet_wrap(~ COMMON.NAME, dir = "h", ncol = 2, 
-             strip.position = "left", scales = "free_y") +
-  labs(x = "Month", y = "Reporting frequency")
-
-(p1 / guide_area() / p2) +
-  plot_layout(guides = "collect", heights = c(6, 0.5, 6)) +
-  plot_annotation(tag_levels = "A") &
-  theme_classic(base_size = 10) &
-  theme(strip.text = element_text(size = 5),
-        legend.position = "bottom",
-        axis.text.x = element_text(colour = (d1 %>% distinct(MONTH.LAB, COL1))$COL1))
-
-```
-
-```{r overall-non14, fig.cap="Calculated annual reporting frequencies for urban (A) and rural (B) species in Assam state. Points represent means while error bars show 95% confidence intervals, and the peak pandemic years are shown in red text.", out.width="100%", fig.width=8, fig.height=11, dpi=300, dev="jpeg"}
-
-load("00_outputs/b_overall_s4b_y.RData")
+load(here("00_outputs/b01_overall_s4b_y.RData"))
 d1 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "U") %>% 
   left_join(month_lab) %>% arrange(M.YEAR)
 d2 <- data_b %>% ungroup() %>% filter(SP.CATEGORY == "R") %>% 
@@ -504,13 +354,13 @@ p2 <- ggplot(d2, aes(M.YEAR, REP.FREQ)) +
 
 ```{r overall-10m, fig.cap="Modelled species reporting frequencies for all ten months excluding April and May, for the states of Karnataka (A), Kerala (B), Maharashtra (C) and Assam (D). Points represent means while error bars show 95% confidence intervals. Values for urban and rural species are shown in maroon and purple respectively, and the pandemic years are shown in red text.", out.width="100%", fig.width=10, fig.height=6, dpi=300, dev="jpeg"}
 
-load("00_outputs/b_overall_s1c_model.RData")
+load(here("00_outputs/b01_overall_s1c_model.RData"))
 d1 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b_overall_s2c_model.RData")
+load(here("00_outputs/b01_overall_s2c_model.RData"))
 d2 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b_overall_s3c_model.RData")
+load(here("00_outputs/b01_overall_s3c_model.RData"))
 d3 <- birds_pred %>% filter(MONTHS.TYPE == "ALL")
-load("00_outputs/b_overall_s4c_model.RData")
+load(here("00_outputs/b01_overall_s4c_model.RData"))
 d4 <- birds_pred %>% filter(MONTHS.TYPE == "ALL") 
 
 p1 <- ggplot(d1, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
@@ -558,30 +408,6 @@ p4 <- ggplot(d4, aes(M.YEAR, PRED, col = SP.CATEGORY)) +
         plot.tag.position = c(0, 1),
         axis.text.x = element_text(colour = (month_lab %>% distinct(M.YEAR, COL3))$COL3,
                                    angle = 45, vjust = 0.5))
-
-```
-
-## Tables
-
-```{r reg-spec, tab.cap='Region-wise species sets for which overall reporting patterns were analysed. "+" indicates species that were included in the analysis for the different states.'}
-
-# regionwise species sets used in analyses
-
-species_list %>% 
-  mutate(STATE = factor(STATE, levels = c("Karnataka", "Kerala", "Maharashtra", "Assam")),
-         SP.CATEGORY = factor(SP.CATEGORY, levels = c("U", "R"))) %>% 
-  distinct(SP.CATEGORY, STATE, COMMON.NAME) %>% 
-  arrange(SP.CATEGORY, STATE) %>% 
-  mutate(PRESENT = "+") %>% 
-  pivot_wider(names_from = "STATE", values_from = "PRESENT") %>% 
-  mutate(SP.CATEGORY = ifelse(SP.CATEGORY == "U", "Urban", "Rural")) %>% 
-  rename(Species = COMMON.NAME, `Species category` = SP.CATEGORY) %>% 
-  # flextable
-  flextable() %>% 
-  set_table_properties(layout = "autofit") %>% 
-  flextable::font(fontname = "Times New Roman", part = "all") %>% 
-  align(align = "center", part = "all") %>% 
-  align(align = "left", j = "Species", part = "all")
 
 ```
 
