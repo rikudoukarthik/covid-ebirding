@@ -8,15 +8,12 @@ expandbyspecies = function(data, species) {
   
   occinfo <- data %>% 
     group_by(GROUP.ID, COMMON.NAME) %>% 
-    reframe(REPORT = 1) %>% 
-    ungroup()
+    reframe(REPORT = 1) 
   
   checklistinfo = data %>% 
     filter(ALL.SPECIES.REPORTED == 1) %>%
     distinct(GROUP.ID, M.YEAR, MONTH, DAY.M, URBAN, CELL.ID, SUBCELL.ID, GRID.G3, NO.SP) %>%
-    group_by(GROUP.ID) %>% 
-    slice(1) %>% 
-    ungroup()
+    distinct(GROUP.ID, .keep_all = TRUE)
   
   # expand data frame to include the bird species in every list
   expanded = checklistinfo %>% 
