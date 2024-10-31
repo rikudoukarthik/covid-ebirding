@@ -13,10 +13,10 @@ source("00_scripts/b_model_functions.R")
 
 for (mt in c("LD", "ALL")) {
   
-  cur_assignment <- 1:1000
+  cur_assignment <- 85:500
   
   
-  path_folder <- glue("00_outputs/bird_models/{state_name}/")
+  path_folder <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}/")
   datapath_folder <- glue("00_data/bird_models/{state_name}/b02_ss_datafiles_{mt}/")
   
   
@@ -25,12 +25,11 @@ for (mt in c("LD", "ALL")) {
     dir.create(path_folder, recursive = T)
   }
   
-  write_path <- glue("{path_folder}b03_models_{mt}.csv")
-  
   
   for (k in cur_assignment) {
     
-    # file names for individual files
+    # file names for individual files  
+    write_path <- glue("{path_folder}models{k}.csv")
     data_path <- glue("{datapath_folder}data{k}.RData")
     
     
@@ -60,21 +59,30 @@ for (mt in c("LD", "ALL")) {
     parallel::stopCluster(cl = my.cluster)
 
     
-    # storing as single object
-    if (!exists("birds_mod", envir = .GlobalEnv)) {
-      birds_mod <- birds_mod0
-    } else {
-      birds_mod <- birds_mod %>% 
-        bind_rows(birds_mod0)
-    }
-    assign("birds_mod", birds_mod, envir = .GlobalEnv)
+    write.csv(birds_mod0, file = write_path, row.names = F)
     
     tictoc::toc() 
+
+  }
+  
+  
+  # need to combine all individual model results into a single CSV (as done for Assam)
+  
+  path_folder2 <- glue("00_outputs/bird_models/{state_name}/")
+  write_path2 <- glue("{path_folder2}b03_models_{mt}.csv")
+  
+  if (dir.exists(path_folder)) {
     
-    gc()
+    list_files <- list.files(path_folder)
+    list_iter <- str_extract(list_files, "(\\d)+") %>% as.numeric() %>% sort()
+    
+    birds_mod <- map2(list_files, list_iter, 
+         ~ read_csv(glue("{path_folder}{.x}")) %>% bind_cols(tibble(ITERATION = .y))) %>% 
+      list_rbind()
+    
+    write.csv(birds_mod, file = write_path2, row.names = FALSE)
     
   }
   
-  write.csv(birds_mod, file = write_path, row.names = F)
   
 }
