@@ -1,5 +1,5 @@
 ---
-title: "Effects of COVID-19 pandemic on birding in India, and implications for citizen science inference"
+title: 'No evidence at large scale for "return" of bird life in the Indian anthropause'
 author: 
   - Karthik Thrikkadeeri:
       email: karthik.t@ncf-india.org
