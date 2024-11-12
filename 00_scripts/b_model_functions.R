@@ -69,19 +69,6 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   
   # the model ---------------------------------------------------------------
 
-  # for some species in KL and MH, using cloglog link is resulting in "PIRLS step-halvings
-  # failed to reduce deviance in pwrssUpdate"
-  
-  # if ((state_name == "Kerala" & species %in% fail_spec_KL) |
-  #     (state_name == "Maharashtra" & species %in% fail_spec_MH)){
-    
-  #   model_spec <- glmer(REPORT ~ M.YEAR + MONTH + MONTH:log(NO.SP) + MONTH:M.YEAR +
-  #                         (1|CELL.ID),
-  #                       data = data_exp, family = binomial,
-  #                       nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
-    
-  # } else {
-    
     # if full country models, then full random effects specification as in SoIB 2023
     if (state_name == "India") {
 
@@ -98,8 +85,8 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
                           nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
       
     }
-  # }
 
+  
   # predicting from model ---------------------------------------------------
   
   # prepare a new data file to predict

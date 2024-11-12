@@ -1,5 +1,5 @@
 ---
-title: 'No evidence at large scale for "return" of bird life in the Indian anthropause'
+title: 'No evidence for "return" of bird life in the Indian anthropause'
 author: 
   - Karthik Thrikkadeeri:
       email: karthik.t@ncf-india.org
