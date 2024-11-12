@@ -13,7 +13,7 @@ source("00_scripts/b_model_functions.R")
 
 for (mt in c("LD", "ALL")) {
   
-  cur_assignment <- 2:500
+  cur_assignment <- 1:500
   
   
   path_folder <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}/")

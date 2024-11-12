@@ -119,8 +119,9 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
   pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",
                          level = 0.95, type = "linear.prediction")
   birds_pred$PRED.LINK = pred$fit
-  birds_pred$CI.L.LINK = pred$fit - pred$lwr
-  birds_pred$SE.LINK = (birds_pred$PRED.LINK - birds_pred$CI.L.LINK)/1.96 # assume alpha = 1.96
+  birds_pred$SE.LINK = pmin((pred$fit - pred$lwr), (pred$upr - pred$fit))/1.96 
+  # assume alpha = 1.96
+  # take smaller value of difference between mean and CI limits to be safe (long tail)
   
   
   birds_pred = birds_pred %>%

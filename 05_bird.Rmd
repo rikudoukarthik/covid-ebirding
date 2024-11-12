@@ -245,24 +245,18 @@ data_prolific <- data_prolific %>%
 
 state_name <- "India"
 source("00_scripts/b_overall_model.R")
-#  mins
 
 state_name <- "Karnataka"
 source("00_scripts/b_overall_model.R")
-# 341 mins
 
 state_name <- "Kerala"
 source("00_scripts/b_overall_model.R")
-# 402 min
 
 state_name <- "Maharashtra"
 source("00_scripts/b_overall_model.R")
-# 221 min
 
 state_name <- "Assam"
 source("00_scripts/b_overall_model.R")
-# 60 min
-# Long-tailed Shrike models for month type 1 and 3 are rank-deficient so drops 1 coefficient
 
 ```
 
