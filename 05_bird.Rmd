@@ -233,19 +233,19 @@ data_prolific <- data_prolific %>%
 ```{r b_overall_models, cache=TRUE, message=FALSE}
 
 state_name <- "India"
-source("00_scripts/b_overall_model.R")
+source("00_scripts/b_overall_model_pipeline.R")
 
 state_name <- "Karnataka"
-source("00_scripts/b_overall_model.R")
+source("00_scripts/b_overall_model_pipeline.R")
 
 state_name <- "Kerala"
-source("00_scripts/b_overall_model.R")
+source("00_scripts/b_overall_model_pipeline.R")
 
 state_name <- "Maharashtra"
-source("00_scripts/b_overall_model.R")
+source("00_scripts/b_overall_model_pipeline.R")
 
 state_name <- "Assam"
-source("00_scripts/b_overall_model.R")
+source("00_scripts/b_overall_model_pipeline.R")
 
 ```
 
