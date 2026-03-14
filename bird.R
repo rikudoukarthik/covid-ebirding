@@ -4,15 +4,21 @@
 source("00_scripts/b01_setup.R")
 
 
+# data import & prep (one-time) -------------------------------------------
 
-source("00_scripts/b02_import_data.R")
-
-
-
-
+# only needs to be run once, later analyses use saved output data/files
+source("00_scripts/b02_import_one_time.R") 
 
 
-# plotting
+# analyses ----------------------------------------------------------------
 
-theme_set(theme_classic())
-covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
+# full country analysis (4 steps)
+source("00_scripts/b03_overall_00_pipeline.R")
+
+# prolific birder analysis 
+source("00_scripts/b03_prolific.R")
+
+
+# plotting ----------------------------------------------------------------
+
+

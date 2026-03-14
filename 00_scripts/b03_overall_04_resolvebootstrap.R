@@ -5,7 +5,7 @@ require(tidyverse)
 require(glue)
 require(VGAM) #clogloglink()
 
-source("00_scripts/b_model_functions.R")
+source("00_scripts/b03_model_functions.R")
 
 
 for (mt in c("LD", "ALL")) {

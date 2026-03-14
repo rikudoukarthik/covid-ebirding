@@ -8,7 +8,7 @@ require(parallel)
 require(foreach)
 require(doParallel)
 
-source("00_scripts/b_model_functions.R")
+source("00_scripts/b03_model_functions.R")
 
 
 for (mt in c("LD", "ALL")) {
