@@ -302,7 +302,7 @@ levelplot(rast_SoIBmap,
           main = "") +
   latticeExtra::layer(sp::sp.polygons(in_bound, alpha = 0.4)) -> s_spread_SoIBmap_poster
 
-png(file = "02_poster_BMS_figs/s_spread_SoIBmap.png", 
+png(file = "presentations/02_poster_BMS_figs/s_spread_SoIBmap.png", 
     width = 12, height = 8, units = "in", res = 300)
 print(s_spread_SoIBmap_poster)
 dev.off()

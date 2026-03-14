@@ -40,7 +40,7 @@ Lines 80--92 should be unhashed when running the analysis for the first time, as
 
 ### Analysis
 
-Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`03_wrap_figs/`) and summary data (`00_outputs/`), which can be directly utilised further downstream.
+Then, the analyses can be run. The study is divided into two broad sections, one dealing with changes in birding and birder behaviour, and the other with changes in bird species reporting. Hence, the analysis is also split into two files, `04_birder.Rmd` and `05_bird.Rmd`. The contents of both these files are self-explanatory; they run various analyses, and generate and store outputs of the analyses such as figures (`01_birder_figs/`) and summary data (`00_outputs/`), which can be directly utilised further downstream.
 
 ### Manuscript
 

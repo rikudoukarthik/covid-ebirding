@@ -173,7 +173,7 @@ figure1 <- (s_spread_netchange | (s_cover / s_UNU_lists)) +
 figure1
 
 
-# ggsave("02_poster_BMS_figs/figure1.png", figure1, dpi = 300,
+# ggsave("presentations/02_poster_BMS_figs/figure1.png", figure1, dpi = 300,
 #        width = 15, height = 12, units = "in")
 
 ```
@@ -254,7 +254,7 @@ figure2 <- no_lists_po / hotspot / protocol / fidelity +
 figure2
 
 
-# ggsave("02_poster_BMS_figs/figure2.png", figure2, dpi = 300,
+# ggsave("presentations/02_poster_BMS_figs/figure2.png", figure2, dpi = 300,
 #        width = 11, height = 21, units = "in")
 
 
@@ -332,7 +332,7 @@ figure3
 
 
 
-# ggsave("02_poster_BMS_figs/figure3.png", figure3, dpi = 300,
+# ggsave("presentations/02_poster_BMS_figs/figure3.png", figure3, dpi = 300,
 #        width = 13, height = 13.5, units = "in")
 
 ```
@@ -361,7 +361,7 @@ table1 %>%
 ```
 
 ```{r figure4, out.width="100%", fig.cap="Map shows log proportional change in number of checklists across 24km $\\times$ 24km grid cells in transition from \"Before\" to \"During\" and from \"During\" to \"After\". Aside from a few small patches with decreased effort during the pandemic, there are no major spatial clusters of very high increase or decrease in birding effort.", cache=TRUE, echo=FALSE}
-knitr::include_graphics("02_poster_BMS_figs/s_spread_SoIBmap.png")                      
+knitr::include_graphics("presentations/02_poster_BMS_figs/s_spread_SoIBmap.png")                      
 ```
 
 # Conclusions

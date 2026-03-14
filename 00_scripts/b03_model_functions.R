@@ -358,78 +358,61 @@ gg_b_model <- function(data, type, data_points) {
     
   } else if (type == "prolific") {
     
-    plot_title <- "Change in bird species reporting from locations with consistent effort"
-    plot_subtitle <- paste0(
-      "Predicted reporting frequencies of ",
-      n_distinct(data_prolific$COMMON.NAME), " species (",
-      n_distinct(filter(data_prolific, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
-      n_distinct(filter(data_prolific, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
-      " in three separate monthwise models")
+    data <- data |> 
+      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("LD", "ALL"))) |> 
+      # remove 2018 points cos baseline
+      filter(M.YEAR != 2018) |> 
+      # calculating % change from baseline
+      mutate(across(ends_with(".PERC"), ~ . - 100))
+    data_points <- data_points |> 
+      # remove 2018 points cos baseline
+      filter(M.YEAR != 2018) |> 
+      # calculating % change from baseline
+      mutate(across(ends_with(".PERC"), ~ . - 100))
     
+    plot_ylim <- c(-100, 150)
+    plot_baseline <- 0
     
-    model_plot <- (ggplot(filter(data, MONTHS.TYPE == "LD"), 
-                          aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
-                     labs(title = "For the months of April and May",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     # data points
-                     geom_point(data = filter(data_points, MONTHS.TYPE == "LD"), 
-                                aes(group = PATH.GROUP),
-                                size = 3, alpha = 0.25,
-                                position = position_dodge(0.25)) + 
-                     geom_path(data = filter(data_points, MONTHS.TYPE == "LD"), 
-                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
-                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-                     # main points
-                     geom_point(size = 3, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
-                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
-                     labs(title = "For other ten months",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     # data points
-                     geom_point(data = filter(data_points, MONTHS.TYPE == "ALL"), 
-                                aes(group = PATH.GROUP),
-                                size = 3, alpha = 0.25,
-                                position = position_dodge(0.25)) + 
-                     geom_path(data = filter(data_points, MONTHS.TYPE == "ALL"), 
-                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
-                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-                     # main points
-                     geom_point(size = 3, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
-                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = c(0.1, 1.0)) +
-                     labs(title = "For all twelve months",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     # data points
-                     geom_point(data = filter(data_points, MONTHS.TYPE == "ALL"), 
-                                aes(group = PATH.GROUP),
-                                size = 3, alpha = 0.25,
-                                position = position_dodge(0.25)) + 
-                     geom_path(data = filter(data_points, MONTHS.TYPE == "ALL"), 
-                               aes(x = as.numeric(M.YEAR), y = PRED, group = PATH.GROUP),
-                               size = 1, alpha = 0.15, position = position_dodge(0.25)) + 
-                     # main points
-                     geom_point(size = 3, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1.5, width = 0.2, position = position_dodge(0.5))) +
-      plot_layout(guides = "collect") +
-      plot_annotation(title = plot_title,
-                      subtitle = plot_subtitle) 
+    # iterate over both month types
+    plot_list <- map(levels(data$MONTHS.TYPE), ~ {
+      
+      data_sub <- data |> filter(MONTHS.TYPE == .x)
+      data_points_sub <- data_points |> filter(MONTHS.TYPE == .x)
+      
+      panel_title <- if (.x == "LD") "April & May" else "All twelve months"
+      
+      ggplot(data = data_sub, 
+             mapping = aes(x = M.YEAR, y = PRED.PERC, col = SP.CATEGORY)) +
+        scale_color_manual(name = "Species category",
+                           values = urbrur_palette,
+                           labels = c("Rural", "Urban")) +
+        coord_cartesian(ylim = plot_ylim) +
+        labs(title = panel_title,
+             x = "Year", y = "Change in reporting frequency (% from 2018)") +
+        
+        # data points
+        geom_point(data = data_points_sub, 
+                   mapping = aes(group = PATH.GROUP),
+                   size = 3, alpha = 0.5, position = position_dodge(0.5)) + 
+        geom_path(data = data_points_sub, 
+                  mapping = aes(x = as.numeric(M.YEAR), y = PRED.PERC, group = PATH.GROUP),
+                  linewidth = 1, alpha = 0.35, position = position_dodge(0.5)) + 
+        
+        # main points
+        geom_point(size = 3, position = position_dodge(0.5)) +
+        geom_errorbar(aes(ymin = CI.L.PERC, ymax = CI.U.PERC), 
+                      linewidth = 1.5, width = 0.2, position = position_dodge(0.5)) +
+        
+        # baseline
+        geom_hline(yintercept = plot_baseline)
+      
+    })
+    
+    model_plot <- (plot_list[[1]] | plot_list[[2]]) +
+      plot_layout(guides = "collect") &
+      # legend at bottom
+      theme(legend.position = "bottom",
+            legend.title.position = "top")
     
     return(model_plot)
     

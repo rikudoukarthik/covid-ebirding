@@ -219,7 +219,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -232,7 +232,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -377,7 +377,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -390,7 +390,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -530,7 +530,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -543,7 +543,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -677,7 +677,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -690,7 +690,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -826,7 +826,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -839,7 +839,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -979,7 +979,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -992,7 +992,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -1130,7 +1130,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -1143,7 +1143,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -1279,7 +1279,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -1292,7 +1292,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -1424,7 +1424,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b,
@@ -1437,7 +1437,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -1574,7 +1574,7 @@ plot_a <- ggplot(data0_a,
                 size = 1, width = 0.3, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
@@ -1587,7 +1587,7 @@ plot_b <- ggplot(data0_b,
                 size = 1.5, width = 0.4, position = position_dodge(0.5)) +
   scale_colour_manual(values = covid_palette, name = "Migratory\nyear")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
@@ -1798,7 +1798,7 @@ s_spread_map <- ggplot(data_spread1) +
 # not considered can be either because both time periods are zero, or if generally no 
 # district-grid cell link present
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_a.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_1effort_a.png"), 
        plot = s_spread_map,
        dpi = 300, width = 14, height = 8, units = "in")
 
@@ -1825,7 +1825,7 @@ s_spread_rawchange <- ggplot(data_spread2, aes(x = T.LABEL, y = VALUE)) +
   labs(title = "Net change in birding effort (no. of lists) across districts\nin transition periods",
        x = "Transition", y = "Difference in no. of lists") 
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_b.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_1effort_b.png"), 
        plot = s_spread_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -1902,7 +1902,7 @@ s_spread_mapprop <- (ggplot(data_spread3a) +
   plot_annotation(title = "Proportional declines in no. of lists per district in transition periods (only when N1 >= 10)",
                   subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_c.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_1effort_c.png"), 
        plot = s_spread_mapprop,
        dpi = 300, width = 14, height = 15, units = "in")
 
@@ -1944,7 +1944,7 @@ s_spread_gridcov_map <- ggplot(data_spread4) +
        title = "Change in grid coverage per district in transition periods",
        subtitle = "Grey: districts not considered in analysis")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_a.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_2gridcov_a.png"), 
        plot = s_spread_gridcov_map,
        dpi = 300, width = 14, height = 14, units = "in")
 
@@ -1971,7 +1971,7 @@ s_spread_gridcov_rawchange <- ggplot(data_spread5, aes(x = T.LABEL, y = VALUE)) 
   labs(title = "Net change in grid coverage across districts\nin transition periods",
        x = "Transition", y = "Difference in grid coverage") 
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_b.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_2gridcov_b.png"), 
        plot = s_spread_gridcov_rawchange,
        dpi = 300, width = 6, height = 9, units = "in")
 
@@ -2022,7 +2022,7 @@ s_spread_gridcov_mapprop_a <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c1.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_2gridcov_c1.png"), 
        plot = s_spread_gridcov_mapprop_a,
        dpi = 300, width = 14, height = 14, units = "in")
 
@@ -2044,7 +2044,7 @@ s_spread_gridcov_mapprop_b <- ggplot(data_spread6 %>%
        title = "Proportional declines in grid coverage per district (with threshold) in transition periods",
        subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"), 
+ggsave(filename = glue("01_birder_figs/{anal_name}_2gridcov_c2.png"), 
        plot = s_spread_gridcov_mapprop_b,
        dpi = 300, width = 14, height = 14, units = "in")
 
@@ -2139,7 +2139,7 @@ plot_a <- ggplot(data_a, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) +
   labs(title = "National level",
        x = "Day of week", y = "Proportion of lists")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 
@@ -2152,7 +2152,7 @@ plot_b <- ggplot(data_b, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) +
   labs(title = "State-level",
        x = "Day of week", y = "Proportion of lists")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 # Saving analysis objects #
@@ -2214,7 +2214,7 @@ plot_a <- ggplot(data_a, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   labs(title = "National level",
        x = "Time of day (hours)", y = "Proportion of lists")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
+ggsave(filename = glue("01_birder_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 16, height = 8, units = "in")
 
 
@@ -2228,7 +2228,7 @@ plot_b <- ggplot(data_b, aes(HOUR, PROP.LISTS, colour = M.YEAR)) +
   labs(title = "State-level",
        x = "Time of day (hours)", y = "Proportion of lists")
 
-ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
+ggsave(filename = glue("01_birder_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 32, height = 17, units = "in")
 
 

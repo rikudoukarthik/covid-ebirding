@@ -109,6 +109,16 @@ prolific_pred <- prolific_points %>%
          CI.U.PERC = PRED.PERC + 1.96*SE.PERC)
 
 
+
+# some summaries for plots
+prolific_summ <- data.frame(
+  NO.SPEC = n_distinct(prol_data$COMMON.NAME),
+  NO.SPEC.URB = n_distinct(filter(prol_data, SP.CATEGORY == "U")$COMMON.NAME),
+  NO.SPEC.RUR = n_distinct(filter(prol_data, SP.CATEGORY == "R")$COMMON.NAME)
+)
+
+
+
 # save results
-save(prolific_pred, prolific_points, 
-     file = glue("00_outputs/bird_models/prolific.RData"))
+save(prolific_pred, prolific_points, prolific_summ,
+     file = "00_outputs/bird_models/prolific.RData")
