@@ -103,8 +103,9 @@ singlespeciesmodel = function(data, species, specieslist, iter = NULL) {
     birds_pred <- birds_pred %>% dplyr::select(-GRID.G3)
   }
   
-  pred = predictInterval(model_spec, newdata = birds_pred, which = "fixed",
-                         level = 0.95, type = "linear.prediction")
+  pred = predictInterval(model_spec, newdata = birds_pred, 
+                         which = "fixed", level = 0.95, n.sims = 1000, # default nsims but explicitly stating
+                         type = "linear.prediction", include.resid.var = FALSE)
   birds_pred$PRED.LINK = pred$fit
   birds_pred$SE.LINK = pmin((pred$fit - pred$lwr), (pred$upr - pred$fit))/1.96 
   # assume alpha = 1.96
@@ -158,6 +159,69 @@ simerrordiv = function(x1, x2, se1, se2, state, species)
   return(tp)
 }
 
+
+# fit prolific model and predict with bootstrapping -----------------------
+
+# helper to run a model + predictions for one (month_type, loc_id) combo
+
+fit_pred_prolific <- function(cur_m, loc_id, data, new_data_pred) {
+  
+  # filter data for this combo
+  data_loc <- data %>% 
+    filter(MONTHS.TYPE == cur_m, 
+           LOCALITY.ID == loc_id)
+  
+  new_data_pred0 <- new_data_pred %>% 
+    filter(MONTHS.TYPE == cur_m, 
+           LOCALITY.ID == loc_id) %>% 
+    rename(PRED.LINK2 = PRED.LINK,
+           SE.LINK2   = SE.LINK)
+  
+  assign("new_data_pred0", new_data_pred0, envir = .GlobalEnv)
+  
+  # fit model
+  tictoc::tic(glue("GLMM for months type {cur_m}, location {loc_id}"))
+  # L6949429-ALL model not converging (high VIF, TMB works), so using conditional 
+  # to use sqrt-transformation instead of log- in such cases
+  model_loc <- tryCatch(
+    
+    glmer(REPORT ~ M.YEAR + MONTH:log(NO.SP) + MONTH:M.YEAR + SP.CATEGORY +
+            (1|COMMON.NAME),
+          data = data_loc, 
+          family = binomial(link = "cloglog"),
+          nAGQ = 0, control = glmerControl(optimizer = "bobyqa")),
+    
+    error = function(e) {
+      
+      message("Log transform failed, retrying with sqrt…")
+      return(
+        glmer(REPORT ~ M.YEAR + MONTH:sqrt(NO.SP) + MONTH:M.YEAR + SP.CATEGORY +
+                (1|COMMON.NAME),
+              data = data_loc,
+              family = binomial(link = "cloglog"),
+              nAGQ = 0, control = glmerControl(optimizer = "bobyqa"))
+      )
+      message("sqrt model fitted")
+      
+    }
+    
+  )
+  tictoc::toc()
+  
+  # bootstrap predictions
+  tictoc::tic(glue("Bootstrapped predictions for months type {cur_m}, location {loc_id}"))
+  prediction <- boot_conf_GLMM(model = model_loc,
+                               new_data = new_data_pred0)
+  tictoc::toc()
+  
+  # summarise predictions
+  new_data_pred0 %>%
+    mutate(col_id     = row_number(),
+           PRED.LINK2 = map_dbl(col_id, ~ mean(na.omit(prediction[, .x]))),
+           SE.LINK2   = map_dbl(col_id, ~ sd(na.omit(prediction[, .x])))) %>%
+    select(-col_id)
+  
+}
 
 # plotting function for bird model results -----------------
 

@@ -2,7 +2,6 @@
 .Rhistory
 .Ruserdata
 
-*.RData
 *.Rproj
 
 # RMD caches
@@ -18,8 +17,8 @@
 *.pdf
 *.docx
 *.pptx
-
-# folders in repo
+00_data/data0_*.RData
+00_data/grids_*.RData
 00_data/in_LULC/
 00_data/in_LULC_USGS/
 00_data/bird_models/

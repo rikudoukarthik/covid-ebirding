@@ -878,7 +878,6 @@ boot_conf = function(x, fn = mean, B = 1000) {
 
 boot_conf_GLMM = function(model, 
                           new_data, # separately specify dataframe with vars for model
-                          new_data_string, # string for clusterExport()
                           re_form = NA,
                           nsim = 1000,
                           pred_type = "link")
@@ -898,7 +897,8 @@ boot_conf_GLMM = function(model,
   par_cores <- max(1, floor(detectCores()/2))
   par_cluster <- makeCluster(rep("localhost", par_cores), outfile = "log.txt")
   clusterEvalQ(par_cluster, library(lme4))
-  clusterExport(par_cluster, varlist = new_data_string)
+  clusterExport(par_cluster, 
+                varlist = deparse(substitute(new_data)))
 
   print(glue("Using {par_cores} cores."))
   

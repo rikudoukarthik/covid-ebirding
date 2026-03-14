@@ -13,7 +13,7 @@ source("00_scripts/b_model_functions.R")
 
 for (mt in c("LD", "ALL")) {
   
-  cur_assignment <- 1:500
+  cur_assignment <- 1:1000
   
   
   path_folder <- glue("00_outputs/bird_models/{state_name}/b03_models_{mt}/")
@@ -41,7 +41,7 @@ for (mt in c("LD", "ALL")) {
     
     # start parallel
     n.cores = if (state_name == "India" & mt == "ALL") {
-      parallel::detectCores()/3
+      parallel::detectCores()/6
     } else {
       parallel::detectCores()/2
     }
