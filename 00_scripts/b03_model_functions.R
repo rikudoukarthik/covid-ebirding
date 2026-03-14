@@ -231,10 +231,11 @@ gg_b_model <- function(data, type, data_points) {
   require(patchwork)
   require(ggtext)
   
+  lab_y <- "Change in abundance index<br>(from t~0~ = 2018\u201319)"
+  
   if (type == "overall_ribbon") {
 
-    lab_y <- "Change in abundance index<br>(from t~0~ = 2018\u201319)"
-    lab_ribbons <- urbrur_palette %>% 
+    lab_ribbons <- urbrur_palette_df %>% 
       mutate(HEX.LABEL = case_when(MONTHS.TYPE == "LD" ~ "Apr\u2013May\n(Peak impact)",
                                    MONTHS.TYPE == "ALL" ~ "Jun\u2013May\n(Full year)")) %>% 
       mutate(HEX.LABEL = factor(HEX.LABEL, 
@@ -271,8 +272,7 @@ gg_b_model <- function(data, type, data_points) {
       scale_x_continuous(labels = c("2018\u201319", "2019\u201320", "2020\u201321", "2021\u201322"),
                          limits = c(2018, 2021.003)) +
       labs(x = "Migratory Year", 
-           y = lab_y,
-           title = unique(data$STATE.NAME)) +
+           y = lab_y) +
       coord_cartesian(expand = FALSE, ylim = c(74.2, 135)) +
       # guides(fill = guide_legend(byrow = TRUE, reverse = FALSE),
       #        colour = guide_legend(byrow = TRUE, reverse = FALSE)) +
@@ -297,62 +297,48 @@ gg_b_model <- function(data, type, data_points) {
     
   } else if (type == "overall") {
     
-    plot_title <- glue("{state_name} state")
-    plot_subtitle <- paste0(
-      "Predicted reporting frequencies of ",
-      n_distinct(data_occ$COMMON.NAME), " species (",
-      n_distinct(filter(data_occ, SP.CATEGORY == "U")$COMMON.NAME), " urban, ",
-      n_distinct(filter(data_occ, SP.CATEGORY == "R")$COMMON.NAME), " rural)",
-      " in three separate monthwise models")
+    state_name <- unique(data$STATE.NAME)
+
+    plot_ylim <- c(-100, NA)
+    plot_baseline <- 0
     
-    # different y lims for different states
-    if (state_name == "Karnataka") {
-      plot_ylims <- c(0.13, 0.35)
-    } else if (state_name == "Kerala") {
-      plot_ylims <- c(0.05, 0.22)
-    } else if (state_name == "Maharashtra") {
-      plot_ylims <- c(0.175, 0.35)
-    } else if (state_name == "Assam") {
-      plot_ylims <- c(0.1, 0.5)
-    }
+    data <- data |> 
+      mutate(MONTHS.TYPE = factor(MONTHS.TYPE, levels = c("LD", "ALL"))) |> 
+      filter(M.YEAR != 2018) |> 
+      # calculating % change from baseline
+      mutate(across(ends_with(".PERC"), ~ . - 100))
     
+    # iterate over both month types
+    plot_list <- map(levels(data$MONTHS.TYPE), ~ {
+      
+      data_sub <- data |> filter(MONTHS.TYPE == .x)
+      
+      panel_title <- if (.x == "LD") "April & May" else "All twelve months"
+      
+      ggplot(data = data_sub, 
+             mapping = aes(x = M.YEAR, y = PRED.PERC, col = SP.CATEGORY)) +
+        scale_color_manual(name = "Species category",
+                           values = urbrur_palette,
+                           labels = c("Rural", "Urban")) +
+        coord_cartesian(ylim = plot_ylim) +
+        labs(title = panel_title,
+             x = "Year", y = lab_y) +
+        
+        # main points
+        geom_point(size = 3, position = position_dodge(0.5)) +
+        geom_errorbar(aes(ymin = CI.L.PERC, ymax = CI.U.PERC), 
+                      linewidth = 1.5, width = 0.2, position = position_dodge(0.5)) +
+        
+        # baseline
+        geom_hline(yintercept = plot_baseline)
+      
+    })
     
-    model_plot <- (ggplot(filter(data, MONTHS.TYPE == "LD"), 
-                          aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = plot_ylims) +
-                     labs(title = "For the months of April and May",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 1.75, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
-                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = plot_ylims) +
-                     labs(title = "For other ten months",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 1.75, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1, width = 0.15, position = position_dodge(0.5)) |
-                     ggplot(filter(data, MONTHS.TYPE == "ALL"), 
-                            aes(M.YEAR, PRED, col = SP.CATEGORY)) +
-                     scale_color_manual(values = c("#8F85C1", "#A3383C"),
-                                        name = "Species\ncategory",
-                                        labels = c("Rural", "Urban")) +
-                     scale_y_continuous(limits = plot_ylims) +
-                     labs(title = "For all twelve months",
-                          x = "Migratory year", y = "Predicted reporting frequency") +
-                     geom_point(size = 1.75, position = position_dodge(0.5)) +
-                     geom_errorbar(aes(ymin = CI.L, ymax = CI.U), 
-                                   size = 1, width = 0.15, position = position_dodge(0.5))) +
-      plot_layout(guides = "collect") +
-      plot_annotation(title = plot_title,
-                      subtitle = plot_subtitle) 
+    model_plot <- (plot_list[[1]] | plot_list[[2]]) +
+      plot_layout(guides = "collect") &
+      # legend at bottom
+      theme(legend.position = "bottom",
+            legend.title.position = "top")
     
     return(model_plot)
     
@@ -388,7 +374,7 @@ gg_b_model <- function(data, type, data_points) {
                            labels = c("Rural", "Urban")) +
         coord_cartesian(ylim = plot_ylim) +
         labs(title = panel_title,
-             x = "Year", y = "Change in reporting frequency (% from 2018)") +
+             x = "Year", y = y = lab_y) +
         
         # data points
         geom_point(data = data_points_sub, 
