@@ -25,17 +25,6 @@ createrandomlocs <- function(locs) {
 }
 
 
-data0_MY_b <- bind_rows("LD" = data0_MY_b %>% filter(MONTH %in% 4:5), 
-                        "ALL" = data0_MY_b, 
-                        .id = "MONTHS.TYPE")
-
-
-# creating new directory if it doesn't already exist
-if (!dir.exists(glue("00_data/bird_models/{state_name}/"))) {
-  dir.create(glue("00_data/bird_models/{state_name}/"), recursive = TRUE)
-}
-
-
 # filtering separately for lockdown and all months
 for (mt in c("LD", "ALL")) {
   

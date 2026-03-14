@@ -11,18 +11,19 @@
 # RDS file with login credentials
 *.rds
 
-# data files
+# data 
 *.txt
 *.zip
-*.pdf
-*.docx
-*.pptx
-00_data/data0_*.RData
-00_data/grids_*.RData
+00_data/*.RData
 00_data/in_LULC/
 00_data/in_LULC_USGS/
 00_data/bird_models/
 00_outputs/bird_models/*/*/*.csv
+
+# other files
+*.pdf
+*.docx
+*.pptx
 
 # Zoom recording
 Recording_IOC/

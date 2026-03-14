@@ -1,34 +1,100 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
+# Setup -------------------------------------------------------------------
 
-# Birder behaviour (focus level: checklists)
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+library(boot)
+library(lme4)
+library(glue)
+library(spdep)
+library(sf)
+library(parallel) # for bootstrapping error from GLMMs
+library(colorspace) # for ability to set midpoint in ggplot scale colour
+library(ggallin) # for inverse arcsine transformation of ggplot scale
 
-Changes in eBirder behaviour will be analysed using the focal data point, checklists. A number of metrics based on checklists will be calculated and analysed (**at the monthly scale**), such as:
+theme_set(theme_classic())
 
--   Group birding per observer
--   Site fidelity per observer
--   Birding time per observer
--   Hotspot birding
--   Birding protocol
--   Birding distance
--   List duration
--   List length
--   Proportion of urban birding
--   Spatial coverage
--   Spatial spread (not GLMM)
+covid_palette <- c("#1B9E77", "#EF4050", "#E89005", "#9678B6")
+# covid_palette2 <- c("#1B9E77", "#D95F02", "#7570B3", "#555555")
+covid_palette3 <- c("#1B9E77", "#E89005", "#9678B6")
 
-These are usually driven by decision at the state level, so since the models are being run for the states individually, no need to consider district.
 
-### Group birding (\>2 observer) per observer
+anal_states <- data.frame(a = "Karnataka",
+                          b = "Kerala",
+                          c = "Maharashtra",
+                          d = "Assam")
 
-```{r d01_group_po, cache=TRUE, message=FALSE}
+
+load("00_data/maps_sf.RData")
+
+
+
+source("00_scripts/functions.R")
+
+# Only needed once in the beginning to obtain the data.
+
+# Getting MODIS data ###
+if (!file.exists("00_data/in_LULC_MODIS/in_LULC_MODIS.tif") & 
+    !file.exists("00_data/rast_UNU.RData")) {
+  
+  getmodisdata()
+  
+} else {
+  print("MODIS data is ready to use!")
+}
+
+# #  Getting EBD data + filtering and preparing for current use (62 mins on server) ###
+# tictoc::tic("Preparing data for analyses")
+# rawdatapath <- "00_data/ebd_IN_prv_relMay-2022.txt"
+# senspath <- "00_data/ebd_sensitive_relMay-2022_IN.txt"
+# datapath <- "00_data/ebd_IN_relMay-2022.RData"
+# groupaccspath <- "00_data/ebd_users_GA_relMay-2022.csv"
+# covidclasspath <- "00_data/covid_classification.csv"
+# rast_UNU_path <- "00_data/rast_UNU.RData"
+# 
+# data_qualfilt_prep(rawdatapath, senspath, datapath, groupaccspath, covidclasspath,
+#                    rast_UNU_path,
+#                    maxvel = 20, minsut = 2)
+# tictoc::toc()
+
+
+load("00_data/data0_MY_d_slice.RData")
+load("00_data/grids_st_sf.RData")
+
+
+
+# timeline metadata
+timeline <- data0_MY_d_slice_G %>% distinct(COVID, YEAR, MONTH, M.YEAR)
+
+# finding main state of birders (mainly for observer-level metrics)
+obs_mainstates <- data0_MY_d_slice_S %>% 
+  group_by(OBSERVER.ID, STATE) %>% 
+  dplyr::summarise(LISTS = n_distinct(SAMPLING.EVENT.IDENTIFIER)) %>% 
+  arrange(desc(LISTS)) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  rename(MAIN.STATE = STATE) %>% 
+  dplyr::select(-LISTS)
+
+# choosing only months with data from all 3 COVID categories
+month_compar <- data0_MY_d_slice_G %>% 
+  group_by(MONTH) %>% 
+  mutate(COVID = factor(case_when(as.character(COVID) %in% c("DUR_20","DUR_21") ~ "DUR",
+                                  TRUE ~ as.character(COVID)),
+                        levels = c("BEF","DUR","AFT"))) %>% 
+  dplyr::summarise(N = n_distinct(COVID)) %>% 
+  filter(N == 3) %>%  # all 3 COVID categories
+  dplyr::select(MONTH)
+
+# removing unnecessary objects from maps_sf.RData
+rm(g2_in_sf, g3_in_sf, g4_in_sf,
+   g2_st_sf, g3_st_sf, g4_st_sf)
+
+# Group birding (\>2 observer) per observer -------------------------------
 
 anal_name <- "d01_group_po"
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -63,7 +129,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -75,7 +141,7 @@ data0_a <- data0_a %>%
   left_join(timeline)
 
 
-##### Final analysis: statewise GLMMs ####
+# Final analysis: statewise GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -137,15 +203,15 @@ data0_b <- data0_b %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
        x = "Month", y = "Predicted group birding proportion") +
   geom_point(size = 2, position = position_dodge(0.5)) +
@@ -157,7 +223,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
   labs(title = "State-level models",
        x = "Month", y = "Predicted group birding proportion") +
@@ -169,15 +235,12 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
-### Site fidelity per observer
-
-```{r d02_fidelity_po, cache=TRUE, message=FALSE}
+# Site fidelity per observer ----------------------------------------------
 
 anal_name <- "d02_fidelity_po"
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -201,8 +264,8 @@ data_a <- data0_MY_d_slice_G %>%
 
 tictoc::tic(glue("LMM for India"))
 model_a <- lmer(NO.SITES ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, 
-                 control = lmerControl(optimizer = "bobyqa")) 
+                data = data_a, 
+                control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 6 sec
 
 
@@ -217,7 +280,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -231,7 +294,7 @@ data0_a <- data0_a %>%
   left_join(timeline)
 
 
-##### Final analysis: statewise GLMMs ####
+# Final analysis: statewise GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -245,7 +308,7 @@ data0_b <- data0_MY_d_slice_G %>%
 
 
 for (i in 1:4) { # for each state
-
+  
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
   data_b <- data0_MY_d_slice_G %>% 
@@ -298,15 +361,15 @@ data0_b <- data0_b %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
        x = "Month", y = "Predicted no. of sites visited") +
   geom_point(size = 2, position = position_dodge(0.5)) +
@@ -318,7 +381,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
   labs(title = "State-level models",
        x = "Month", y = "Predicted no. of sites visited") +
@@ -331,17 +394,12 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
-```
 
--   At the national level, site fidelity was generally higher during the pandemic than before but mostly only around lockdown/second wave. In other months patterns closely followed pre-pandemic ones.
-
-### Birding time per observer
-
-```{r d03_time_po, cache=TRUE, message=FALSE}
+# Birding time per observer -----------------------------------------------
 
 anal_name <- "d03_time_po"
 
-##### Final analysis: national LMMs ####
+# Final analysis: national LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -380,7 +438,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -391,7 +449,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise LMMs ####
+# Final analysis: statewise LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -405,7 +463,7 @@ data0_b <- data0_MY_d_slice_G %>%
 
 
 for (i in 1:4) { # for each state
-
+  
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
   
   data_b <- data0_MY_d_slice_G %>% 
@@ -456,15 +514,15 @@ data0_b <- data0_b %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   labs(title = "National-level models",
        x = "Month", y = "Predicted birding time per observer") +
   geom_point(size = 2, position = position_dodge(0.5)) +
@@ -476,7 +534,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_a.png"), plot = plot_a,
        dpi = 300, width = 11, height = 6, units = "in")
 
 plot_b <- ggplot(data0_b, 
-       aes(MONTH, PRED, colour = M.YEAR)) +
+                 aes(MONTH, PRED, colour = M.YEAR)) +
   facet_wrap(~ STATE, ncol = 2, scales = "free_y") +
   labs(title = "State-level models",
        x = "Month", y = "Predicted birding time per observer") +
@@ -489,19 +547,12 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
-```
 
--   At the national level, birding times were and are lowest during monsoon. There was no noticeable negative impact of the pandemic on monthly birding times, except in March 2020 when the pandemic was a novelty. In fact, in the monsoon months of July and August, birding times even increased slightly during the pandemic.\
--   The only other major pattern visible at the state level is in Karnataka, where birding times have increased in the months of August--October.
--   Karnataka and Assam showed a lowered birding duration around the peak months, while Kerala and Maharashtra showed no difference.
-
-### Hotspot birding
-
-```{r d04_hotspot, cache=TRUE, message=FALSE}
+# Hotspot birding ---------------------------------------------------------
 
 anal_name <- "d04_hotspot"
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -536,7 +587,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -547,7 +598,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise GLMMs ####
+# Final analysis: statewise GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -563,7 +614,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-    
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -575,8 +626,8 @@ for (i in 1:4) { # for each state
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
-
-
+  
+  
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
@@ -610,12 +661,12 @@ data0_b <- data0_b %>%
   left_join(timeline)
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -642,19 +693,13 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
--   The national level saw lower hotspot birding during the lockdown/second wave months, with some spillover into the months of June and July.\
--   In Karnataka, this impact surprisingly lasted through all of 2020 but returned almost exactly to pre-COVID levels in 2021. The same to an extent in Kerala, though the difference was much less.
--   Maharashtra recovered after the peak period, while there was no effect on Assam.
+# Birding protocol --------------------------------------------------------
 
-### Birding protocol
-
-```{r d05_protocol, cache=TRUE, message=FALSE}
 
 anal_name <- "d05_protocol"
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -689,7 +734,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -700,7 +745,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise GLMMs ####
+# Final analysis: statewise GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -716,7 +761,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-    
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -729,16 +774,16 @@ for (i in 1:4) { # for each state
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
-
-
+  
+  
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
                                new_data_string = "data0_b2",
                                nsim = 1000)
   tictoc::toc() #
-
-
+  
+  
   
   for (j in 1:length(data0_b2$MONTH)) {
     
@@ -765,12 +810,12 @@ data0_b <- data0_b %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -798,17 +843,12 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
-```
 
--   At the national level, mobility of birders, in terms of proportion of travelling lists submitted, decreased sharply during April--May as expected, and had some spillover into June and July, but matched pre-COVID levels well in the other months of the year.
-
-### Birding distance
-
-```{r d06_distance, cache=TRUE, message=FALSE}
+# Birding distance --------------------------------------------------------
 
 anal_name <- "d06_distance"
 
-##### Final analysis: national LMMs ####
+# Final analysis: national LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -828,8 +868,8 @@ data_a <- data0_MY_d_slice_G %>%
 
 tictoc::tic(glue("LMM for India"))
 model_a <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, 
-                 control = lmerControl(optimizer = "bobyqa")) 
+                data = data_a, 
+                control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 18 sec
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -844,7 +884,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -856,7 +896,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise LMMs ####
+# Final analysis: statewise LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -872,7 +912,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-    
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     filter(PROTOCOL.TYPE == "Traveling", !is.na(EFFORT.DISTANCE.KM), EFFORT.DISTANCE.KM > 0.3) %>% 
@@ -883,10 +923,10 @@ for (i in 1:4) { # for each state
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
   model_b <- lmer(DISTANCE ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, 
-                   control = lmerControl(optimizer = "bobyqa")) 
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
-
+  
   
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
@@ -894,8 +934,8 @@ for (i in 1:4) { # for each state
                                new_data_string = "data0_b2",
                                nsim = 1000)
   tictoc::toc() #
-
-
+  
+  
   
   for (j in 1:length(data0_b2$MONTH)) {
     
@@ -923,12 +963,12 @@ data0_b <- data0_b %>%
 
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -956,18 +996,12 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
 
-```
 
--   At the national level, checklist distances were highest during summer and winter before the pandemic. During the pandemic, distances remained fairly similar for the winter months of October--December, but were drastically lower during the summer months of April and May, which coincided with the lockdown/second wave.\
--   Overall, this metric was not affected as much as others. Karnataka and Kerala showed some brief declines, but overall patterns are rather irregular, so nothing major. Maharashtra has shown a consistent decline since the start of the pandemic till now.
-
-### List duration
-
-```{r d07_duration, cache=TRUE, message=FALSE}
+# List duration -----------------------------------------------------------
 
 anal_name <- "d07_duration"
 
-##### Final analysis: national LMMs ####
+# Final analysis: national LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -986,8 +1020,8 @@ data_a <- data0_MY_d_slice_G %>%
 
 tictoc::tic(glue("LMM for India"))
 model_a <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                 data = data_a, 
-                 control = lmerControl(optimizer = "bobyqa")) 
+                data = data_a, 
+                control = lmerControl(optimizer = "bobyqa")) 
 tictoc::toc() # 35 sec
 
 tictoc::tic(glue("Bootstrapped predictions for India"))
@@ -1002,7 +1036,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -1015,7 +1049,7 @@ data0_a <- data0_a %>%
   left_join(timeline)
 
 
-##### Final analysis: statewise LMMs ####
+# Final analysis: statewise LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1031,7 +1065,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-    
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1041,10 +1075,10 @@ for (i in 1:4) { # for each state
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
   model_b <- lmer(DURATION ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, 
-                   control = lmerControl(optimizer = "bobyqa")) 
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
-
+  
   
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
@@ -1052,8 +1086,8 @@ for (i in 1:4) { # for each state
                                new_data_string = "data0_b2",
                                nsim = 1000)
   tictoc::toc() #
-
-
+  
+  
   
   for (j in 1:length(data0_b2$MONTH)) {
     
@@ -1080,12 +1114,12 @@ data0_b <- data0_b %>%
   left_join(timeline)
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -1112,19 +1146,12 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
--   In normal circumstances, checklists become longer in the winter, and shorter in the monsoon. The only notable change during the pandemic at the national level was low checklist duration in April--June, due to the national lockdown/second wave.\
--   A point of interest is that the average checklist duration varied greatly between states. Among the 4 compared here, Kerala on average had shortest lists, followed by Karnataka and then Maharashtra.\
--   Patterns somewhat similar to those of birding distance. Generally, briefly reduced during the peak months.
-
-### List length
-
-```{r d08_length, cache=TRUE, message=FALSE}
+# List length -------------------------------------------------------------
 
 anal_name <- "d08_length"
 
-##### Final analysis: national LMMs ####
+# Final analysis: national LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1161,7 +1188,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -1173,7 +1200,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise LMMs ####
+# Final analysis: statewise LMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1189,7 +1216,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-    
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, OBSERVER.ID, SAMPLING.EVENT.IDENTIFIER) %>% 
@@ -1199,18 +1226,18 @@ for (i in 1:4) { # for each state
   
   tictoc::tic(glue("LMM for {anal_states[, i]}"))
   model_b <- lmer(LENGTH ~ M.YEAR + M.YEAR:MONTH + (1|OBSERVER.ID),
-                   data = data_b, 
-                   control = lmerControl(optimizer = "bobyqa")) 
+                  data = data_b, 
+                  control = lmerControl(optimizer = "bobyqa")) 
   tictoc::toc() 
-
+  
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
                                new_data_string = "data0_b2",
                                nsim = 1000)
   tictoc::toc() 
-
-
+  
+  
   
   for (j in 1:length(data0_b2$MONTH)) {
     
@@ -1236,12 +1263,12 @@ data0_b <- data0_b %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -1268,25 +1295,8 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
--   Overall, slight decrease during the peak period.\
--   Kerala didn't show any change at all.\
--   The peak months brought average list length in other states to around 10-11 species, which in Kerala's case already used to be the case (shorter lists).
-
-### Spatial spread and coverage
-
-1.  Urban:non-urban ratio in birding effort
-    -   Proportion of lists that are urban per grid cell GLMM\
-2.  Spatial coverage (min. 10 lists per grid cell)
-    -   Proportion of total cells in country/state covered across months GLMM\
-3.  Spatial spread/evenness (25kmx25km cells; across 9 months) Large spatial and temporal scale---no STATE or MONTH/M.YEAR in question.
-    -   Raw change in no. of lists per district
-    -   Proportional change in no. of lists per district (only declines)
-    -   Raw change in grid coverage per district
-    -   Proportional change in grid coverage per district (only declines)
-
-```{r d09a_s_UNU, cache=TRUE, message=FALSE}
+# Spatial spread and coverage ---------------------------------------------
 
 anal_name <- "d09a_s_UNU"
 
@@ -1294,7 +1304,7 @@ anal_name <- "d09a_s_UNU"
 # Issue with high number of zeroes (or hence low proportion values) and back-transformation of linear variable without accounting for random variation (Jensen's inequality effects)
 # So, need to include random effects in prediction, and need to predict at response scale.
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
@@ -1324,7 +1334,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -1336,7 +1346,7 @@ data0_a <- data0_a %>%
   left_join(timeline)
 
 
-##### Final analysis: state GLMMs ####
+# Final analysis: state GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1370,7 +1380,7 @@ for (i in 1:4) { # for each state
                                new_data_string = "data0_b2",
                                nsim = 1000)
   tictoc::toc() #
-
+  
   
   for (j in 1:length(data0_b2$MONTH)) {
     
@@ -1398,12 +1408,12 @@ data0_b <- data0_b %>%
   left_join(timeline)
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -1430,13 +1440,11 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
-```{r d09b_s_cover, cache=TRUE, message=FALSE}
 
 anal_name <- "d09b_s_cover"
 
-##### Final analysis: national GLMMs ####
+# Final analysis: national GLMMs #
 
 data0_a <- data0_MY_d_slice_G %>% 
   tidyr::expand(nesting(MONTH, M.YEAR)) %>% 
@@ -1469,7 +1477,7 @@ for (i in 1:length(data0_a$MONTH)) {
   
   data0_a$PRED.LINK[i] <- median(na.omit(prediction[,i]))
   data0_a$SE.LINK[i] <- sd(na.omit(prediction[,i]))
-
+  
 }
 
 data0_a <- data0_a %>% 
@@ -1480,7 +1488,7 @@ data0_a <- data0_a %>%
   get_CI_lims() %>% 
   left_join(timeline)
 
-##### Final analysis: statewise GLMMs ####
+# Final analysis: statewise GLMMs #
 
 # dataframe with empty column to populate with looped values
 # total rows: product of distinct values of predictors
@@ -1496,7 +1504,7 @@ data0_b <- data0_MY_d_slice_G %>%
 for (i in 1:4) { # for each state
   
   data0_b2 <- data0_b %>% filter(STATE == anal_states[, i])
-
+  
   data_b <- data0_MY_d_slice_G %>% 
     filter(STATE == anal_states[, i]) %>% 
     group_by(M.YEAR, MONTH, CELL.ID) %>% 
@@ -1514,8 +1522,8 @@ for (i in 1:4) { # for each state
                    data = data_b, family = binomial(link = "cloglog"),
                    nAGQ = 0, control = glmerControl(optimizer = "bobyqa")) 
   tictoc::toc() #
-
-
+  
+  
   tictoc::tic(glue("Bootstrapped predictions for {anal_states[, i]}"))
   prediction <- boot_conf_GLMM(model_b,
                                new_data = data0_b2,
@@ -1550,12 +1558,12 @@ data0_b <- data0_b %>%
   left_join(timeline)
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data0_a, data_a, model_a, data0_b, data_b, model_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-##### Graphs ####
+# Graphs #
 
 plot_a <- ggplot(data0_a, 
                  aes(MONTH, PRED, colour = M.YEAR)) +
@@ -1582,11 +1590,7 @@ plot_b <- ggplot(data0_b,
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-```
 
-For spread, we will not consider change in number or proportion of lists per grid cells because there will be too much noise at that fine a scale. Here, districts provide a nice compromise: large enough to track change, small enough to inform us about local patterns. For grid coverage, only those districts that have a minimum of 5 grid cells will be considered.
-
-```{r d09c_s_spread, cache=TRUE, message=FALSE}
 
 anal_name <- "d09c_s_spread"
 
@@ -1596,7 +1600,7 @@ region_codes <- region_codes %>%
          !is.na(COUNTY.CODE)) %>% 
   distinct(COUNTY.CODE, STATE, COUNTY)
 
-##### Preparing data ####
+# Preparing data #
 
 # linking ebd state, district, latlong to grid cell (already done) and sf state, district
 sf_use_s2(FALSE)
@@ -1756,7 +1760,7 @@ transition_names <- data.frame(T.CODE = c("T1", "T2", "T3", "T4"),
                                            "During to Before", "After to During"))
 
 
-##### Change in number of lists per district ####
+# Change in number of lists per district #
 
 # 1. map of raw change
 # 2. with SEs of raw change
@@ -1863,37 +1867,37 @@ data_spread3b <- data_spread0 %>%
 
 
 s_spread_mapprop <- (ggplot(data_spread3a) +
-  geom_sf(data = india_sf,
-          fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
-  facet_wrap(~ T.LABEL) +
-  # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
-  #                                  n_interp = 7, na.value = "grey") +
-  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
-                    mid = viridisLite::cividis(5, direction = -1)[3],
-                    high = viridisLite::cividis(5, direction = -1)[5],
-                    midpoint = -0.45,
-                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-                    limits = c(-1, 0),
-                    na.value = "#ACACAC") +
-  labs(x = "Longitude", y = "Latitude",
-       fill = "Proportional change")) /
+                       geom_sf(data = india_sf,
+                               fill = "white", colour = "black", size = 0.4) +
+                       geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
+                       facet_wrap(~ T.LABEL) +
+                       # scale_fill_continuous_divergingx(palette = "RdBu", mid = 0,
+                       #                                  n_interp = 7, na.value = "grey") +
+                       scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                                         mid = viridisLite::cividis(5, direction = -1)[3],
+                                         high = viridisLite::cividis(5, direction = -1)[5],
+                                         midpoint = -0.45,
+                                         breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                                         limits = c(-1, 0),
+                                         na.value = "#ACACAC") +
+                       labs(x = "Longitude", y = "Latitude",
+                            fill = "Proportional change")) /
   (ggplot(data_spread3b) +
-  geom_sf(data = india_sf,
-          fill = "white", colour = "black", size = 0.4) +
-  geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
-  facet_wrap(~ T.LABEL) +
-  # scale_fill_viridis_b(option = "cividis", direction = -1, na.value = "grey",
-  #                      values = c(0.1, 0.25, 0.45, 0.65, 0.9)) +
-  scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
-                    mid = viridisLite::cividis(5, direction = -1)[3],
-                    high = viridisLite::cividis(5, direction = -1)[5],
-                    midpoint = -0.45,
-                    breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
-                    limits = c(-1, 0),
-                    na.value = "#ACACAC") +
-  labs(x = "Longitude", y = "Latitude",
-       fill = "Proportional change")) +
+     geom_sf(data = india_sf,
+             fill = "white", colour = "black", size = 0.4) +
+     geom_sf(aes(fill = VALUE, geometry = DISTRICT.GEOM), col ="#ACACAC", size = 0.1) +
+     facet_wrap(~ T.LABEL) +
+     # scale_fill_viridis_b(option = "cividis", direction = -1, na.value = "grey",
+     #                      values = c(0.1, 0.25, 0.45, 0.65, 0.9)) +
+     scale_fill_steps2(low = viridisLite::cividis(5, direction = -1)[1],
+                       mid = viridisLite::cividis(5, direction = -1)[3],
+                       high = viridisLite::cividis(5, direction = -1)[5],
+                       midpoint = -0.45,
+                       breaks = c(-1, -0.9, -0.65, -0.45, -0.25, -0.1, -0),
+                       limits = c(-1, 0),
+                       na.value = "#ACACAC") +
+     labs(x = "Longitude", y = "Latitude",
+          fill = "Proportional change")) +
   plot_layout(guides = "collect") +
   plot_annotation(title = "Proportional declines in no. of lists per district in transition periods (only when N1 >= 10)",
                   subtitle = "Grey: districts with positive proportional change\nWhite: districts not considered in analysis")
@@ -1903,7 +1907,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_1effort_c.png"),
        dpi = 300, width = 14, height = 15, units = "in")
 
 
-##### Change in grid coverage per district (without & with threshold) ####
+# Change in grid coverage per district (without & with threshold) #
 
 # 1. map of raw change
 # 2. with SEs of raw change
@@ -2046,7 +2050,7 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_2gridcov_c2.png"),
 
 # all these values are zero in one of the two transition periods.
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 map_dists_ebd_sf <- dists_ebd_sf %>% 
   distinct(COUNTY.CODE, STATE.NAME, DISTRICT.NAME)
@@ -2063,25 +2067,13 @@ temp7 <- data_spread6 %>% st_drop_geometry() %>% dplyr::select(-DISTRICT.GEOM)
 save(map_dists_ebd_sf, temp1, temp2, temp3, temp4, temp5, temp6, temp7,
      file = glue("00_outputs/{anal_name}.RData"))
 
-```
 
--   In terms of pure no. of lists, overall birding effort was not notably affected by the pandemic. From the map of raw change, it is clear that more districts had negative change from DUR to AFT than from BEF to DUR. But it also seems that major and worrisome changes were in very few cases. Most importantly, there was no prominent clustering in these major worrisome changes.
--   Comparing proportional change in no. of lists in both directions, specifically BEF-DUR with AFT-DUR which tells us the effect of the pandemic, we see that most major changes (bright yellow) are in central and northern India and also that there is in general little overlap between the two transitions. What this means is that while there is obvious variability in birding effort between different years, the direct effect of the pandemic on this variability (inferred from overlapping areas of high proportional decline in BEF-DUR and AFT-DUR) is not great. In fact, in some cases, some major declines in BEF-DUR are not major in AFT-DUR and vice-versa, meaning that these instead may point to annual idiosyncrasies. This is solidified by the presence of a similar number of districts showing prominent negative change in the transitions DUR-BEF and DUR-AFT. The presence of many more yellow districts in the reverse direction than in the forward direction points to the general increase in birding efforts.
--   Overall grid coverage across all districts increased during the pandemic, while it either increased (without threshold) or stayed the same (with threshold) after. Looking into this deeper, it is clear that major worrisome changes are actually very few, and most importantly, there aren't major spatial clusters of these major changes.
--   Like with no. of lists, in some East-Central Indian districts grid coverage also showed major declines due to the pandemic (and bounced back after). Aside from these few districts, there is little overlap. Moreover, there are more districts with major declines in the other directions, i.e., DUR-BEF and DUR-AFT, which suggests that there is general growth.
--   With the threshold for coverage, the only declines that remain are the ones where one of the periods has zero coverage. Again, there is very little overlap of these districts, and there are no major spatial clusters. It also looks like several districts were covered during the pandemic that weren't covered before or after!
+# Temporal spread ---------------------------------------------------------
 
-### Temporal spread
-
-Not "per observer", as this metric from data POV.
-
-Here, running models is not necessary, as we just want to visualise the patterns. Robust results for this do not tell us much. Besides, the models that can be run for this metric would be very different from those for the other metrics (no CELL.ID or OBSERVER.ID random effect, and MONTH used as random effect; response has more than 2 values).
-
-```{r d10a_t_dow, cache=TRUE, message=FALSE}
 
 anal_name <- "d10a_t_dow"
 
-##### Change in DoW spread ####
+# Change in DoW spread #
 
 met_week <- function(dates) {
   require(lubridate)
@@ -2163,19 +2155,18 @@ plot_b <- ggplot(data_b, aes(DAY.W.LABEL, PROP.LISTS, colour = M.YEAR)) +
 ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 22, height = 13, units = "in")
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data_a, data_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
 
-```
 
-```{r d10b_t_tod, cache=TRUE, message=FALSE}
+
 
 anal_name <- "d10b_t_tod"
 
-##### Change in ToD spread ####
+# Change in ToD spread #
 
 data_a <- data0_MY_d_slice_G %>% 
   mutate(DAY.Y = yday(OBSERVATION.DATE)) %>% 
@@ -2241,9 +2232,10 @@ ggsave(filename = glue("03_wrap_figs/{anal_name}_b.png"), plot = plot_b,
        dpi = 300, width = 32, height = 17, units = "in")
 
 
-##### Saving analysis objects ####
+# Saving analysis objects #
 
 save(data_a, data_b, 
      file = glue("00_outputs/{anal_name}.RData"))
 
-```
+
+
